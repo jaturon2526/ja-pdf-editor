@@ -27,7 +27,7 @@ def test_legacy_database_is_upgraded(tmp_path, monkeypatch):
     with eng.connect() as c:
         cols = {col["name"] for col in sa.inspect(c).get_columns("users")}
         assert {"is_admin", "encrypted_gemini_key", "accepted_tos"} <= cols
-        assert c.execute(sa.text("select max_storage_mb from plan_configs")).scalar() == 5120
+        assert c.execute(sa.text("select max_storage_mb from plan_configs")).scalar() == 1024  # premium (0016)
         assert {"files", "conversion_tasks", "licenses"} <= set(sa.inspect(c).get_table_names())
 
 
@@ -57,3 +57,32 @@ def test_postgres_fresh_and_restart(monkeypatch):
     migrations.run_migrations()
     with eng.connect() as conn:
         assert compare_metadata(MigrationContext.configure(conn), Base.metadata) == []
+
+
+def test_0016_retiers_saved_defaults_and_shrinks_plans(tmp_path, monkeypatch):
+    """เครื่องที่ deploy 0015 แล้ว: ระดับ 50/300/500 ที่บันทึกไว้ → 49/299/499 · pro/premium 1024/5120 → 500/1024
+    ค่าที่แอดมินตั้งเองไม่ถูกแตะ"""
+    import json
+
+    import sqlalchemy as sa
+    from alembic import command
+
+    from app.db import migrations
+
+    url = f"sqlite:///{tmp_path / 'm.db'}"
+    eng = sa.create_engine(url)
+    monkeypatch.setattr(migrations, "engine", eng)
+    monkeypatch.setattr(migrations, "DATABASE_URL", url)
+    with eng.begin() as conn:
+        command.upgrade(migrations._alembic_config(conn), "0015_donations")
+        conn.execute(sa.text("INSERT INTO plan_configs (plan_type, max_sessions, max_storage_mb) VALUES "
+                             "('pro', 5, 1024), ('premium', 10, 3000)"))
+        old = [{"min_amount": 50, "plan": "pro", "days": 30}, {"min_amount": 300, "plan": "pro", "days": 365},
+               {"min_amount": 500, "plan": "premium", "days": 365}]
+        conn.execute(sa.text("INSERT INTO app_settings (key, value) VALUES ('donation', :v)"),
+                     {"v": json.dumps({"enabled": True, "promptpay_id": "0812345678", "tiers": old})})
+        command.upgrade(migrations._alembic_config(conn), "head")
+        plans = dict(conn.execute(sa.text("SELECT plan_type, max_storage_mb FROM plan_configs")).fetchall())
+        cfg = json.loads(conn.execute(sa.text("SELECT value FROM app_settings WHERE key='donation'")).scalar())
+    assert plans == {"pro": 500, "premium": 3000}
+    assert [t["min_amount"] for t in cfg["tiers"]] == [49, 299, 499] and cfg["enabled"] is True

@@ -25,7 +25,8 @@ JA PDF Editor เผยแพร่ภายใต้ **GNU Affero General Publi
 | certifi | Mozilla CA bundle | MPL-2.0 |
 | aiohttp | ขอ timestamp จาก TSA | Apache-2.0 |
 | webauthn (py_webauthn) | Passkey | BSD-3-Clause |
-| segno | QR code (SVG) | BSD-3-Clause |
+| segno | QR code (SVG) — LINE, พร้อมเพย์ | BSD-3-Clause |
+| zxing-cpp | อ่าน QR ในสลิปโอนเงิน | Apache-2.0 |
 | treepoem (+ BWIPP) | บาร์โค้ด/QR | MIT |
 | docxtpl | Word template (Auto-Gen) | LGPL-2.1 |
 | docxcompose, python-docx, openpyxl | รวม/สร้าง Word, อ่าน Excel | MIT |

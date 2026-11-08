@@ -129,6 +129,17 @@ def delete_account(db: Session, user: User, client: ClientInfo) -> dict:
     db.query(AIUsageDaily).filter(AIUsageDaily.user_id == user_id).delete(synchronize_session=False)
     db.query(License).filter(License.used_by_user_id == user_id).update({License.used_by_user_id: None},
                                                                           synchronize_session=False)
+    # การสนับสนุน: เก็บยอดไว้เป็นบันทึกบัญชีโดยไม่ผูกกับใคร · ลบชื่อ/ข้อความออกจากรายชื่อผู้สนับสนุน · ลบสลิปที่ค้างตรวจ
+    from app.models.domain import Donation
+    from app.services import donation_service
+
+    for donation in db.query(Donation).filter(Donation.user_id == user_id).all():
+        donation_service.delete_slip(donation)
+        donation.user_id, donation.display_name, donation.message, donation.anonymous = None, None, None, True
+        donation.verify_detail = None  # มีชื่อผู้โอนจากธนาคาร
+        if donation.status == "pending":
+            donation.status, donation.admin_note = "rejected", "ผู้แจ้งลบบัญชีก่อนตรวจ"
+    db.query(Donation).filter(Donation.reviewed_by == user_id).update({Donation.reviewed_by: None}, synchronize_session=False)
     db.delete(user)
     db.commit()
     logger.info("ลบบัญชีผู้ใช้ %s แล้ว (ไฟล์ %d, คำขอลงนาม %d)", user_id, len(records), len(owned_requests))

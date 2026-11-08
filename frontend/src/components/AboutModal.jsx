@@ -1,7 +1,7 @@
 import React from "react";
 import SourceCodeLink from "./SourceCodeLink.jsx";
 
-export const APP_VERSION = "v1.31.0";
+export const APP_VERSION = "v1.33.0";
 
 const OSS_CREDITS = [
   // ---- Backend (Python) ----
@@ -18,7 +18,8 @@ const OSS_CREDITS = [
   { name: "certifi", role: "ฐานข้อมูลใบรับรองที่เชื่อถือได้ (Mozilla CA Bundle)", license: "MPL-2.0" },
   { name: "aiohttp", role: "ติดต่อ TSA เพื่อขอประทับเวลาลายเซ็น", license: "Apache-2.0 / MIT" },
   { name: "pikepdf (qpdf)", role: "ถอดรหัสรหัสผ่าน PDF", license: "MPL-2.0" },
-  { name: "segno", role: "สร้าง QR code สำหรับเชื่อมต่อ LINE", license: "BSD-3-Clause" },
+  { name: "segno", role: "สร้าง QR code สำหรับเชื่อมต่อ LINE และ QR พร้อมเพย์", license: "BSD-3-Clause" },
+  { name: "zxing-cpp", role: "อ่าน QR ในสลิปโอนเงิน (กันสลิปซ้ำ)", license: "Apache License 2.0" },
   { name: "PyThaiNLP", role: "ตัดคำภาษาไทย", license: "Apache License 2.0" },
   { name: "Pillow", role: "ประมวลผลรูปภาพ และตราลายเซ็น", license: "MIT-CMU License" },
   { name: "Tesseract OCR + pytesseract", role: "OCR แปลงรูปภาพเป็น Searchable PDF", license: "Apache License 2.0" },

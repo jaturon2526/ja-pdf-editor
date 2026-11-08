@@ -29,6 +29,8 @@ export default function NotificationBell() {
       refresh();
     }
     if (item.request_id) navigate(`/signing/${item.request_id}`);
+    else if (item.kind === "donation_new") navigate("/admin");
+    else if (item.kind?.startsWith("donation_") || item.kind === "plan_expired") navigate("/support");
   }
 
   return (

@@ -42,7 +42,9 @@ class RenameFileRequest(BaseModel):
 
 
 def _storage_limit_bytes(db: Session, user: User) -> int:
-    plan_config = db.query(PlanConfig).filter(PlanConfig.plan_type == user.plan_type).first()
+    from app.services.donation_service import effective_plan
+
+    plan_config = db.query(PlanConfig).filter(PlanConfig.plan_type == effective_plan(user)).first()
     max_mb = (plan_config.max_storage_mb if plan_config else None) or settings.DEFAULT_STORAGE_MB
     return max_mb * 1024 * 1024
 
@@ -52,7 +54,7 @@ def check_storage_quota(db: Session, user: User, new_file_size: int = 0, replaci
     used_bytes = sum((f.file_size or 0) for f in files)
     projected_bytes = used_bytes - replacing_file_size + new_file_size
     if projected_bytes > _storage_limit_bytes(db, user):
-        raise HTTPException(status_code=403, detail="พื้นที่เก็บข้อมูลของคุณเต็มแล้ว กรุณาอัปเกรดแพ็กเกจหรือลบไฟล์ที่ไม่ใช้งาน")
+        raise HTTPException(status_code=403, detail="พื้นที่เก็บข้อมูลของคุณเต็มแล้ว กรุณาลบไฟล์ที่ไม่ใช้งาน (ผู้สนับสนุนได้พื้นที่เพิ่ม — เมนู ☕ สนับสนุนผู้พัฒนา)")
 
 
 def _page_count_of(path: Path) -> int:

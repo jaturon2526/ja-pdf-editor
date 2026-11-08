@@ -16,7 +16,8 @@ import ProfilePage from "./pages/ProfilePage";
 import SecurityPage from "./pages/SecurityPage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import UpgradePage from "./pages/UpgradePage";
+import SupportPage from "./pages/SupportPage.jsx";
+import SupportersPage from "./pages/SupportersPage.jsx";
 import AdminDashboard from "./pages/AdminDashboard";
 import AIConfigPage from "./pages/AIConfigPage";
 import LineLoginCallback from "./pages/LineLoginCallback.jsx";
@@ -60,7 +61,9 @@ export default function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/security" element={<SecurityPage />} />
         <Route path="/ai-config" element={<AIConfigPage />} />
-        <Route path="/upgrade" element={<UpgradePage />} />
+        <Route path="/support" element={<SupportPage />} />
+        <Route path="/supporters" element={<SupportersPage />} />
+        <Route path="/upgrade" element={<Navigate to="/support" replace />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />

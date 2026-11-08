@@ -275,3 +275,46 @@ class Passkey(Base):
     backed_up = Column(Boolean, nullable=False, default=False, server_default="false")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     last_used_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class AppSetting(Base):
+    """ค่าตั้งที่แอดมินแก้ได้ในหน้าเว็บ (เก็บเป็น JSON) — ดู services/app_settings.py"""
+    __tablename__ = "app_settings"
+
+    key = Column(String(64), primary_key=True)
+    value = Column(Text, nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class Donation(Base):
+    """แจ้งโอนเงินสนับสนุน (PromptPay) — แอดมินตรวจกับบัญชีธนาคารแล้วอนุมัติ/ปฏิเสธ · ดู services/donation_service.py
+
+    status: pending → approved | rejected · amount เก็บเป็นสตางค์ · slip_path ลบเมื่อตรวจเสร็จ (ไม่เก็บสลิปถาวร)
+    """
+    __tablename__ = "donations"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    amount_satang = Column(Integer, nullable=False)
+    transferred_at = Column(DateTime(timezone=True), nullable=False)
+    slip_path = Column(String(255), nullable=True)
+    status = Column(String(16), nullable=False, default="pending", server_default="pending", index=True)
+    show_on_board = Column(Boolean, nullable=False, default=True, server_default=true())
+    anonymous = Column(Boolean, nullable=False, default=False, server_default="false")
+    display_name = Column(String(80), nullable=True)
+    message = Column(String(200), nullable=True)
+    admin_note = Column(String(255), nullable=True)
+    granted_plan = Column(String(32), nullable=True)
+    granted_days = Column(Integer, nullable=True)
+    reviewed_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    # ตรวจสลิป (0016): ข้อความใน QR ของสลิป / เลขอ้างอิงรายการ (กันแจ้งซ้ำ) / ธนาคารผู้โอน
+    # verify_status: None (ไม่ได้ตรวจ) | unreadable | verified | mismatch | retry | error · verify_detail = JSON
+    slip_payload = Column(String(255), nullable=True)
+    slip_ref = Column(String(64), nullable=True, index=True)
+    slip_bank = Column(String(8), nullable=True)
+    verify_status = Column(String(16), nullable=True)
+    verify_detail = Column(Text, nullable=True)
+    verified_at = Column(DateTime(timezone=True), nullable=True)
+

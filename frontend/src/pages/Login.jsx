@@ -18,6 +18,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [donationsOn, setDonationsOn] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isRegister, setIsRegister] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -54,6 +55,7 @@ export default function Login() {
         setLineLogin(!!cfg.line_login);
         setSelfRegistration(cfg.self_registration !== false);
         setAllowedDomains(Array.isArray(cfg.allowed_email_domains) ? cfg.allowed_email_domains : []);
+        setDonationsOn(!!cfg.donations);
       } else {
         setGoogleClientId(FALLBACK_GOOGLE_CLIENT_ID);
         getLineLoginConfig().then((c) => setLineLogin(!!c.enabled)).catch(() => setLineLogin(false));
@@ -492,6 +494,7 @@ export default function Login() {
           <a href="/terms" className="hover:text-gray-700 hover:underline">ข้อกำหนดการใช้งาน</a>
           <a href="/manual.html" className="hover:text-gray-700 hover:underline">คู่มือการใช้งาน</a>
           <SourceCodeLink className="hover:text-gray-700 hover:underline" />
+          {donationsOn && <a href="/support" className="text-amber-700 hover:underline" data-testid="login-support-link">☕ สนับสนุนผู้พัฒนา</a>}
         </nav>
       </div>
     </div>

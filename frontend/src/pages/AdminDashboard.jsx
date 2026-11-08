@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMe, getAdminStats, getAdminUsers, updateAdminUserPlan, updateAdminUserStatus, getAdminPlans, updateAdminPlanConfig } from "../api";
 import QuotaPanel from "../components/admin/QuotaPanel.jsx";
+import DonationsPanel from "../components/admin/DonationsPanel.jsx";
 
 
 
@@ -153,6 +154,7 @@ export default function AdminDashboard() {
         )}
 
         {user?.is_admin && <QuotaPanel />}
+        {user?.is_admin && <DonationsPanel />}
 
         <div className="mb-6">
           <div className="relative max-w-md">

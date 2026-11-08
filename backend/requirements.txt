@@ -12,7 +12,8 @@ pydantic==2.13.5
 aiohttp>=3.9  # pyHanko ใช้ขอ timestamp จาก TSA (SIGNING_TSA_URL) — เดิมติดมากับแพ็กเกจอื่น ระบุไว้ให้ชัด
 pyhanko>=0.37.0  # เซ็นลายเซ็นดิจิทัลจริง (PAdES) จากไฟล์ p12/pfx — เมนู Digital Signature > Digital Sign
 webauthn>=2.5,<4  # passkey (WebAuthn) — ดู app/services/passkey_service.py
-segno>=1.6  # QR code (SVG) สำหรับเชื่อมต่อ LINE — pure Python
+segno>=1.6  # QR code (SVG) สำหรับเชื่อมต่อ LINE / QR พร้อมเพย์ — pure Python
+zxing-cpp>=2.2,<4  # อ่าน QR ในสลิปโอนเงิน (เลขอ้างอิงรายการ กันแจ้งซ้ำ) — Apache-2.0, มี wheel ARM64/x86_64
 treepoem==3.29.0  # บาร์โค้ด (เมนูแทรก › บาร์โค้ด) — MIT, ใช้ BWIPP (MIT) + Ghostscript ที่มีอยู่แล้ว
 redis>=5.0.0  # optional: ใช้เมื่อตั้งค่า PDF_REDIS_URL — เปิดใช้ RedisSessionManager สำหรับ multi-instance deployment
 docxtpl>=0.16.0

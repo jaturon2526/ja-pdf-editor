@@ -18,6 +18,7 @@ from app.api import (
     routes_config,
     routes_compare,
     routes_convert,
+    routes_donations,
     routes_edit,
     routes_license,
     routes_line,
@@ -109,6 +110,12 @@ def _check_quotas() -> None:
         sent = quota_service.check_and_alert(db)
         if sent:
             logger.info("quota: แจ้งแอดมิน %d เรื่อง", sent)
+    from app.services import donation_service
+
+    with SessionLocal() as db:
+        expired = donation_service.expire_plans(db)
+        if expired:
+            logger.info("plans: แพ็กเกจหมดอายุกลับเป็น free %d บัญชี", expired)
 
 
 async def _periodic_quota_check() -> None:
@@ -146,8 +153,8 @@ def _seed_plan_configs() -> None:
         if not db.query(PlanConfig).first():
             db.add_all([
                 PlanConfig(plan_type="free", max_sessions=2, max_storage_mb=settings.DEFAULT_STORAGE_MB),
-                PlanConfig(plan_type="pro", max_sessions=5),
-                PlanConfig(plan_type="premium", max_sessions=10),
+                PlanConfig(plan_type="pro", max_sessions=5, max_storage_mb=500),
+                PlanConfig(plan_type="premium", max_sessions=10, max_storage_mb=1024),
             ])
             db.commit()
     except Exception:
@@ -298,6 +305,7 @@ app.include_router(routes_signing.notifications_router)
 app.include_router(routes_line.router)
 app.include_router(routes_line_login.router)
 app.include_router(routes_config.router)
+app.include_router(routes_donations.router)
 
 
 @app.exception_handler(ServerBusyError)

@@ -3,6 +3,7 @@ import DeleteConfirmModal from '../components/dashboard/DeleteConfirmModal.jsx';
 import useWordConversion from '../hooks/useWordConversion.jsx';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getPublicConfig } from '../api/config.js';
 import { getMyFiles, getMe, uploadPdf, openFile, unlockPdf, closeSession, deleteFile, renameFile, getAiQuota, logout } from '../api';
 import AppBrand from "../components/AppBrand.jsx";
 import UserAvatar from "../components/UserAvatar.jsx";
@@ -156,6 +157,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [donationsOn, setDonationsOn] = useState(false);
+  useEffect(() => {
+    getPublicConfig().then((cfg) => setDonationsOn(!!cfg?.donations)).catch(() => {});
+  }, []);
   const [showAutoGenModal, setShowAutoGenModal] = useState(false);
   const [showMergeModal, setShowMergeModal] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' }); // {type: 'error' | 'success', text: ''}
@@ -511,15 +516,14 @@ export default function Dashboard() {
                       <div className="px-4 py-3 border-b border-gray-50 bg-gray-50/50">
                         <p className="text-sm text-gray-900 font-semibold truncate">{user.display_name || user.email}</p>
                         {user.display_name && <p className="text-xs text-gray-500 truncate mt-0.5">{user.email}</p>}
-                        <p className="text-xs text-blue-600 mt-1 font-medium uppercase tracking-wider">Plan: {user.plan_type}</p>
+                        <p className="text-xs text-blue-600 mt-1 font-medium uppercase tracking-wider">Plan: {user.plan_type}{user.plan_type !== "free" && user.expire_date ? ` · ถึง ${new Date(user.expire_date).toLocaleDateString("th-TH", { dateStyle: "medium" })}` : ""}</p>
                       </div>
                       <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/profile"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
                         โปรไฟล์ส่วนตัว
                       </a>
-                      <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/upgrade"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
-                        <span>อัปเกรดแพ็กเกจ</span>
-                        <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">Pro</span>
-                      </a>
+                      {donationsOn && <a href="#" data-testid="menu-support" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/support"); }} className="block px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 transition-colors">
+                        ☕ สนับสนุนผู้พัฒนา
+                      </a>}
                       <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/security"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
                         ความปลอดภัย
                       </a>

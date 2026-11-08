@@ -19,6 +19,7 @@ from app.core import ratelimit
 from app.core.auth_session import auth_session_manager
 from app.core.security import verify_password, get_password_hash, create_access_token, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.services.email_service import send_verification_email, send_reset_password_email
+from app.services.donation_service import effective_plan
 from app.api.deps import get_current_active_user
 
 logger = logging.getLogger("routes_auth")
@@ -131,7 +132,7 @@ def issue_login_token(db: Session, user: User) -> dict:
     _claim_signing_invites(db, user)
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     jti = str(uuid.uuid4())
-    auth_session_manager.add_session(db, user.id, jti, user.plan_type)
+    auth_session_manager.add_session(db, user.id, jti, effective_plan(user))
     access_token = create_access_token(
         data={"sub": str(user.id), "jti": jti}, expires_delta=access_token_expires
     )
