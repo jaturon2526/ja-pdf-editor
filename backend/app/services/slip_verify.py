@@ -88,7 +88,7 @@ def read_slip_qr(image_bytes: bytes) -> Optional[SlipQR]:
 
 @dataclass
 class VerifyResult:
-    status: str                       # verified | mismatch | retry | error
+    status: str                       # verified | mismatch | retry (ชั่วคราว ลองใหม่อัตโนมัติ) | error (ต้องตรวจเอง)
     amount: Optional[Decimal] = None
     date: Optional[str] = None
     sender: Optional[str] = None
@@ -188,8 +188,10 @@ def verify(payload: str, *, api_key: str, claimed_amount: Decimal, transferred_a
         return VerifyResult("mismatch", problems=["สลิปนี้เคยถูกตรวจไปแล้ว (ใช้ซ้ำ)"])
     if code in (400, 404) and message in ("invalid_payload", "slip_not_found"):
         return VerifyResult("mismatch", problems=["ไม่พบรายการนี้ที่ธนาคาร (สลิปอาจไม่ถูกต้อง)"])
-    if code in (401, 403):
-        return VerifyResult("error", problems=[f"บริการตรวจสลิปปฏิเสธ ({message or code}) — ตรวจ API key/โควต้า"])
+    if code in (401, 403):  # key ผิด/หมดอายุ/โควต้าเต็ม — ลองซ้ำก็ไม่ผ่าน → แอดมินตรวจเอง
+        return VerifyResult("error", problems=[f"บริการตรวจสลิปปฏิเสธ ({message or code}) — ตรวจ API key/โควต้า แล้วตรวจรายการนี้เอง"])
+    if code == 429 or code >= 500:  # บริการล่ม/ยุ่งชั่วคราว → ลองใหม่อัตโนมัติ
+        return VerifyResult("retry", problems=[f"บริการตรวจสลิปไม่พร้อม ({code}) — ระบบจะลองใหม่อัตโนมัติ"])
     if code != 200 or not data:
         return VerifyResult("error", problems=[f"บริการตรวจสลิปตอบผิดปกติ ({message or code})"])
 

@@ -137,11 +137,31 @@ test("แอดมิน: เห็นรายการรอตรวจแล
   await expect(list).toContainText("donor@example.com");
   await expect(list).toContainText("คุณใจดี");
   await expect(panel.getByTestId("verify-settings")).toContainText("ตั้งไว้แล้ว");
-  await expect(list.getByTestId("verify-badge")).toContainText("รอตรวจอีกครั้ง");
+  await expect(list.getByTestId("verify-badge")).toContainText("ลองตรวจใหม่อัตโนมัติ");
   await expect(list).toContainText("เลขอ้างอิง 015312101530BPM04512");
   await list.getByTestId("donation-verify").click();
   await expect.poll(() => verified).toEqual(["/api/admin/donations/7/verify"]);
   await list.getByTestId("donation-approve").click();
   await expect.poll(() => approved).toEqual(["/api/admin/donations/7/approve"]);
   await expect(panel.getByText("ไม่มีรายการ")).toBeVisible();
+});
+
+test("เมนูรูปโปรไฟล์: ผู้ใช้ทั่วไปเห็น ☕ สนับสนุนผู้พัฒนา แต่แอดมินไม่เห็น", async ({ page }) => {
+  await login(page);
+  const config = { app_name: "JA PDF Editor", profile: "public", google_client_id: null, line_login: false,
+    self_registration: true, allowed_email_domains: [], donations: true };
+  await page.route("**/api/config/public", (route) => route.fulfill({ json: config }));
+  await page.reload();
+  const openMenu = () => page.getByRole("button", { name: "เมนูบัญชี" }).click();
+  await openMenu();
+  await expect(page.getByTestId("menu-support")).toBeVisible();
+
+  await page.route("**/api/auth/me", async (route) => {
+    const res = await route.fetch();
+    route.fulfill({ response: res, json: { ...(await res.json()), is_admin: true } });
+  });
+  await page.reload();
+  await openMenu();
+  await expect(page.getByText("จัดการระบบ (Admin)")).toBeVisible();
+  await expect(page.getByTestId("menu-support")).toHaveCount(0);
 });

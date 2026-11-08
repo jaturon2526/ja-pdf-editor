@@ -9,8 +9,8 @@ import {
 const VERIFY = {
   verified: { label: "ตรวจกับธนาคารแล้ว ✓", cls: "bg-emerald-100 text-emerald-800" },
   mismatch: { label: "ตรวจแล้วไม่ตรง", cls: "bg-red-100 text-red-700" },
-  retry: { label: "รอตรวจอีกครั้ง", cls: "bg-amber-100 text-amber-800" },
-  error: { label: "ตรวจไม่สำเร็จ", cls: "bg-gray-200 text-gray-700" },
+  retry: { label: "กำลังลองตรวจใหม่อัตโนมัติ", cls: "bg-amber-100 text-amber-800" },
+  error: { label: "ตรวจอัตโนมัติไม่ได้ — ตรวจเอง", cls: "bg-gray-200 text-gray-700" },
   unreadable: { label: "อ่าน QR ในสลิปไม่ได้", cls: "bg-gray-100 text-gray-600" },
 };
 

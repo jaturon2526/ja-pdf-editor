@@ -1,6 +1,7 @@
 """รับบริจาค PromptPay: QR ตรงมาตรฐาน, แจ้งโอน → แอดมินอนุมัติ/ปฏิเสธ → สิทธิ์ + กระดาน, แพ็กเกจหมดอายุ"""
 import datetime as dt
 import io
+import json
 
 import pytest
 from PIL import Image
@@ -343,3 +344,62 @@ def test_receiver_name_fallback_and_bank_account():
     assert not slip_verify.receiver_matches(acc, PP, "", "คนอื่น ทดสอบ")
     assert slip_verify.receiver_matches({"bank": {"account": "xxx-x-x5234-x"}}, PP, "123-4-55234-6")  # เลขบัญชีที่ผูกพร้อมเพย์
     assert not slip_verify.receiver_matches({"bank": {"account": "xxx-x-x5234-x"}}, PP, "")
+
+
+@pytest.mark.parametrize("behaviour,first_status", [("down", "retry"), ("busy", "retry"), ("malformed", "error"), ("quota", "error")])
+def test_service_failure_keeps_report_for_manual_approval(client, make_user, monkeypatch, behaviour, first_status):
+    """ติดต่อไม่ได้/บริการล่ม → ลองใหม่อัตโนมัติไม่เกิน VERIFY_MAX_ATTEMPTS ครั้ง แล้วให้แอดมินตรวจเอง
+    โควต้าเต็ม/ตอบผิดรูปแบบ → ไม่ลองซ้ำ ให้แอดมินตรวจเองทันที · ทุกกรณีแจ้งโอนสำเร็จ แจ้งแอดมิน และอนุมัติเองได้"""
+    calls = []
+
+    def fake(payload, key):
+        calls.append(payload)
+        if behaviour == "down":
+            raise slip_verify.VerifyError("ติดต่อบริการตรวจสลิปไม่ได้ (URLError)")
+        if behaviour == "busy":
+            return 503, {}
+        if behaviour == "malformed":
+            return 200, {"data": ["unexpected"]}
+        return 403, {"message": "quota_exceeded"}
+    monkeypatch.setattr(slip_verify, "call_easyslip", fake)
+    admin_id, admin = _admin(make_user)
+    _enable(client, admin, verify_provider="easyslip", verify_key="k", auto_approve=True)
+    _, user = make_user("free")
+    r = client.post("/donations", headers=user, data={"amount": "100", "transferred_at": dt.datetime.now(dt.timezone.utc).isoformat()},
+                    files={"slip": ("s.png", _slip_image(_slip_payload(f"DOWN{behaviour}")), "image/png")})
+    did = r.json()["id"]
+    assert r.status_code == 200 and r.json()["status"] == "pending" and r.json()["verify_status"] == first_status
+    with SessionLocal() as db:
+        assert db.query(Notification).filter_by(user_id=admin_id, kind="donation_new").count() >= 1
+        for _ in range(10):  # งานเบื้องหลังรันหลายรอบ
+            donation_service.retry_pending_verifications(db)
+        d = db.get(Donation, did)
+        detail = json.loads(d.verify_detail)
+        assert d.verify_status == "error"
+    if first_status == "retry":
+        assert len(calls) == donation_service.VERIFY_MAX_ATTEMPTS and detail["attempts"] == donation_service.VERIFY_MAX_ATTEMPTS
+        assert any("ครบ" in p for p in detail["problems"])
+    else:
+        assert len(calls) == 1  # โควต้าเต็ม/ตอบแปลก ไม่ส่งซ้ำ
+    ok = client.post(f"/admin/donations/{did}/approve", headers=admin, json={})
+    assert ok.status_code == 200 and ok.json()["granted_plan"] == "pro"
+
+
+def test_retry_succeeds_later_and_auto_approves(client, make_user, monkeypatch):
+    state = {"n": 0}
+
+    def flaky(payload, key):
+        state["n"] += 1
+        if state["n"] == 1:
+            raise slip_verify.VerifyError("timeout")
+        return _easyslip_ok(amount=100)
+    monkeypatch.setattr(slip_verify, "call_easyslip", flaky)
+    _, admin = _admin(make_user)
+    _enable(client, admin, verify_provider="easyslip", verify_key="k", auto_approve=True)
+    _, user = make_user("free")
+    r = client.post("/donations", headers=user, data={"amount": "100", "transferred_at": dt.datetime.now(dt.timezone.utc).isoformat()},
+                    files={"slip": ("s.png", _slip_image(_slip_payload("FLAKY0001")), "image/png")})
+    assert r.json()["verify_status"] == "retry"
+    with SessionLocal() as db:
+        assert donation_service.retry_pending_verifications(db) >= 1
+        assert db.get(Donation, r.json()["id"]).status == "approved"

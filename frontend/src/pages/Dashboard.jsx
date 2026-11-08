@@ -521,7 +521,7 @@ export default function Dashboard() {
                       <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/profile"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
                         โปรไฟล์ส่วนตัว
                       </a>
-                      {donationsOn && <a href="#" data-testid="menu-support" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/support"); }} className="block px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 transition-colors">
+                      {donationsOn && !user.is_admin && <a href="#" data-testid="menu-support" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/support"); }} className="block px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 transition-colors">
                         ☕ สนับสนุนผู้พัฒนา
                       </a>}
                       <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/security"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">

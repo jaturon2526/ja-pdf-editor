@@ -40,6 +40,9 @@ SLIP_MAX_BYTES = 5 * 1024 * 1024
 SLIP_MAX_SIDE = 1600
 ANONYMOUS_NAME = "ผู้สนับสนุนไม่ประสงค์ออกนาม"
 VERIFY_PROVIDERS = ("none", "easyslip")
+# ตรวจสลิปไม่สำเร็จชั่วคราว (ติดต่อไม่ได้, 5xx/429, ธนาคารยังไม่พร้อม) → ลองใหม่อัตโนมัติทุกรอบเก็บกวาด (~10 นาที)
+# ไม่เกินจำนวนนี้ (รวมครั้งแรก) แล้วค้างให้แอดมินตรวจเอง · โควต้าเต็ม/key ผิด → ไม่ลองซ้ำ
+VERIFY_MAX_ATTEMPTS = 4
 
 
 class DonationError(ValueError):
@@ -228,6 +231,17 @@ def create(db: Session, user: User, *, amount, transferred_at: dt.datetime, anon
     return donation
 
 
+def retry_pending_verifications(db: Session, limit: int = 20) -> int:
+    """งานเบื้องหลัง: ตรวจสลิปที่ค้างสถานะ retry อีกครั้ง (ทีละไม่เกิน limit รายการ) คืนจำนวนที่ลอง"""
+    if get_config(db)["verify_provider"] == "none":
+        return 0
+    rows = (db.query(Donation).filter(Donation.status == "pending", Donation.verify_status == "retry",
+                                      Donation.slip_payload.isnot(None)).order_by(Donation.id).limit(limit).all())
+    for donation in rows:
+        run_verification(db, donation)
+    return len(rows)
+
+
 def run_verification(db: Session, donation: Donation) -> Donation:
     """ตรวจสลิปกับบริการภายนอก (ใช้ข้อความใน QR) · ผ่าน + เปิดอนุมัติอัตโนมัติ → อนุมัติทันที"""
     cfg = get_config(db)
@@ -238,10 +252,21 @@ def run_verification(db: Session, donation: Donation) -> Donation:
             donation.slip_payload, api_key=_verify_key(db), claimed_amount=Decimal(donation.amount_satang) / 100,
             transferred_at=donation.transferred_at, promptpay_id=cfg["promptpay_id"],
             bank_account=cfg["verify_bank_account"], receiver_name=cfg["receiver_name"])
-    except slip_verify.VerifyError as exc:
-        result = slip_verify.VerifyResult("error", problems=[str(exc)])
+    except slip_verify.VerifyError as exc:  # ติดต่อบริการไม่ได้/หมดเวลา → ชั่วคราว
+        result = slip_verify.VerifyResult("retry", problems=[f"{exc} — ระบบจะลองใหม่อัตโนมัติ"])
+    except Exception:  # noqa: BLE001 — บริการตอบรูปแบบแปลก ๆ ต้องไม่ทำให้แจ้งโอนล้ม: ค้างไว้ให้แอดมินอนุมัติเอง
+        logger.exception("donation %s: ตรวจสลิปผิดพลาด", donation.id)
+        result = slip_verify.VerifyResult("error", problems=["ตรวจสลิปไม่สำเร็จ (บริการตอบผิดรูปแบบ) — ตรวจเองแล้วอนุมัติได้"])
+    try:
+        attempts = int((json.loads(donation.verify_detail) or {}).get("attempts", 0)) if donation.verify_detail else 0
+    except (ValueError, AttributeError):
+        attempts = 0
+    attempts += 1
+    if result.status == "retry" and attempts >= VERIFY_MAX_ATTEMPTS:
+        result.status = "error"
+        result.problems.append(f"ลองตรวจอัตโนมัติครบ {attempts} ครั้งแล้วไม่สำเร็จ — ตรวจเองแล้วอนุมัติได้")
     donation.verify_status = result.status
-    donation.verify_detail = json.dumps(result.detail(), ensure_ascii=False)
+    donation.verify_detail = json.dumps({**result.detail(), "attempts": attempts}, ensure_ascii=False)
     donation.verified_at = dt.datetime.now(dt.timezone.utc)
     if result.status == "verified" and result.amount is not None:
         donation.amount_satang = int(result.amount * 100)  # ใช้ยอดจริงจากธนาคาร

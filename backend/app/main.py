@@ -82,11 +82,25 @@ async def _periodic_cleanup() -> None:
                 orphans = session_manager.cleanup_orphan_files()
                 orphans += _cleanup_unreferenced_uploads()
                 orphans += routes_compare.cleanup_old_tasks()
+                await run_in_threadpool(_retry_slip_verifications)
             if expired or orphans:
                 logger.info("cleanup: เคลียร์ session หมดอายุ %d รายการ, ไฟล์ค้าง %d ไฟล์", expired, orphans)
         except Exception:
             logger.exception("cleanup: เกิดข้อผิดพลาดระหว่างเก็บกวาดข้อมูลเก่า")
         await asyncio.sleep(interval)
+
+
+def _retry_slip_verifications() -> None:
+    from app.db.database import SessionLocal
+    from app.services import donation_service
+
+    try:
+        with SessionLocal() as db:
+            tried = donation_service.retry_pending_verifications(db)
+            if tried:
+                logger.info("donations: ลองตรวจสลิปซ้ำ %d รายการ", tried)
+    except Exception:
+        logger.exception("donations: ลองตรวจสลิปซ้ำไม่สำเร็จ")
 
 
 def _check_signing_due_dates() -> None:
