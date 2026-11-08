@@ -1,0 +1,12 @@
+# ไม่ต้องส่งเข้าไปใน build context — ลดขนาด image + กันข้อมูล dev ที่ไม่จำเป็น/เป็นความลับหลุดเข้า image
+venv/
+**/__pycache__/
+**/*.pyc
+*.pyo
+.pytest_cache/
+tests/
+storage/
+README.md
+.git
+.gitignore
+secrets/

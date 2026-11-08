@@ -1,0 +1,56 @@
+services:
+  db:
+    image: docker.io/postgres:15-alpine
+    container_name: pdf_db
+    environment:
+      - TZ=Asia/Bangkok
+      - POSTGRES_USER=pdf_user
+      - POSTGRES_PASSWORD=pdf_password
+      - POSTGRES_DB=pdf_editor
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdf_user -d pdf_editor"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  backend:
+    build: 
+      context: ./backend
+    container_name: pdf_backend
+    ports:
+      - "8001:8000"
+    environment:
+      - TZ=Asia/Bangkok
+      - APP_TIMEZONE=Asia/Bangkok
+      - DATABASE_URL=postgresql://pdf_user:pdf_password@db:5432/pdf_editor
+    env_file:
+      # ไม่บังคับ — CI (GitHub Actions) ไม่มีไฟล์ .env
+      - path: ./backend/.env
+        required: false
+    volumes:
+      - pdf_data:/data
+      # ไฟล์ลับที่ไม่ใส่ใน image/git เช่นใบรับรองระบบ .p12 (SIGNING_SEAL_P12=/run/secrets/pdf-editor/seal.p12)
+      - ./backend/secrets:/run/secrets/pdf-editor:ro
+    depends_on:
+      db:
+        condition: service_healthy
+  frontend:
+    build:
+      context: ./frontend
+    container_name: pdf_frontend
+    environment:
+      - TZ=Asia/Bangkok
+    env_file:
+      # ไม่บังคับ — CI (GitHub Actions) ไม่มีไฟล์ .env
+      - path: ./frontend/.env
+        required: false
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+volumes:
+  pgdata:
+  pdf_data:

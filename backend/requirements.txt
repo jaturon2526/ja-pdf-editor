@@ -1,0 +1,40 @@
+fastapi==0.142.2
+uvicorn[standard]==0.54.0
+pymupdf==1.24.10
+fpdf2>=2.7.9  # สร้าง Micro-PDF เพื่อทำ Overlay ข้อความ (Vector)
+uharfbuzz>=0.38.0  # ใช้ร่วมกับ fpdf2 เพื่อจัดสระและวรรณยุกต์ภาษาไทย (Text Shaping)
+fonttools>=4.40  # ตรวจ/แปลงไฟล์ฟอนต์ที่ผู้ใช้ติดตั้ง (มากับ fpdf2 อยู่แล้ว — ระบุไว้เพราะเรียกใช้ตรง)
+brotli>=1.1  # แปลงฟอนต์ .woff2 เป็น .ttf/.otf ตอนติดตั้งฟอนต์จากไฟล์
+pikepdf>=9.0.0
+pythainlp>=5.0.0,<6  # พจนานุกรมใช้ตัดสินฟอนต์ที่ map สระอาผิด (services/thai_text.py)
+python-multipart==0.0.32
+pydantic==2.13.5
+aiohttp>=3.9  # pyHanko ใช้ขอ timestamp จาก TSA (SIGNING_TSA_URL) — เดิมติดมากับแพ็กเกจอื่น ระบุไว้ให้ชัด
+pyhanko>=0.37.0  # เซ็นลายเซ็นดิจิทัลจริง (PAdES) จากไฟล์ p12/pfx — เมนู Digital Signature > Digital Sign
+webauthn>=2.5,<4  # passkey (WebAuthn) — ดู app/services/passkey_service.py
+segno>=1.6  # QR code (SVG) สำหรับเชื่อมต่อ LINE — pure Python
+treepoem==3.29.0  # บาร์โค้ด (เมนูแทรก › บาร์โค้ด) — MIT, ใช้ BWIPP (MIT) + Ghostscript ที่มีอยู่แล้ว
+redis>=5.0.0  # optional: ใช้เมื่อตั้งค่า PDF_REDIS_URL — เปิดใช้ RedisSessionManager สำหรับ multi-instance deployment
+docxtpl>=0.16.0
+docxcompose>=1.4.0
+openpyxl>=3.1.0
+Pillow>=10.0.0
+pytesseract>=0.3.10
+
+# Database and ORM
+SQLAlchemy>=2.0.0
+psycopg[binary]>=3.1.18
+
+# Authentication and Security
+passlib[bcrypt]>=1.7.4
+bcrypt==3.2.2
+python-jose[cryptography]>=3.3.0
+email-validator>=2.0.0
+google-genai>=2.28.0  # Gemini SDK (google-generativeai เลิกซัพพอร์ตแล้ว) — ใช้ Client แยกตาม API key ไม่มี global state
+# PDF to Word conversion
+pdf2docx>=0.5.8
+python-docx>=1.1.0
+
+# Database migrations
+alembic>=1.13.0
+tzdata>=2024.1  # ฐานข้อมูลเขตเวลาสำหรับ zoneinfo (image slim ไม่มี /usr/share/zoneinfo)

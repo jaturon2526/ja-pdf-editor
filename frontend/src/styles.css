@@ -1,0 +1,1711 @@
+:root {
+  /* ---------- Color ---------- */
+  --color-bg-canvas: #e9ebf0;      /* พื้นหลังรอบหน้ากระดาษ */
+  --color-surface: #ffffff;        /* menu bar, sidebar, status bar, ตัวหน้ากระดาษ */
+  --color-surface-alt: #f4f5f7;    /* hover / active row */
+  --color-border: #dde1e7;
+  --color-text: #1b2130;
+  --color-text-muted: #6b7280;
+  --color-accent: #2f5af0;
+  --color-accent-soft: #eaf0ff;
+  --color-danger: #d9463b;
+
+  /* ---------- Type ---------- */
+  /* Inter ไม่มีอักษรไทย — ต่อด้วย Noto Sans Thai (Google Fonts) ให้ภาษาไทยเป็นฟอนต์เดียวกันทุกเครื่อง
+     (เดิมตกไปใช้ฟอนต์ระบบ: iOS Thonburi / Windows Leelawadee / Android Noto จึงหน้าตาต่างกัน)
+     เบราว์เซอร์เลือกฟอนต์ทีละตัวอักษร: ละตินยังเป็น Inter ไทยเป็น Noto Sans Thai */
+  --font-ui: "Inter", "Noto Sans Thai", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "Noto Sans Thai", ui-monospace, monospace;
+
+  /* ---------- Layout ---------- */
+  --menubar-height: 36px;
+  --toolbar-height: 44px;
+  --statusbar-height: 36px;
+  --sidebar-width: 232px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overscroll-behavior: none;
+  font-family: var(--font-ui);
+  color: var(--color-text);
+  background: var(--color-bg-canvas);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: var(--cursor-hand);
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+::selection {
+  background: var(--color-accent-soft);
+}
+
+/* focus ring ที่มองเห็นได้ชัดสำหรับ keyboard navigation */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  border-radius: 5px;
+  color: var(--color-text);
+}
+.icon-btn:hover {
+  background: var(--color-surface-alt);
+}
+.icon-btn.active {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: var(--cursor-arrow);
+  background: none;
+}
+
+/* ============ Menu Bar ============ */
+
+.menubar-brand {
+  display: flex;
+  align-items: center;
+  margin-right: 6px;
+}
+.menubar-item {
+  position: relative;
+}
+.menubar-label {
+  border: none;
+  background: transparent;
+  padding: 6px 10px;
+  border-radius: 4px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+.menubar-label:hover,
+.menubar-label.open {
+  background: var(--color-surface-alt);
+}
+.menubar-dropdown {
+  position: absolute;
+  top: calc(var(--menubar-height) - 4px);
+  left: 0;
+  min-width: 200px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(20, 24, 38, 0.12);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+}
+.menubar-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border: none;
+  background: transparent;
+  padding: 7px 10px;
+  border-radius: 5px;
+  text-align: left;
+  color: var(--color-text);
+}
+.menubar-dropdown-item:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.menubar-dropdown-item:disabled {
+  color: var(--color-text-muted);
+  opacity: 0.55;
+  cursor: var(--cursor-arrow);
+}
+.menubar-shortcut {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+.menubar-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 4px 2px;
+}
+.menubar-filename {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============ Toolbar ============ */
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border);
+  margin: 0 6px;
+}
+.toolbar-zoom-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  width: 42px;
+  text-align: center;
+}
+.toolbar-zoom-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 2px;
+}
+.toolbar-zoom-input {
+  width: 34px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: right;
+  color: var(--color-text);
+  padding: 2px 0;
+}
+.toolbar-zoom-input:hover:not(:disabled) {
+  border-color: var(--color-border);
+}
+.toolbar-zoom-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+.toolbar-zoom-input:disabled {
+  color: var(--color-text-muted);
+}
+.toolbar-zoom-percent {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ปุ่ม "บันทึกการแก้ไข" บน toolbar — ยิง API จริงทีเดียวรวมทุกย่อหน้าที่กด "ตกลง" สะสมไว้
+   (ดูหมายเหตุใน App.jsx เรื่อง pendingEdits) แสดงเฉพาะตอนอยู่โหมดแก้ไขข้อความเท่านั้น */
+.toolbar-apply-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.toolbar-apply-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.toolbar-apply-btn:disabled {
+  opacity: 0.45;
+  cursor: var(--cursor-arrow);
+}
+.toolbar-apply-badge {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ============ Body layout ============ */
+
+
+.sidebar-collapsed {
+  align-items: center;
+  padding-top: 8px;
+}
+.sidebar-expand-btn,
+.sidebar-collapse-btn {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: var(--cursor-hand);
+  font-size: 13px;
+  line-height: 1;
+  padding: 6px 8px;
+}
+.sidebar-expand-btn:hover,
+.sidebar-collapse-btn:hover {
+  color: var(--color-accent);
+}
+.sidebar-collapse-btn {
+  flex: 0 0 auto;
+}
+/* แถบลากขอบขวาเพื่อปรับความกว้าง (ผู้ใช้แจ้งขอ) */
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5;
+}
+.sidebar-resize-handle:hover {
+  background: var(--color-accent-soft);
+}
+.no-select,
+.no-select * {
+  user-select: none;
+}
+.sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+}
+.sidebar-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 8px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  border-bottom: 2px solid transparent;
+}
+.sidebar-tab.active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+.sidebar-body {
+  overscroll-behavior: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+.sidebar-empty {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 24px 8px;
+}
+.sidebar-action-btn {
+  width: 100%;
+  border: 1px dashed var(--color-border);
+  background: transparent;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 10px;
+  color: var(--color-accent);
+  font-weight: 500;
+}
+.sidebar-action-btn:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+}
+.sidebar-action-btn:disabled {
+  opacity: 0.4;
+  cursor: var(--cursor-arrow);
+}
+
+.thumbnail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: grab;
+  min-height: 100%;
+}
+.thumbnail-list.dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+.thumbnail-item {
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.thumbnail-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 0.75;
+  background: var(--color-surface-alt);
+  border: 2px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.thumbnail-item.active .thumbnail-frame {
+  border-color: var(--color-accent);
+}
+/* เลือกหลายหน้า (ctrl/cmd-click สลับทีละหน้า, shift-click เลือกเป็นช่วง — ผู้ใช้แจ้งขอ) แสดงเฉพาะตอน
+   เลือกมากกว่า 1 หน้าเท่านั้น กันไม่ให้ซ้อนกับกรอบ .active ปกติตอนคลิกเลือกหน้าเดียวทั่วไป */
+.thumbnail-item.selected .thumbnail-frame {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+.thumbnail-select-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: white;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(20, 24, 38, 0.3);
+}
+.thumbnail-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.thumbnail-placeholder {
+  width: 60%;
+  height: 60%;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--color-border),
+    var(--color-border) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  opacity: 0.4;
+}
+.thumbnail-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+.thumbnail-item.active .thumbnail-label {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* ลากสลับตำแหน่งหน้า (reorder) — กดเมาส์ค้างที่ thumbnail แล้วลาก (ผู้ใช้แจ้งขอ — ดู Sidebar.jsx
+   handleThumbnailPointerDown) หน้าที่กำลังถูกลากจะจางลง ส่วนเส้นไฮไลท์บอกตำแหน่งที่จะแทรก (ก่อน/หลัง
+   thumbnail ไหน) ใช้ box-shadow แบบ inset วาดเป็นเส้นหนาที่ขอบบน/ล่างของกรอบรูป ไม่กระทบ layout เดิม */
+.thumbnail-item.dragging-source {
+  opacity: 0.35;
+}
+.thumbnail-item.drop-indicator-before .thumbnail-frame {
+  box-shadow: inset 0 3px 0 0 var(--color-accent);
+}
+.thumbnail-item.drop-indicator-after .thumbnail-frame {
+  box-shadow: inset 0 -3px 0 0 var(--color-accent);
+}
+
+/* เมนูคลิกขวาของแอปเอง (แทนที่เมนูขวาเริ่มต้นของเบราว์เซอร์ทั้งหมดในแผงหน้าเอกสาร — ผู้ใช้แจ้งขอ) —
+   position: fixed วางตำแหน่งตาม clientX/clientY ของ event คลิกขวาโดยตรง (ดู Sidebar.jsx) */
+.page-context-menu {
+  position: fixed;
+  min-width: 220px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(20, 24, 38, 0.18);
+  padding: 6px;
+  z-index: 50;
+}
+.page-context-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.page-context-menu-item:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+}
+.page-context-menu-item:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.page-context-menu-separator {
+  height: 1px;
+  background: var(--color-border);
+  margin: 4px 2px;
+}
+
+.bookmark-list {
+  display: flex;
+  flex-direction: column;
+}
+.bookmark-item {
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+}
+.bookmark-item.active {
+  background: var(--color-accent-soft);
+}
+.bookmark-jump {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  padding: 8px;
+  text-align: left;
+  min-width: 0;
+}
+.bookmark-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+}
+.bookmark-page {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+.bookmark-remove {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  font-size: 15px;
+}
+.bookmark-remove:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-danger);
+}
+/* เปลี่ยนชื่อ bookmark (ผู้ใช้แจ้งขอ) — ดับเบิลคลิกชื่อ หรือกดปุ่มดินสอนี้ */
+.bookmark-rename {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.bookmark-rename:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-accent);
+}
+.bookmark-rename-input {
+  flex: 1;
+  border: 1px solid var(--color-accent);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin: 2px 4px;
+  font-size: 12.5px;
+  font-family: inherit;
+  min-width: 0;
+}
+
+/* ============ Canvas ============ */
+.canvas-area {
+  touch-action: pan-x pan-y;
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  /* จัดกลางด้วย margin auto ของ .page-sheet แทน justify-content: center — แบบเดิมตอนซูมจนหน้ากว้างกว่าจอ
+     ด้านซ้ายของหน้าล้นออกนอกพื้นที่เลื่อน เลื่อนไปดูขอบซ้ายไม่ได้ */
+  justify-content: flex-start;
+  padding: 28px 20px;
+}
+.canvas-empty {
+  align-items: center;
+  /* หน้าว่าง (ยังไม่เปิดเอกสาร) จัดกลางเอง — .canvas-area ใช้ flex-start เพื่อให้หน้าที่ซูมกว้างเลื่อนดูขอบซ้ายได้ */
+  justify-content: center;
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+}
+.empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 10px 0 0;
+}
+.empty-subtitle { text-align: center; max-width: 100%;
+  margin: 0 0 6px;
+  font-size: 12.5px;
+}
+.primary-btn {
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 7px;
+  font-weight: 600;
+}
+.primary-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.primary-btn:disabled {
+  opacity: 0.5;
+}
+.secondary-btn {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  padding: 9px 16px;
+  border-radius: 7px;
+  font-weight: 500;
+}
+.secondary-btn:hover {
+  background: var(--color-surface-alt);
+}
+
+.page-sheet {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  flex-shrink: 0;
+  /* นิ้วเดียวเลื่อนจอได้ตามปกติ (สองนิ้วซูม — จัดการเองใน PDFCanvas) · เครื่องมือที่ลากวาดบนหน้า = none */
+  touch-action: pan-x pan-y;
+  -webkit-touch-callout: none;
+}
+.page-sheet.tool-highlight,
+.page-sheet.tool-freetext,
+.page-sheet.tool-rect,
+.page-sheet.tool-text_note,
+.page-sheet.tool-insert_text,
+.page-sheet.tool-redact {
+  touch-action: none;
+}
+/* กล่องที่ลากย้าย/ย่อขยายด้วยนิ้วได้ — ไม่ให้เบราว์เซอร์เลื่อนจอแทน */
+.page-sheet .resize-handle,
+.page-sheet .edit-box-drag-handle,
+.page-sheet .annot-note-marker {
+  touch-action: none;
+}
+
+/* ซ่อน Scrollbar สำหรับ MenuBar / Toolbar บนมือถือ */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ซ่อน Scrollbar สำหรับ MenuBar / Toolbar บนมือถือ */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.page-sheet.tool-highlight,
+.page-sheet.tool-rect {
+  cursor: crosshair;
+}
+.page-sheet.tool-freetext,
+.page-sheet.tool-text_note {
+  cursor: text;
+}
+.page-image {
+  display: block;
+  max-width: none;
+  user-select: none; /* กันเบราว์เซอร์เลือกรูปเป็น "ข้อความ/ภาพ" เองระหว่างลากเมาส์วาง annotation หรือลากมือจับเลื่อนหน้า */
+}
+
+/* "มือจับเลื่อนหน้า" (hand tool) — ลากเมาส์ที่ไหนก็ได้ในพื้นที่มองเห็นเพื่อเลื่อน scroll แทนการวาง
+   annotation ใดๆ (ดู PDFCanvas.jsx handlePanMouseDown) cursor เปลี่ยนมือเปิด/มือกำตามสถานะกำลังลากอยู่ */
+.canvas-area.tool-hand {
+  cursor: grab;
+}
+.canvas-area.tool-hand.panning {
+  cursor: grabbing;
+}
+
+/* กรอบพรีวิวระหว่างกำลังลากเมาส์วาง annotation (mousedown-move-up) — ก่อนปล่อยเมาส์แล้วค่อยยิง API จริง
+   (ดู PDFCanvas.jsx dragSelect + App.jsx handleAnnotationDrag) */
+.drag-select-box {
+  position: absolute;
+  border: 1.5px dashed var(--color-accent);
+  background: rgba(47, 90, 240, 0.08);
+  pointer-events: none;
+  z-index: 8;
+}
+.drag-select-highlight {
+  position: absolute;
+  background: rgba(255, 224, 40, 0.45);
+  border: 1px solid rgba(200, 170, 20, 0.6);
+  pointer-events: none;
+  z-index: 8;
+}
+
+/* ============ Edit mode overlay boxes (แก้ไขข้อความ / แก้ไขรูปภาพ) ============ */
+.edit-box {
+  position: absolute;
+  cursor: var(--cursor-hand);
+  border-radius: 2px;
+  transition: background 0.1s ease;
+}
+.edit-box-text {
+  background: rgba(47, 90, 240, 0.08);
+  border: 1px dashed rgba(47, 90, 240, 0.55);
+}
+.edit-box-text:hover {
+  background: rgba(47, 90, 240, 0.18);
+}
+.edit-box-image {
+  background: rgba(217, 70, 59, 0);
+  border: 1px dashed rgba(217, 70, 59, 0.2);
+  transition: background 0.15s, border-color 0.15s;
+}
+.edit-box-image:hover {
+  background: rgba(217, 70, 59, 0.12);
+  border-color: rgba(217, 70, 59, 0.75);
+}
+
+/* ย่อหน้าที่กด "ตกลง" ไปแล้วแต่ยังไม่กด "บันทึกการแก้ไข" บน toolbar (ยังเป็นแค่ draft ในเครื่อง
+   ยังไม่ยิง API จริง) — ใช้สีส้ม + จุดมุมขวาบน ให้ผู้ใช้เห็นชัดว่าย่อหน้าไหน "รอบันทึก" อยู่บ้าง */
+.edit-box-pending {
+  border-style: solid;
+  border-color: rgba(230, 145, 25, 0.85);
+  background: rgba(230, 145, 25, 0.12);
+}
+.edit-box-pending:hover {
+  background: rgba(230, 145, 25, 0.22);
+}
+.edit-box-pending::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgb(230, 145, 25);
+  border: 1.5px solid white;
+}
+
+/* กล่องย่อหน้าที่กำลังแก้ไขอยู่ตอนนี้ (พิมพ์แก้ตรงนี้ได้เลย ไม่ต้องผ่าน properties panel อีกต่อไป) */
+.edit-box-active {
+  position: absolute;
+  outline: 1px solid var(--color-accent);
+  background: rgba(255, 255, 255, 0.55);
+  z-index: 5;
+}
+.edit-inline-text {
+  width: 100%;
+  /* เดิม height:100%+overflow:hidden ตายตัว — ถ้าผู้ใช้เลือกฟอนต์/ขนาดใหญ่ขึ้นโดยไม่ได้ลากขยายกล่องเอง
+     ข้อความส่วนเกินจะถูก "ครอบ/ตัดทิ้งไปเงียบๆ" ระหว่างพิมพ์ ดูเหมือนฟอนต์เล็กกว่าที่ควรจะเป็น (ผู้ใช้แจ้ง
+     บั๊กนี้ — ดูหมายเหตุ "แก้บั๊กสำคัญ #8" ใน edit_service.py) เปลี่ยนเป็น min-height+overflow:visible ให้
+     เห็นเนื้อหาจริงครบระหว่างพิมพ์เสมอ (กล่องแม่ .edit-box-active/.edit-box-preview จะถูกขยายตามจริงทันที
+     ผ่าน EditableTextBox.jsx อยู่แล้ว ส่วนนี้กันไว้อีกชั้นเผื่อช่วงสั้นๆ ก่อน React re-render ทัน) */
+  min-height: 100%;
+  outline: none;
+  overflow: visible;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.3;
+  cursor: text;
+  padding: 1px 2px;
+}
+/* handle ลาก ย่อ/ขยาย กล่องข้อความที่กำลังแก้ไข — วางไว้รอบขอบกล่อง (มุม 4 + กลางขอบ 4) */
+.resize-handle {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: var(--color-accent);
+  border: 1px solid white;
+  border-radius: 1px;
+  z-index: 6;
+}
+.handle-nw {
+  left: -4px;
+  top: -4px;
+  cursor: nwse-resize;
+}
+.handle-n {
+  left: 50%;
+  top: -4px;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+.handle-ne {
+  right: -4px;
+  top: -4px;
+  cursor: nesw-resize;
+}
+.handle-e {
+  right: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+.handle-se {
+  right: -4px;
+  bottom: -4px;
+  cursor: nwse-resize;
+}
+.handle-s {
+  left: 50%;
+  bottom: -4px;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+.handle-sw {
+  left: -4px;
+  bottom: -4px;
+  cursor: nesw-resize;
+}
+.handle-w {
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+/* จุดจับ (grip) ลากย้ายตำแหน่งกล่อง (ข้อความ/รูปภาพ) — วางไว้เหนือกล่อง กึ่งกลางแนวนอน
+   แยกจาก .resize-handle (ย่อ/ขยาย) ให้ผู้ใช้แยกแยะได้ง่ายด้วยรูปทรง+ไอคอนลูกศร 4 ทิศ */
+.edit-box-drag-handle {
+  position: absolute;
+  left: 50%;
+  top: -20px;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent);
+  border: 1px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(20, 24, 38, 0.2);
+  cursor: grab;
+  z-index: 7;
+}
+.edit-box-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* กล่องพรีวิว (readOnly) — ย่อหน้า/รูปที่กด "ตกลง" ไปแล้วแต่ยังไม่กด "บันทึกการแก้ไข" หรือยังไม่ได้
+   เลือกกลับมาแก้ต่อ ยังคลิกกลับไปแก้ไขต่อได้ (ดู onSelect ใน EditableTextBox/PDFCanvas) */
+.edit-box-preview {
+  outline-style: dashed;
+  cursor: var(--cursor-hand);
+}
+.edit-inline-text-preview {
+  cursor: var(--cursor-hand);
+  pointer-events: none;
+}
+/* พรีวิวที่ยังไม่กดบันทึกจริง (รอสะสมไว้ยิง API ทีเดียว) — ใช้กรอบส้มชุดเดียวกับ .edit-box-pending
+   ให้ผู้ใช้เห็นตรงกันว่าอะไร "รอบันทึก" อยู่บ้าง ไม่ว่าจะเป็นข้อความหรือรูปภาพ */
+.edit-box-preview-pending {
+  outline-color: rgb(230, 145, 25);
+}
+
+/* ============ Edit mode overlay: กล่องแก้ไขรูปภาพ (แทรกใหม่ / ย้าย / ปรับขนาด) ============ */
+.image-edit-box {
+  position: absolute;
+  outline: 1px solid var(--color-accent);
+  z-index: 5;
+  overflow: visible;
+}
+.image-edit-preview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+.image-edit-toolbar {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 8px 20px rgba(20, 24, 38, 0.18);
+  white-space: nowrap;
+  z-index: 10;
+}
+.image-edit-toolbar-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+/* กล่องพรีวิวรูปภาพที่ยังไม่กด "บันทึกการแก้ไข" (คลิกเพื่อกลับไปแก้ต่อ) */
+.image-edit-box-preview {
+  position: absolute;
+  cursor: var(--cursor-hand);
+  outline: 1px dashed rgb(230, 145, 25);
+  z-index: 4;
+}
+.image-edit-box-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.image-edit-original-mask {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ============ Properties panel (แก้ไขข้อความ) ============ */
+.properties-panel {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+}
+.properties-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+.properties-header h3 {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.properties-body {
+  overscroll-behavior: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.properties-label {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+  margin-top: 10px;
+}
+.properties-label:first-child {
+  margin-top: 0;
+}
+.properties-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  margin: 0 0 8px;
+}
+.properties-select,
+.properties-number {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.properties-row {
+  display: flex;
+  gap: 10px;
+}
+.properties-field {
+  flex: 1;
+  min-width: 0;
+}
+.properties-color {
+  width: 100%;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 2px;
+  background: var(--color-surface);
+}
+/* ปุ่มจัดตัวหนังสือ ชิดซ้าย/กึ่งกลาง/ชิดขวา (ผู้ใช้แจ้งเพิ่ม) — แถวปุ่มไอคอน 3 ปุ่มแบบเดียวกับ .icon-btn
+   แต่เข้าชุดกันเป็นแถวเดียว มีปุ่ม active ไฮไลท์ตามค่าปัจจุบันของ draft */
+/* ปุ่มสไตล์ฟอนต์ (ตัวหนา/ตัวเอียง/ตัวหนาเอียง) + ขีดเส้นใต้ ต่อจาก dropdown เลือก font family (ผู้ใช้
+   แจ้งขอเพิ่ม — เหมือนไอคอน Bold/Italic/Bold Italic/Underline บน toolbar ทั่วไป) ปุ่มสไตล์ที่ family
+   ที่เลือกอยู่ไม่มีไฟล์ฟอนต์ของสไตล์นั้นจะถูก disable (:disabled ด้านล่าง) ไม่ auto สร้างตัวหนา/เอียงปลอม */
+.properties-style-group {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  margin-bottom: 2px;
+}
+.properties-style-btn {
+  flex: 1;
+  padding: 5px 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: var(--cursor-hand);
+  font-size: 12px;
+  font-weight: 600;
+}
+.properties-style-btn:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+}
+.properties-style-btn.active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+.properties-style-btn:disabled {
+  opacity: 0.35;
+  cursor: var(--cursor-arrow);
+}
+.properties-underline-btn {
+  text-decoration: underline;
+}
+
+.properties-align-group {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.properties-align-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: var(--cursor-hand);
+}
+.properties-align-btn:hover {
+  background: var(--color-surface-alt);
+}
+.properties-align-btn.active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+.properties-error {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--color-danger);
+}
+.properties-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-border);
+}
+.page-loading {
+  position: absolute;
+  inset: 0;
+  /* นิ้ว/เมาส์ทะลุไปที่หน้าเอกสาร — ข้อความนี้หายไปตอนรูปมา ถ้าเป็นจุดที่นิ้วแตะ touchend จะหาย (ปัดหน้าซ้ำเร็วๆ ไม่ติด) */
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+/* ============ Status Bar ============ */
+
+.statusbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.statusbar-page {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+}
+.statusbar-page-input {
+  width: 34px;
+  text-align: center;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 3px 2px;
+  font-family: var(--font-mono);
+}
+.statusbar-page-total {
+  color: var(--color-text-muted);
+}
+/* ============ Modal ============ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 20, 30, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-card {
+  background: var(--color-surface);
+  border-radius: 10px;
+  padding: 22px;
+  width: 340px;
+  box-shadow: 0 20px 50px rgba(15, 18, 30, 0.25);
+}
+.modal-title {
+  font-size: 15px;
+  margin: 0 0 6px;
+}
+.modal-subtitle {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  margin: 0 0 14px;
+}
+
+.modal-input,
+.modal-select,
+.modal-textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 9px 10px;
+  margin-bottom: 8px;
+  font-family: inherit;
+  resize: vertical;
+}
+.modal-input, .modal-select {
+  height: 40px;
+}
+.modal-textarea {
+  min-height: 80px;
+  height: auto;
+}
+.modal-error {
+  color: var(--color-danger);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* หน้าต่างที่เนื้อหายาว (เช่น Auto-Gen): ไม่ให้สูงเกินจอ — เลื่อนภายในหน้าต่างได้ และปุ่มด้านล่างค้างไว้ให้กดได้เสมอ */
+.modal-overlay:has(> .modal-card-scroll) {
+  padding: 16px;
+}
+.modal-card-scroll {
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.modal-card-scroll .modal-actions {
+  position: sticky;
+  bottom: -22px; /* ชดเชย padding ของ .modal-card */
+  margin-bottom: -22px;
+  padding: 12px 0 22px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  z-index: 1;
+}
+
+/* ============ Digital Signature — Electronic Sign modal (ผู้ใช้แจ้งขอ) ============ */
+.sign-modal-card {
+  width: 520px;
+  max-width: 92vw;
+}
+.sign-modal-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 12px;
+}
+.sign-modal-tab {
+  flex: 1;
+  padding: 8px 6px;
+  font-size: 12.5px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-muted);
+  cursor: var(--cursor-hand);
+}
+.sign-modal-tab.active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+  font-weight: 600;
+}
+.sign-modal-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.sign-modal-canvas-preview {
+  width: 100%;
+  height: auto;
+  aspect-ratio: auto;
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  background: #fff;
+  touch-action: none;
+}
+.sign-modal-draw-canvas {
+  cursor: crosshair;
+}
+.sign-modal-empty-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+}
+.sign-modal-image-preview {
+  max-width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  background: #fff;
+  align-self: flex-start;
+}
+
+/* ============ Document Properties modal (ผู้ใช้แจ้งขอ — เมนู File + ปุ่มบน toolbar) ============ */
+.docprops-modal-card {
+  width: 460px;
+  max-height: min(620px, 84vh);
+  overflow-y: auto;
+}
+.docprops-loading {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+.docprops-body {
+  overscroll-behavior: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.docprops-section-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 6px;
+}
+.docprops-row {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 12.5px;
+}
+.docprops-row-label {
+  color: var(--color-text-muted);
+}
+.docprops-row-value {
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+/* ============ Toast ============ */
+.toast {
+  position: fixed;
+  bottom: calc(var(--statusbar-height) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1b2130;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  animation: toast-fade 3.5s forwards;
+  z-index: 200;
+}
+@keyframes toast-fade {
+  0% { opacity: 0; transform: translate(-50%, 6px); }
+  10% { opacity: 1; transform: translate(-50%, 0); }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ============ Annotation select/edit (ไฮไลท์/กรอบสี่เหลี่ยม/กล่องข้อความ/โน้ต ที่มีอยู่แล้ว) ============
+   เนื้อหา/สี/กรอบจริงของ annotation วาดโดย backend ทับลงในรูปหน้าเอกสารอยู่แล้ว (เหมือน annotation
+   อื่นๆ ในแอปนี้) — ชั้นนี้ตอน "ยังไม่ได้เลือก" จึงเป็นแค่จุดคลิกโปร่งใส/จางๆ ทับตำแหน่งเดิม (ดู
+   AnnotationBox.jsx) ตอน "เลือกอยู่" ถึงจะโชว์กรอบ+handle+toolbar ให้แก้ไข */
+.annot-box {
+  position: absolute;
+  cursor: var(--cursor-hand);
+  border: 1.5px dashed transparent;
+  border-radius: 2px;
+}
+.annot-box:hover:not(.editing) {
+  border-color: rgba(47, 90, 240, 0.55);
+  background: rgba(47, 90, 240, 0.08);
+}
+.annot-box.editing {
+  z-index: 6;
+  outline: 2px solid var(--color-accent);
+  border-style: solid;
+  border-width: 2px;
+}
+/* กล่องข้อความที่กำลังแก้: เส้นเดียวบาง 1px เท่ากล่องแก้ไขตัวอักษร (.edit-box-active) — ขนาดกรอบไม่ขยับ */
+.annot-box-freetext.editing {
+  outline: 1px solid var(--color-accent);
+  border-width: 1.5px;
+  border-color: transparent;
+}
+.annot-box-text {
+  width: 100%;
+  height: 100%;
+  outline: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.3;
+  padding: 2px 3px;
+  font-size: 12.5px;
+  color: var(--color-text);
+  cursor: text;
+}
+
+/* toolbar สี/ลบ/ตกลง/ยกเลิก — วางใต้กล่องที่กำลังแก้ไข เหมือนแนวทาง .image-edit-toolbar ที่มีอยู่แล้ว */
+.annot-toolbar {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: max-content;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 8px 20px rgba(20, 24, 38, 0.18);
+  white-space: nowrap;
+  z-index: 10;
+}
+/* ฟอนต์/ขนาดตัวอักษรของกล่องข้อความ (freetext เท่านั้น — ผู้ใช้แจ้งเพิ่ม) วางอยู่แถวเดียวกับสวอตช์สี
+   ใน .annot-toolbar ด้านบน ปรับให้กะทัดรัดกว่า .properties-select/.properties-number ปกติเพราะพื้นที่
+   toolbar ลอยแคบกว่า properties panel มาก */
+.annot-font-select {
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  padding: 4px 6px;
+  font-size: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  max-width: 118px;
+}
+.annot-font-size {
+  width: 46px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  padding: 4px 5px;
+  font-size: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.annot-toolbar-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.annot-danger-btn {
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.annot-danger-btn:hover {
+  filter: brightness(1.08);
+}
+.annot-color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px var(--color-border);
+  padding: 0;
+  flex-shrink: 0;
+}
+.annot-color-swatch.active {
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+/* โน้ต (text_note) — จุดคลิกโปร่งใสทับตำแหน่งไอคอนโน้ตที่ backend วาดไว้แล้ว hover โชว์เนื้อหาแบบ
+   ลูกโป่ง (balloon) เหมือน tooltip ของโปรแกรมอ่าน PDF ทั่วไป */
+.annot-note-marker {
+  position: absolute;
+  cursor: var(--cursor-hand);
+  border-radius: 3px;
+}
+.annot-note-marker:hover:not(.selected) {
+  background: rgba(230, 145, 25, 0.18);
+  outline: 1.5px dashed rgba(230, 145, 25, 0.7);
+}
+.annot-note-marker.selected {
+  z-index: 6;
+  outline: 2px solid var(--color-accent);
+  background: rgba(47, 90, 240, 0.1);
+}
+.annot-note-balloon {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-8px);
+  min-width: 140px;
+  max-width: 240px;
+  background: #fffbe6;
+  border: 1px solid #e6c200;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--color-text);
+  box-shadow: 0 8px 20px rgba(20, 24, 38, 0.2);
+  white-space: pre-wrap;
+  word-break: break-word;
+  z-index: 20;
+  pointer-events: none;
+}
+.annot-note-balloon::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 100%;
+  border: 6px solid transparent;
+  border-top-color: #fffbe6;
+}
+.annot-note-editor {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
+  width: 220px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 8px 20px rgba(20, 24, 38, 0.18);
+  z-index: 20;
+}
+.annot-note-editor textarea {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  resize: vertical;
+  margin-bottom: 6px;
+}
+.annot-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* ============ Install Font modal (เมนู File > ติดตั้งฟอนต์ใหม่... — ผู้ใช้แจ้งขอ) ============ */
+.font-modal-card {
+  width: 440px;
+  max-height: min(620px, 84vh);
+  overflow-y: auto;
+}
+/* แท็บสลับโหมด "ติดตั้งฟอนต์ใหม่" / "เพิ่มสไตล์ให้ฟอนต์เดิม" (ผู้ใช้แจ้งขอเพิ่ม) ใช้สไตล์เดียวกับ
+   sign-modal-tabs อยู่แล้ว เพิ่มระยะห่างด้านล่างเข้าไปเพิ่มเติมเพื่อแยกจากฟอร์มด้านล่าง */
+.font-modal-mode-tabs {
+  margin-bottom: 10px;
+}
+.font-install-form {
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.font-install-actions {
+  margin-top: 6px;
+}
+.font-installed-title {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 8px;
+}
+/* รายการอัปโหลดไฟล์แยกตามสไตล์ตอน "ติดตั้งฟอนต์ใหม่" — Regular บังคับ (มี * กำกับ) ที่เหลือไม่บังคับ */
+.font-style-upload-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.font-style-upload-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.font-style-upload-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.font-style-required {
+  color: var(--color-danger);
+  margin-left: 3px;
+}
+.font-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.font-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 4px;
+  border-radius: 6px;
+}
+.font-row:hover {
+  background: var(--color-surface-alt);
+}
+.font-row-label {
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+/* ตัวย่อสไตล์ (R/B/I/BI) บอกว่า family นี้มีไฟล์สไตล์ไหนติดตั้งไว้แล้วบ้าง (ผู้ใช้แจ้งขอเพิ่ม) —
+   filled = มีไฟล์จริงแล้ว, empty = ยังไม่มี (จางลงให้ดูออกง่ายว่าใส่เพิ่มได้อีกกี่สไตล์) */
+.font-row-styles {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.font-row-style-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+.font-row-style-badge.filled {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.font-row-style-badge.empty {
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  opacity: 0.6;
+}
+
+.annot-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.docprops-sig-box {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+.docprops-cert-box {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--color-border);
+}
+.docprops-cert-title {
+  margin: 8px 0 4px;
+  font-size: 12px;
+  color: var(--color-primary);
+}
+.docprops-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.docprops-badge.ok { background: #dcfce7; color: #166534; }
+.docprops-badge.warn { background: #fef3c7; color: #92400e; }
+.docprops-badge.bad { background: #fee2e2; color: #991b1b; }
+.docprops-cert-advanced {
+  margin-top: 8px;
+}
+.docprops-cert-advanced > summary {
+  cursor: var(--cursor-hand);
+  font-size: 12px;
+  color: var(--color-primary);
+  margin-bottom: 4px;
+}
+.docprops-mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.drag-select-redact {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 1px solid black;
+  pointer-events: none;
+  z-index: 50;
+}
+
+
+/* Modern Custom Cursors — รูปอยู่ที่ public/cursors/ (ลูกศร 32px, มือชี้ 24px — ขนาดที่ตาเห็นใกล้กัน)
+   ตัวเลขหลัง url() = จุดที่คลิกจริง (ปลายลูกศร / ปลายนิ้ว) · ท้ายสุด = เคอร์เซอร์สำรองของระบบ */
+:root {
+  --cursor-arrow: url("/cursors/arrow.svg") 6 3, auto;
+  --cursor-hand: url("/cursors/hand.svg") 10 2, pointer;
+  --cursor-text: url('data:image/svg+xml;utf8,<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4V20M8 4H16M8 20H16" stroke="%230F172A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>') 12 12, text;
+}
+
+body {
+  overscroll-behavior: none;
+  cursor: var(--cursor-arrow) !important;
+}
+
+button, a, .cursor-pointer, input[type="submit"], input[type="button"], [role="button"] {
+  cursor: var(--cursor-hand) !important;
+}
+
+.cursor-text, input[type="text"], input[type="number"], textarea, [contenteditable="true"] {
+  cursor: var(--cursor-text) !important;
+}
+
+/* ปุ่มในแถบเครื่องมือของ Editor ใช้ลูกศร (ไม่เปลี่ยนเป็นมือ) */
+.toolbar-container button {
+  cursor: var(--cursor-arrow) !important;
+}
+
+.deleted-mask {
+  pointer-events: auto !important;
+}
+
+.deleted-mask:hover {
+  outline: 1px dashed red;
+  background-color: rgba(255, 0, 0, 0.1) !important;
+  opacity: 0.8;
+}
+
+/* ป้องกันเมนูคลิกขวา/พรีวิวรูปภาพของ iOS Safari บน Thumbnail */
+.ios-no-callout {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  pointer-events: none !important;
+}
+
+/* ปุ่ม "Choose File" ของช่องเลือกไฟล์ทุกหน้า — สีเดียวกับหน้าติดตั้งฟอนต์ (ฟ้าอ่อน ตัวอักษรน้ำเงิน) */
+input[type="file"] {
+  color: #6b7280;
+  font-size: 14px;
+}
+input[type="file"]::file-selector-button {
+  margin-right: 16px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 6px;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: var(--cursor-hand);
+  transition: background-color 0.15s ease;
+}
+input[type="file"]:hover::file-selector-button {
+  background-color: #dbeafe;
+}
+input[type="file"]:disabled::file-selector-button {
+  opacity: 0.5;
+  cursor: var(--cursor-arrow);
+}
+
+/* มือถือแนวนอน (จอสัมผัสเตี้ย — ตรงกับ phone: ใน tailwind.css): ลดขอบรอบหน้ากระดาษ ให้เหลือพื้นที่ดูเอกสารมากขึ้น */
+@media (pointer: coarse) and (max-height: 500px) {
+  .canvas-area {
+    padding: 8px 8px;
+  }
+}

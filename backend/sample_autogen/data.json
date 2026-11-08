@@ -1,0 +1,53 @@
+[
+  {
+    "customer_name": "คุณ สมชาย ใจดี",
+    "invoice_no": "INV-001",
+    "purchases": [
+      {
+        "item": "โน้ตบุ๊ก",
+        "qty": 1,
+        "price": 25000
+      },
+      {
+        "item": "เมาส์ไร้สาย",
+        "qty": 2,
+        "price": 500
+      }
+    ],
+    "payments": [
+      {
+        "date": "10/09/2026",
+        "method": "โอนเงิน",
+        "amount": 10000
+      },
+      {
+        "date": "12/09/2026",
+        "method": "เงินสด",
+        "amount": 16000
+      }
+    ]
+  },
+  {
+    "customer_name": "คุณ สมศรี รักเรียน",
+    "invoice_no": "INV-002",
+    "purchases": [
+      {
+        "item": "คีย์บอร์ดแมคคานิคอล",
+        "qty": 1,
+        "price": 3500
+      },
+      {
+        "item": "จอภาพ 27 นิ้ว",
+        "qty": 1,
+        "price": 8900
+      }
+    ],
+    "payments": [
+      {
+        "date": "15/09/2026",
+        "method": "บัตรเครดิต",
+        "amount": 12400
+      }
+    ]
+  }
+]

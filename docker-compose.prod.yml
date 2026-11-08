@@ -1,0 +1,100 @@
+# docker-compose.prod.yml — เซิร์ฟเวอร์จริง ใช้ image สำเร็จรูปจาก Docker Hub
+#   cp .env.prod.template .env.prod   แล้วแก้ค่า
+#   docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
+# ต้องใส่ --env-file .env.prod เพราะ ${DB_PASSWORD} ฯลฯ ในไฟล์นี้อ่านจาก --env-file (env_file: อย่างเดียวไม่พอ)
+services:
+  db:
+    # จำกัดขนาด log ของ container (ค่าเริ่มต้นของ Docker โตไม่จำกัดจนดิสก์เต็มได้) — Docker/Podman รองรับ max-size
+    logging:
+      options:
+        max-size: "20m"
+    image: docker.io/postgres:15-alpine
+    container_name: pdf_db_prod
+    restart: always
+    env_file:
+      - .env.prod
+    environment:
+      - TZ=Asia/Bangkok
+      - POSTGRES_USER=${DB_USER:-pdf_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?ตั้ง DB_PASSWORD ใน .env.prod แล้วรันด้วย --env-file .env.prod}
+      - POSTGRES_DB=${DB_NAME:-pdf_editor}
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pdf_user} -d ${DB_NAME:-pdf_editor}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    # จำกัดขนาด log ของ container (ค่าเริ่มต้นของ Docker โตไม่จำกัดจนดิสก์เต็มได้) — Docker/Podman รองรับ max-size
+    logging:
+      options:
+        max-size: "20m"
+    # ชื่อเต็ม (docker.io/library/...) — Podman ไม่ยอมดึง image ชื่อสั้นตอนรันแบบไม่มีหน้าจอ
+    image: docker.io/library/redis:7-alpine
+    container_name: pdf_redis_prod
+    environment:
+      - TZ=Asia/Bangkok
+    restart: always
+    command: redis-server --maxmemory ${REDIS_MAXMEMORY:-1536mb} --maxmemory-policy volatile-lru
+    volumes:
+      - pdf_redis_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  backend:
+    # จำกัดขนาด log ของ container (ค่าเริ่มต้นของ Docker โตไม่จำกัดจนดิสก์เต็มได้) — Docker/Podman รองรับ max-size
+    logging:
+      options:
+        max-size: "20m"
+    # ชื่อ/แท็ก image ตั้งได้ใน .env.prod (ติดตั้งในองค์กรใช้แท็กแยก เช่น onprem-v1.26.18) — ไม่ตั้ง = ค่าเดิมของเว็บสาธารณะ
+    image: ${BACKEND_IMAGE:-docker.io/jaturon2526/pdf-editor-backend}:${IMAGE_TAG:-latest}
+    container_name: pdf_backend_prod
+    restart: always
+    env_file:
+      - .env.prod
+    environment:
+      - TZ=Asia/Bangkok
+      - APP_TIMEZONE=Asia/Bangkok
+      - DATABASE_URL=postgresql://${DB_USER:-pdf_user}:${DB_PASSWORD}@db:5432/${DB_NAME:-pdf_editor}
+      - PDF_REDIS_URL=redis://redis:6379/0
+      # จำนวน process ของ backend (ใช้ CPU หลาย core) — ตั้งใน .env.prod ได้ แนะนำ = จำนวน core − 1 (เครื่อง 4 core = 3)
+      - BACKEND_WORKERS=${BACKEND_WORKERS:-3}
+      # production: แอปจะไม่ยอม start ถ้า SECRET_KEY/JWT_SECRET ไม่ได้ตั้ง สั้นกว่า 32 ตัว หรือเป็นค่า default
+      - APP_ENV=production
+    volumes:
+      - pdf_data_prod:/data
+      # ใบรับรองระบบ .p12 จาก CA (SIGNING_SEAL_P12=/run/secrets/pdf-editor/seal.p12) — เก็บนอก git/image
+      - ./secrets:/run/secrets/pdf-editor:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    # จำกัดขนาด log ของ container (ค่าเริ่มต้นของ Docker โตไม่จำกัดจนดิสก์เต็มได้) — Docker/Podman รองรับ max-size
+    logging:
+      options:
+        max-size: "20m"
+    image: ${FRONTEND_IMAGE:-docker.io/jaturon2526/pdf-editor-frontend}:${IMAGE_TAG:-latest}
+    container_name: pdf_frontend_prod
+    environment:
+      - TZ=Asia/Bangkok
+    restart: always
+    # ไม่ส่ง .env.prod เข้า nginx — มีแค่ความลับของ backend และ nginx ไม่ได้ใช้
+    # พอร์ตที่เปิดหน้าเว็บ (ค่าเริ่มต้น 80) — HTTPS ในตัว (docker-compose.onprem-tls.yml) ให้ nginx tls รับ 80/443 แทน
+    # deploy.sh ตั้ง FRONTEND_BIND=127.0.0.1:8081 ให้เอง · Podman แบบไม่ใช้ root เปิดพอร์ตต่ำกว่า 1024 ไม่ได้ (ดู deploy.sh setup)
+    ports:
+      - "${FRONTEND_BIND:-80}:8080"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata_prod:
+  pdf_data_prod:
+  pdf_redis_prod:

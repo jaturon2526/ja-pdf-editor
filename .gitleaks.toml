@@ -1,0 +1,13 @@
+# gitleaks — ใช้กฎมาตรฐาน + ยกเว้นไฟล์ที่ไม่ใช่ความลับจริง
+#   .secrets.baseline                  : baseline ของ detect-secrets เก็บแค่ hash
+#   frontend/e2e/fixtures/signer2.p12  : ใบรับรองทดสอบ self-signed (CN=E2E Signer Two, e2e-signer2@example.com,
+#                                        รหัส p12-pass อยู่ในเทสต์) — ใช้ทดสอบลายเซ็นดิจิทัลเท่านั้น
+[extend]
+useDefault = true
+
+[allowlist]
+description = "non-secret test fixtures"
+paths = [
+  '''(^|/)\.secrets\.baseline$''',
+  '''(^|/)frontend/e2e/fixtures/signer2\.p12$''',
+]

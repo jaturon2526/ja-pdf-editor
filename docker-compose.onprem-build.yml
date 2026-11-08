@@ -1,0 +1,18 @@
+# docker-compose.onprem-build.yml — build image จากซอร์สโค้ดบนเซิร์ฟเวอร์ขององค์กรเอง (ติดตั้งในองค์กร / on-premise)
+# ใช้ "ซ้อน" กับ docker-compose.prod.yml:
+#   docker compose --env-file .env.prod -f docker-compose.prod.yml -f docker-compose.onprem-build.yml up -d --build
+#
+# ทำไม: image บน Docker Hub (jaturon2526/pdf-editor-*) build สำหรับ ARM64 (Oracle Ampere) เท่านั้น
+#   เซิร์ฟเวอร์ x86_64 ทั่วไปรันไม่ได้ ("exec format error") — ไฟล์นี้ build ตามสถาปัตยกรรมของเครื่องที่รัน
+#   และใช้ชื่อ image ภายในเครื่อง (pdf-editor-*:onprem) ไม่ดึงจาก Docker Hub ทับ
+# อัปเดตเวอร์ชัน: git pull แล้วรันคำสั่งเดิม (--build) · build backend ครั้งแรกใช้เวลานาน (คอมไพล์ Ghostscript)
+services:
+  backend:
+    image: pdf-editor-backend:onprem
+    build: ./backend
+    pull_policy: build
+
+  frontend:
+    image: pdf-editor-frontend:onprem
+    build: ./frontend
+    pull_policy: build

@@ -1,0 +1,9 @@
+/* สไตล์ของคู่มือ (public/manual.html) — คอมไพล์เป็น public/manual.css แทนการโหลด Tailwind จาก CDN ตอนเปิดหน้า
+   แก้ manual.html แล้วใช้ class ใหม่ ให้สร้างไฟล์ใหม่ด้วย:
+     npx @tailwindcss/cli@4 -i manual.tailwind.css -o public/manual.css --minify */
+@import "tailwindcss" source(none);
+@source "./public/manual.html";
+
+@theme {
+  --font-sans: "Sarabun", sans-serif;
+}

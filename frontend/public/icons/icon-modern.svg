@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="outerBg" cx="50%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#1e1b6e"/>
+      <stop offset="100%" stop-color="#08092e"/>
+    </radialGradient>
+    <radialGradient id="innerBg" cx="50%" cy="42%" r="65%">
+      <stop offset="0%" stop-color="#131850"/>
+      <stop offset="100%" stop-color="#060921"/>
+    </radialGradient>
+
+    <!-- Hex glow blur -->
+    <filter id="hexGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- J white-blue glow -->
+    <filter id="jGlow" x="-35%" y="-25%" width="170%" height="150%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14" result="blur"/>
+      <feFlood flood-color="#93c5fd" flood-opacity="0.85" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- A amber-orange glow -->
+    <filter id="aGlow" x="-35%" y="-25%" width="170%" height="150%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14" result="blur"/>
+      <feFlood flood-color="#fb923c" flood-opacity="0.95" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Cyan orb glow -->
+    <filter id="orbGlow" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="16" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Outer dark indigo circle -->
+  <circle cx="256" cy="256" r="256" fill="url(#outerBg)"/>
+
+  <!-- Inner darker core -->
+  <circle cx="256" cy="265" r="220" fill="url(#innerBg)"/>
+
+  <!-- Hexagon glow layer (wide, blurred) -->
+  <polygon
+    points="256,58 424,155 424,353 256,450 88,353 88,155"
+    fill="none" stroke="#22d3ee" stroke-width="14"
+    filter="url(#hexGlow)" opacity="0.8"/>
+
+  <!-- Hexagon crisp outline -->
+  <polygon
+    points="256,58 424,155 424,353 256,450 88,353 88,155"
+    fill="none" stroke="#22d3ee" stroke-width="2.5" opacity="0.95"/>
+
+  <!-- J letter — white with ice-blue glow -->
+  <text x="174" y="318"
+    font-family="'Arial Black', 'Impact', 'Helvetica Neue', Arial, sans-serif"
+    font-size="192" font-weight="900"
+    fill="white" text-anchor="middle"
+    filter="url(#jGlow)">J</text>
+
+  <!-- A letter — amber with orange glow -->
+  <text x="340" y="318"
+    font-family="'Arial Black', 'Impact', 'Helvetica Neue', Arial, sans-serif"
+    font-size="192" font-weight="900"
+    fill="#fbbf24" text-anchor="middle"
+    filter="url(#aGlow)">A</text>
+
+  <!-- Cyan orb backdrop glow -->
+  <circle cx="256" cy="266" r="20" fill="#22d3ee" filter="url(#orbGlow)" opacity="0.6"/>
+  <!-- Cyan orb -->
+  <circle cx="256" cy="266" r="12" fill="#06b6d4"/>
+  <!-- Orb inner highlight -->
+  <circle cx="256" cy="266" r="6" fill="#e0f9fe"/>
+  <circle cx="254" cy="264" r="3" fill="white"/>
+
+  <!-- Three arc dots at bottom inside hex -->
+  <circle cx="206" cy="403" r="5.5" fill="#22d3ee" opacity="0.7"/>
+  <circle cx="256" cy="416" r="6" fill="#22d3ee" opacity="0.9"/>
+  <circle cx="306" cy="403" r="5.5" fill="#22d3ee" opacity="0.7"/>
+
+  <!-- PDF label -->
+  <text x="256" y="480"
+    font-family="Arial, 'Helvetica Neue', sans-serif"
+    font-size="46" font-weight="bold"
+    fill="white" text-anchor="middle"
+    letter-spacing="10" opacity="0.92">PDF</text>
+</svg>

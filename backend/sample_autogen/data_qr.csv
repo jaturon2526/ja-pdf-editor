@@ -1,0 +1,5 @@
+﻿name,emp_id,dept,profile_url,phone
+สมชาย ใจดี,EMP-00123,บัญชี,https://example.com/staff/EMP-00123,081-234-5678
+สมหญิง รักงาน,EMP-00124,ฝ่ายขาย,https://example.com/staff/EMP-00124,089-111-2222
+John Smith,EMP-00125,IT,https://example.com/staff/EMP-00125,02-345-6789
+วิไล มั่นคง,EMP-00126,บุคคล,,086-555-0000

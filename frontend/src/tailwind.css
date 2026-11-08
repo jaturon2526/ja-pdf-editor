@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+/* คลาส font-sans ของ Tailwind ใช้ฟอนต์เดียวกับหน้าจอหลัก (ดู --font-ui ใน styles.css) */
+@theme {
+  --font-sans: "Inter", "Noto Sans Thai", -apple-system, "Segoe UI", sans-serif;
+}
+
+/* จอเตี้ย (มือถือแนวนอน) — ใช้กับหน้าต่างเซ็นลายเซ็นให้พื้นที่วาดใหญ่ที่สุด */
+@custom-variant short (@media (max-height: 520px));
+
+/* หน้าตาแบบมือถือ (phone:) / แบบคอมพิวเตอร์ (desk:) ของหน้า Editor — ใช้แทน md: เพราะมือถือแนวนอนกว้างเกิน 768px
+   แต่ยังควรได้หน้าตาแบบมือถือ: phone = จอแคบกว่า 768px หรือจอสัมผัสที่สูงไม่เกิน 500px
+   (ต้องตรงกับ PHONE_LAYOUT_QUERY ใน utils/viewport.js) · desk = ส่วนกลับ (เขียนแบบ Media Queries Level 3 ไม่ใช้ not) */
+@custom-variant phone (@media (max-width: 767px), (pointer: coarse) and (max-height: 500px));
+@custom-variant desk (@media (min-width: 768px) and (pointer: fine), (min-width: 768px) and (pointer: none), (min-width: 768px) and (min-height: 501px));

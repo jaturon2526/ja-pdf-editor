@@ -1,0 +1,9 @@
+# ไฟล์ที่รันบน Linux (container / เซิร์ฟเวอร์) ต้องเป็น LF เสมอ แม้ clone บน Windows (core.autocrlf=true)
+# — deploy.sh / .env ที่เป็น CRLF ใช้บนเซิร์ฟเวอร์ไม่ได้ (bad interpreter, ค่าใน .env มี \r ติด)
+*.sh                  text eol=lf
+*.py                  text eol=lf
+Dockerfile            text eol=lf
+*.conf                text eol=lf
+docker-compose*.yml   text eol=lf
+.env*.template        text eol=lf
+*.ps1                 text eol=crlf

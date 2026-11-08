@@ -1,0 +1,7 @@
+# ไม่ต้องส่งเข้าไปใน build context — node_modules/dist ของเครื่อง dev ไม่เกี่ยวกับ build ใน container
+# (npm ci จะติดตั้งใหม่เองในสเตจ build อยู่แล้ว) ลดขนาด context ที่ต้องส่งให้ Docker daemon มาก
+node_modules/
+dist/
+README.md
+.git
+.gitignore

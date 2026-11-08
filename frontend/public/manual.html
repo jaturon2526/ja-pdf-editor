@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="th" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คู่มือการใช้งาน - JA PDF Editor</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/manual.css">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .bg-pattern {
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        
+        .inline-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+            width: 1.75em;
+            height: 1.75em;
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 3px;
+            margin: 0 4px;
+            color: #0284c7;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .inline-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-sky-200 selection:text-sky-900 flex">
+    
+    <!-- Sidebar -->
+    <aside class="fixed inset-y-0 left-0 w-72 bg-white/80 backdrop-blur-xl border-r border-slate-200 overflow-y-auto px-6 py-8 hidden lg:block shadow-sm z-10">
+        <h2 class="text-lg font-extrabold text-slate-900 mb-6 flex items-center gap-2"><svg class="w-6 h-6 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg> 
+            <svg width="24" height="24" viewBox="0 0 56 56" fill="none">
+                <rect x="10" y="4" width="30" height="42" rx="3" fill="#ffe4e6" stroke="#e11d48" stroke-width="2" />
+                <path d="M32 4v11h11" stroke="#e11d48" stroke-width="2" />
+                <path d="M17 26h16M17 32h16M17 38h10" stroke="#e11d48" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            คู่มือ JA PDF Editor
+        </h2>
+        <ul class="space-y-1">
+            <li><a href="#intro" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">แนะนำโปรแกรม</a></li>
+            <li><a href="#open-save" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">1. เปิด บันทึก และพิมพ์เอกสาร</a></li>
+            <li><a href="#edit-text" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">2. แก้ไขข้อความ/รูปภาพ</a></li>
+            <li><a href="#draw-highlight" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">3. วาดและไฮไลท์ข้อความ</a></li>
+            <li><a href="#page-manage" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">4. จัดการหน้ากระดาษ</a></li>
+            <li><a href="#merge-pdf" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">5. รวมไฟล์ (Merge PDF)</a></li>
+            <li><a href="#watermark-pass" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">6. ลายน้ำและรหัสผ่าน</a></li>
+            <li><a href="#page-numbers" class="block px-3 py-2 pl-6 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">6.1 ใส่เลขหน้า</a></li>
+            <li><a href="#barcode" class="block px-3 py-2 pl-6 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">6.2 แทรกบาร์โค้ด / QR Code</a></li>
+            <li><a href="#electronic-sign" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">7. เซ็นลายเซ็นอิเล็กทรอนิกส์</a></li>
+            <li><a href="#digital-sign" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">8. เซ็นลายเซ็นดิจิทัล</a></li>
+            <li><a href="#auto-gen" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">9. สร้างเอกสารอัตโนมัติ (Mail Merge)</a></li>
+            <li><a href="#compress-pdf" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">10. เครื่องมือลดขนาดไฟล์ (Compress PDF)</a></li>
+            <li><a href="#flatten-pdf" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">11. เครื่องมือรวมเลเยอร์ (Flatten PDF)</a></li>
+            <li><a href="#copy-ocr" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">12. การคัดลอกข้อความด้วย AI (Fusion OCR)</a></li>
+            <li><a href="#quick-tools" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">13. เครื่องมือด่วน (Quick Tools)</a></li>
+            <li><a href="#compare-pdf" class="block px-3 py-2 pl-6 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">13.3 เปรียบเทียบเอกสาร</a></li>
+            <li><a href="#scan-document" class="block px-3 py-2 pl-6 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">13.1 สแกนเอกสารด้วยมือถือ</a></li>
+            <li><a href="#api-key" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">14. การตั้งค่า API KEY สำหรับ AI</a></li>
+            <li><a href="#extract-pages" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">15. แยกหน้าเอกสาร (Extract Pages)</a></li>
+            <li><a href="#search-redact" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">16. เซ็นเซอร์ด้วยคำค้นหา</a></li>
+            <li><a href="#pdpa" class="block px-3 py-2 pl-6 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">16.1 ปกปิดข้อมูลส่วนบุคคล (PDPA)</a></li>
+            <li><a href="#bookmarks" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">17. บุ๊กมาร์ก (Bookmarks)</a></li>
+            <li><a href="#rename-file" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">18. เปลี่ยนชื่อไฟล์ (Rename)</a></li>
+            <li><a href="#install-font" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">19. ติดตั้งฟอนต์ (Install Font)</a></li>
+            <li><a href="#keyboard-shortcuts" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">20. คีย์ลัดการใช้งาน</a></li>
+            <li><a href="#my-documents" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">21. เอกสารของฉัน &amp; เมนูไฟล์ (☰)</a></li>
+            <li><a href="#signing-send" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">22. ส่งเอกสารให้ลงนาม</a></li>
+            <li><a href="#signing-sign" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">23. ลงนามเมื่อได้รับคำขอ</a></li>
+            <li><a href="#signing-track" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">24. ติดตามสถานะ &amp; หนังสือรับรอง</a></li>
+            <li><a href="#signing-invite" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">25. เชิญคนที่ยังไม่มีบัญชี</a></li>
+            <li><a href="#account" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">26. บัญชีผู้ใช้ &amp; แก้ปัญหาเข้าสู่ระบบ</a></li>
+            <li><a href="#passkey" class="block px-3 py-2 pl-6 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">26.1 เข้าสู่ระบบด้วย Passkey</a></li>
+            <li><a href="#line-notify" class="block px-3 py-2 pl-6 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">26.2 แจ้งเตือนทาง LINE</a></li>
+            <li><a href="#delete-account" class="block px-3 py-2 pl-6 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">26.3 ลบบัญชี</a></li>
+            <li><a href="#line-login" class="block px-3 py-2 pl-6 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">26.4 เข้าสู่ระบบด้วย LINE</a></li>
+            <li><a href="#open-source" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">27. ซอร์สโค้ดและสัญญาอนุญาต</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 min-w-0 lg:ml-72 min-h-screen bg-pattern relative">
+        <!-- Top Nav (Mobile) -->
+        <div class="lg:hidden bg-white/80 backdrop-blur border-b border-slate-200 sticky top-0 z-20 px-4 py-4 flex items-center justify-between">
+            <span class="font-bold text-slate-800 flex items-center gap-2"><svg class="w-5 h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg> คู่มือ JA PDF Editor</span>
+            <a href="/" class="text-sm font-medium text-sky-600 bg-sky-50 px-3 py-1 rounded-full border border-sky-100">กลับสู่แอป</a>
+        </div>
+
+        <div class="max-w-4xl mx-auto px-6 sm:px-10 py-12 lg:py-20 bg-white min-h-screen shadow-sm border-x border-slate-100 relative z-0">
+            <h1 id="intro" class="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-6 scroll-mt-24">คู่มือการใช้งาน JA PDF Editor</h1>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ยินดีต้อนรับสู่ <strong>JA PDF Editor</strong> เครื่องมือจัดการเอกสาร PDF ครบวงจร ตั้งแต่แก้ไขข้อความและรูปภาพ จัดการหน้า แปลงเป็น Word ไปจนถึงส่งเอกสารให้หลายคนลงนามตามลำดับ ไฟล์ที่คุณอัปโหลดจะถูกเก็บไว้ในพื้นที่ "เอกสารของฉัน" ของบัญชีคุณเท่านั้น คนอื่นมองไม่เห็น และคุณลบได้ทุกเมื่อ</p>
+
+        <details class="lg:hidden my-6 bg-slate-50 border border-slate-200 rounded-2xl p-4">
+            <summary class="font-semibold text-slate-800 cursor-pointer">📑 สารบัญ</summary>
+            <ul class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm"><li><a class="text-sky-700 hover:underline" href="#open-save">1. เปิด บันทึก พิมพ์</a></li><li><a class="text-sky-700 hover:underline" href="#edit-text">2. แก้ไขข้อความ/รูปภาพ</a></li><li><a class="text-sky-700 hover:underline" href="#draw-highlight">3. ไฮไลท์และเครื่องมือเสริม</a></li><li><a class="text-sky-700 hover:underline" href="#page-manage">4. จัดการหน้ากระดาษ</a></li><li><a class="text-sky-700 hover:underline" href="#merge-pdf">5. รวมไฟล์</a></li><li><a class="text-sky-700 hover:underline" href="#watermark-pass">6. ลายน้ำและรหัสผ่าน</a></li><li><a class="text-sky-700 hover:underline" href="#page-numbers">6.1 ใส่เลขหน้า</a></li><li><a class="text-sky-700 hover:underline" href="#barcode">6.2 แทรกบาร์โค้ด / QR Code</a></li><li><a class="text-sky-700 hover:underline" href="#electronic-sign">7. ลายเซ็นอิเล็กทรอนิกส์</a></li><li><a class="text-sky-700 hover:underline" href="#digital-sign">8. ลายเซ็นดิจิทัล</a></li><li><a class="text-sky-700 hover:underline" href="#auto-gen">9. สร้างเอกสารอัตโนมัติ</a></li><li><a class="text-sky-700 hover:underline" href="#compress-pdf">10. ลดขนาดไฟล์</a></li><li><a class="text-sky-700 hover:underline" href="#flatten-pdf">11. รวมเลเยอร์</a></li><li><a class="text-sky-700 hover:underline" href="#copy-ocr">12. คัดลอกข้อความด้วย AI</a></li><li><a class="text-sky-700 hover:underline" href="#quick-tools">13. เครื่องมือด่วน / PDF เป็น Word</a></li><li><a class="text-sky-700 hover:underline" href="#scan-document">13.1 สแกนเอกสารด้วยมือถือ</a></li><li><a class="text-sky-700 hover:underline" href="#scan-to-word">13.2 แปลงไฟล์สแกนเป็น Word</a></li><li><a class="text-sky-700 hover:underline" href="#compare-pdf">13.3 เปรียบเทียบเอกสาร</a></li><li><a class="text-sky-700 hover:underline" href="#api-key">14. API KEY สำหรับ AI</a></li><li><a class="text-sky-700 hover:underline" href="#extract-pages">15. แยกหน้าเอกสาร</a></li><li><a class="text-sky-700 hover:underline" href="#search-redact">16. เซ็นเซอร์ด้วยคำค้นหา</a></li><li><a class="text-sky-700 hover:underline" href="#pdpa">16.1 ปกปิดข้อมูลส่วนบุคคล (PDPA)</a></li><li><a class="text-sky-700 hover:underline" href="#bookmarks">17. บุ๊กมาร์ก</a></li><li><a class="text-sky-700 hover:underline" href="#rename-file">18. เปลี่ยนชื่อไฟล์</a></li><li><a class="text-sky-700 hover:underline" href="#install-font">19. ติดตั้งฟอนต์</a></li><li><a class="text-sky-700 hover:underline" href="#keyboard-shortcuts">20. คีย์ลัด</a></li><li><a class="text-sky-700 hover:underline" href="#my-documents">21. เอกสารของฉัน &amp; เมนูไฟล์ (☰)</a></li><li><a class="text-sky-700 hover:underline" href="#signing-send">22. ส่งเอกสารให้ลงนาม</a></li><li><a class="text-sky-700 hover:underline" href="#signing-sign">23. ลงนามเมื่อได้รับคำขอ</a></li><li><a class="text-sky-700 hover:underline" href="#signing-track">24. ติดตามสถานะ &amp; หนังสือรับรอง</a></li><li><a class="text-sky-700 hover:underline" href="#signing-invite">25. เชิญคนที่ยังไม่มีบัญชี</a></li><li><a class="text-sky-700 hover:underline" href="#account">26. บัญชีผู้ใช้ &amp; แก้ปัญหาเข้าสู่ระบบ</a></li><li><a class="text-sky-700 hover:underline" href="#passkey">26.1 เข้าสู่ระบบด้วย Passkey</a></li><li><a class="text-sky-700 hover:underline" href="#line-notify">26.2 แจ้งเตือนทาง LINE</a></li><li><a class="text-sky-700 hover:underline" href="#delete-account">26.3 ลบบัญชี</a></li><li><a class="text-sky-700 hover:underline" href="#line-login">26.4 เข้าสู่ระบบด้วย LINE</a></li><li><a class="text-sky-700 hover:underline" href="#open-source">27. ซอร์สโค้ดและสัญญาอนุญาต</a></li></ul>
+        </details>
+
+        <div class="my-8 bg-emerald-50 border border-emerald-200 p-5 sm:p-6 rounded-2xl text-emerald-900 shadow-sm leading-relaxed">
+            <strong>✨ มีอะไรใหม่</strong>
+            <ul class="list-disc list-inside mt-2 space-y-1">
+                <li><strong>เปิดซอร์ส:</strong> <a class="underline" href="#open-source">JA PDF Editor เป็นซอฟต์แวร์เสรี (AGPL-3.0)</a> — ใช้ฟรี ดาวน์โหลดซอร์สโค้ดไปศึกษาหรือติดตั้งในองค์กรเองได้ · ลิงก์ "ซอร์สโค้ด" อยู่ที่หน้าเข้าสู่ระบบและเมนู วิธีใช้ › เกี่ยวกับ</li>
+                <li><strong>ใหม่:</strong> <a class="underline" href="#auto-gen-barcode">QR Code / บาร์โค้ดในเอกสารอัตโนมัติ</a> — ใส่ใน Template Word ได้ทั้งพิมพ์ในบรรทัด <code>{{ qr(ลิงก์) }}</code> และรูปตัวแทนที่จัดขนาด/ตำแหน่งเองแล้วใส่คำสั่งใน Alt Text · ภาษาไทยได้ · มีไฟล์ตัวอย่างชุดใหม่</li>
+                <li><strong>ใหม่:</strong> <a class="underline" href="#compare-pdf">เปรียบเทียบเอกสาร</a> — หาจุดต่างของ 2 ไฟล์ ทั้งข้อความที่เพิ่ม/ลบ/แก้ (ตัดคำไทยถูกต้อง) และภาพ เช่น ลายเซ็น ตราประทับ · ดูเคียงข้างหรือซ้อนทับ · ไฟล์สแกนอ่านด้วย OCR · ดาวน์โหลดรายงาน PDF · เทียบกับเวอร์ชันก่อนบันทึกได้</li>
+                <li><strong>ความปลอดภัย:</strong> ใส่รหัสผ่านผิด 5 ครั้งติดกัน ระบบจะล็อกการเข้าสู่ระบบของบัญชีนั้นชั่วคราว 15 นาที (เตือนเมื่อเหลือโอกาส 2 ครั้ง) · ขอลิงก์ลืมรหัสผ่าน/อีเมลยืนยันได้ 3 ครั้งต่อชั่วโมง — ลืมรหัสผ่านให้ใช้ "ลืมรหัสผ่าน" หรือเข้าด้วย Passkey/Google/LINE ได้ทันที</li>
+                <li><strong>ผู้ดูแลระบบ:</strong> หน้าแอดมินแสดงสถานะเซิร์ฟเวอร์ (RAM, CPU, Redis, ดิสก์, เวลาสำรองข้อมูลล่าสุด) และแจ้งเตือนทาง LINE/อีเมลเมื่อใกล้เต็มหรือสำรองข้อมูลขาดหาย</li>
+                <li><strong>ปรับปรุง:</strong> งานหนัก (ลดขนาดไฟล์, บันทึก PDF/A, แปลง Word, อ่านข้อความจากภาพ) เข้าคิวทำทีละไม่กี่งาน — ช่วงที่มีคนใช้พร้อมกันมาก การเปิดและแก้ไขเอกสารจะไม่ช้าตาม · ถ้าคิวยาวมากจะแจ้งให้ลองใหม่อีกครั้งในอีกสักครู่</li>
+                <li><strong>ปรับปรุง:</strong> เปิดและเลื่อนดูหน้าเอกสารเร็วขึ้น — ระบบจำภาพหน้าที่แสดงแล้วไว้ใช้ซ้ำ และส่งภาพหน้าเป็น JPEG คุณภาพสูง (ไฟล์เล็กกว่า สร้างเร็วกว่า PNG ราว 10 เท่า) · ไฟล์ PDF ที่บันทึกยังคมชัดเหมือนเดิม</li>
+                <li><strong>ใหม่:</strong> <a class="underline" href="#page-numbers">ใส่เลขหน้า</a> — 1, 2, 3 หรือ 1/N (ตัวคั่นกำหนดเอง) · เลขไทย ๑ ๒ ๓ · เริ่มที่หน้าไหนก็ได้ · หน้าคู่วางฝั่งตรงข้ามสำหรับพิมพ์สองหน้า · ใช้ได้ทั้งในหน้าแก้ไขและเครื่องมือด่วนในหน้าเอกสารของฉัน</li>
+                <li><strong>ใหม่:</strong> <a class="underline" href="#barcode">แทรกบาร์โค้ด / QR Code</a> — 11 ประเภท · QR, Data Matrix, PDF417, Aztec ใส่ภาษาไทยได้ · ตรวจข้อมูลและเลขตรวจสอบก่อนสร้าง · ลากวางและย่อขยายได้เหมือนรูป บันทึกเป็นภาพเวกเตอร์คมทุกขนาด</li>
+                <li><strong>ใหม่:</strong> <a class="underline" href="#account">รูปโปรไฟล์</a> — อัปโหลดรูปเอง (ครอป/ซูมก่อนบันทึก) หรือเลือกอีโมจิ 18 แบบ เปลี่ยนสีหน้าและสีพื้นหลังได้</li>
+                <li><strong>ปรับปรุง:</strong> มือถือแนวนอนใช้หน้าตาแบบมือถือเหมือนแนวตั้ง (ปุ่ม ☰, แผงหน้าเลื่อนเข้าออก, ซูมพอดีความกว้าง) · หมุนจอแล้วซูมพอดีใหม่ให้เอง · หน้าเข้าสู่ระบบและแถบบนของหน้าแก้ไขบนมือถือมีโลโก้และชื่อแอป · ข้อความ "กำลังโหลดหน้า…" ไม่ถูกบีบแล้ว</li>
+                <li><strong>เปลี่ยนแปลง:</strong> ระบบไม่ได้แนบฟอนต์ <strong>TH Sarabun New</strong> มาให้แล้ว — เอกสารที่ใช้ TH Sarabun New / PSK / IT๙ จะแก้ไขข้อความด้วยฟอนต์ <strong>Sarabun</strong> (ตระกูลเดียวกัน) แทน · ถ้าต้องการใช้ TH Sarabun New ติดตั้งเองได้ที่ <a class="underline" href="#install-font">ติดตั้งฟอนต์</a></li>
+                <li><strong>ปรับปรุง:</strong> <a class="underline" href="#api-key">ระบบที่ยังไม่ได้ตั้ง AI</a> ไม่แสดงกล่องโควต้า AI และซ่อนตัวเลือกที่ใช้ AI (แปลงเป็น Word ยังใช้ได้ตามปกติ ปุ่มอ่านข้อความในหน้าต่างคัดลอกใช้ OCR บนเซิร์ฟเวอร์) · เมนูตั้งค่า AI ซ่อนเมื่อระบบไม่เปิดให้ใช้ key ส่วนตัว</li>
+                <li><strong>ใหม่:</strong> <a class="underline" href="#api-key">AI หลายค่าย</a> — นอกจาก Google Gemini ใช้ <strong>Anthropic Claude</strong> หรือ <strong>OpenAI / Azure OpenAI / โมเดลขององค์กร</strong> ได้ ทั้งเป็น AI ของระบบ และเป็น API key ส่วนตัว (เลือกผู้ให้บริการเอง เช่น ใช้เครดิตของแผนก) · ทดสอบ key ก่อนบันทึก</li>
+                <li><strong>ปรับปรุง:</strong> หน้าผู้ดูแล › โควต้า — การ์ดอีเมลแสดงเฉพาะเมื่อตั้งค่าการส่งอีเมลแล้ว และแยก Brevo กับ mail server ขององค์กร · การ์ด AI แสดงชื่อผู้ให้บริการที่ใช้จริง</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#open-save">ปิดเอกสารแล้ว</a> ปุ่ม "เปิดไฟล์ PDF" กลับมาอยู่กลางพื้นที่เอกสาร (เดิมชิดซ้ายบนคอมพิวเตอร์)</li>
+                <li><strong>ใหม่:</strong> <a class="underline" href="#keyboard-shortcuts">แว่นขยายตอนลากนิ้ว</a> — แตะค้างแล้วลากเลือกข้อความ (หรือลากวาดไฮไลต์/กรอบ/เซ็นเซอร์ด้วยนิ้ว) จะมีแว่นขยายเหนือนิ้วให้เห็นส่วนที่นิ้วบัง แบบเดียวกับตอนปรับมุมเอกสารในหน้าสแกน</li>
+                <li><strong>ใหม่:</strong> <a class="underline" href="#keyboard-shortcuts">ปัดนิ้วซ้าย/ขวาเพื่อเปลี่ยนหน้า</a> บนมือถือและแท็บเล็ต (ตอนดูเอกสาร — ถ้าซูมจนหน้ากว้างกว่าจอ ให้เลื่อนไปสุดขอบก่อนแล้วปัดอีกครั้ง)</li>
+                <li><strong>แก้ไขแล้ว:</strong> ใช้นิ้วบนหน้าเอกสาร — ลากนิ้วเดียวเลื่อนหน้าได้แล้ว (เดิมกลายเป็นกรอบเลือกข้อความ ต้องใช้สองนิ้ว) · คัดลอกข้อความ: แตะค้างแล้วลาก · กาง/หุบนิ้วแล้วจุดที่ซูมอยู่ใต้นิ้วเหมือนเดิม (เดิมกระโดดไปมุมซ้ายบน และภาพเด้งกลับก่อนขยาย) · ซูมจนหน้ากว้างกว่าจอแล้วเลื่อนดูขอบซ้ายได้ · ตัวหนังสือบนหน้าเอกสารคมชัดบนมือถือและจอ Retina (เดิมเบลอ)</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#open-save">พิมพ์เอกสารบน iPhone/iPad/Android และ Safari</a> — เปิดไฟล์ในแท็บใหม่ให้พิมพ์ได้ (เดิมบน iPhone กดแล้วไม่มีอะไรเกิดขึ้น แต่ขึ้นว่าเปิดเรียบร้อย) · ไฟล์ใหญ่ไม่ได้หน้าต่างพิมพ์ว่าง · Ctrl + / Ctrl − ซูมได้ถึง 500%</li>
+                <li><strong>ใหม่:</strong> <a class="underline" href="#page-manage">เลือกหลายหน้าบนมือถือ</a> — แตะค้างที่หน้า › <em>☑ เลือกหลายหน้า</em> แล้วแตะเลือกหน้าที่ต้องการ กด <em>จัดการ ▾</em> เพื่อหมุน ลบ เลื่อน หรือส่งออกพร้อมกันทีเดียว</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#page-manage">แผงหน้าเอกสารบนมือถือ</a> — กดค้างที่หน้าแล้วขึ้นเฉพาะเมนูจัดการหน้า (เดิมมีเมนู "คัดลอก/ค้นดู/แปลภาษา" ของ iPhone ขึ้นซ้อน และเลือกข้อความบนแถบค้างไว้) · เมนูขึ้นข้างนิ้วไม่ถูกนิ้วบัง และรายการกดง่ายขึ้น</li>
+                <li><strong>ใหม่:</strong> <a class="underline" href="#account">ติดตั้งในองค์กร (on-premise)</a> — หน่วยงานติดตั้งระบบบนเซิร์ฟเวอร์ของตัวเองได้: สมัครและเข้าสู่ระบบด้วยอีเมลขององค์กร + รหัสผ่าน หรือ Passkey (ไม่มีปุ่ม Google/LINE) · จำกัดการสมัครเฉพาะอีเมลโดเมนองค์กร (ผู้ได้รับเชิญลงนามสมัครได้เสมอ) · ส่งอีเมลจาก mail server ขององค์กร · ลงนามด้วยใบรับรองขององค์กร</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#pdpa">ปกปิดข้อมูลส่วนบุคคล (PDPA)</a> ตรวจเจอข้อมูลในช่องกรอกฟอร์ม กล่องข้อความ และบันทึกย่อแล้ว (เดิมแบบฟอร์มที่กรอกเลขบัตรประชาชนไว้ไม่ถูกตรวจ) · ปิดแล้วค่าเดียวกันในบุ๊กมาร์ก/ข้อมูลเมตาถูกปิดด้วย · <a class="underline" href="#search-redact">เซ็นเซอร์ด้วยคำค้นหา</a> คำในกล่องข้อความถูกปิดในกล่อง (เดิมระบายดำทับเนื้อหน้าแต่กล่องยังแสดงคำเดิม) · กล่องข้อความไม่โผล่เป็นย่อหน้าให้แก้ไขข้อความ</li>
+                <li><strong>ปรับปรุง:</strong> <a class="underline" href="#quick-tools">แปลงเป็น Word</a> ในหน้าแก้ไข: ถ้ามีการแก้ไขที่ยังไม่บันทึก ระบบถามก่อนว่าจะบันทึกทับแล้วแปลง หรือแปลงฉบับที่บันทึกไว้ (เดิมบันทึกทับให้เอง) · ไฟล์ Word เก็บไว้ให้ดาวน์โหลด 24 ชั่วโมง · ชื่อไฟล์ .PDF ตัวใหญ่ได้ชื่อ .docx ถูกต้อง</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#account">บัญชีผู้ใช้</a> — ลิงก์ตั้งรหัสผ่านใหม่ใช้ได้ครั้งเดียว · เปลี่ยน/ตั้งรหัสผ่านใหม่แล้วอุปกรณ์อื่นต้องเข้าสู่ระบบใหม่ · ออกจากระบบแล้วสิทธิ์ถูกยกเลิกจริง · อีเมลพิมพ์ตัวใหญ่/เล็กก็ได้ (เดิมสมัครซ้ำได้ และพิมพ์ตัวใหญ่แล้วหาบัญชีไม่เจอ) · บัญชีที่ถูกระงับแจ้งตั้งแต่หน้าเข้าสู่ระบบ · ข้อความแจ้งเตือนเป็นภาษาไทยทั้งหมด</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#my-documents">เอกสารของฉัน</a> — เปลี่ยนชื่อไฟล์แสดงชื่อที่บันทึกจริง · ชื่อไฟล์ที่อัปโหลดตัดอักขระที่ใช้ไม่ได้ · เปิดไฟล์ซ้ำไม่ทิ้งสำเนาเก่าค้างบนเซิร์ฟเวอร์ (ไฟล์ที่ลบแล้วไม่มีสำเนาเหลืออยู่)</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#digital-sign">เซ็นดิจิทัลรับรอง</a> — ตรวจรหัสผ่านและใบรับรอง (หมดอายุ/ยังไม่ถึงวันใช้/ไม่อนุญาตให้ลงนาม) ตั้งแต่หน้าต่างเลือกใบรับรอง (เดิมรู้ตอนวางตำแหน่งเสร็จ ต้องเริ่มใหม่ทั้งหมด และใบหมดอายุก็เซ็นได้ แต่ลายเซ็นไม่ถูกต้อง) · ลายเซ็นบนหน้าที่หมุนไว้ หรือหน้าที่มีขอบตัด อยู่ตรงตำแหน่งที่วาง · ไฟล์จากบางโปรแกรมที่เคยเซ็นไม่ได้ ("Illegal generation") เซ็นได้แล้ว · เอกสารที่ตั้งรหัสผ่านไว้แจ้งให้ลบรหัสผ่านก่อน (เดิมเซ็นได้ แต่ไฟล์ที่ดาวน์โหลดลายเซ็นเสีย) · เซ็นไม่สำเร็จ กรอบตำแหน่งยังอยู่</li>
+                <li><strong>เปลี่ยนแปลง:</strong> <a class="underline" href="#open-save">ดาวน์โหลดและพิมพ์ไม่บันทึกทับไฟล์ในเอกสารของฉันแล้ว</a> (เดิมบันทึกทับให้เอง — เช่น เซ็นเซอร์ข้อมูลเพื่อส่งต่อแล้วกดดาวน์โหลด ไฟล์ต้นฉบับถูกเซ็นเซอร์ไปด้วย) · บันทึกเมื่อกด <strong>ไฟล์ → บันทึก</strong> หรือ Ctrl+S · ถ้ายังไม่บันทึกแล้วจะกลับหน้าเอกสารของฉัน เปิดไฟล์อื่น ปิดไฟล์ หรือปิดแท็บ ระบบถามก่อน (เดิมการแก้ไขหายเงียบ ๆ)</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#open-save">พิมพ์เอกสารที่ตั้งรหัสผ่าน</a> ได้แล้ว (เดิมหน้าต่างพิมพ์ไม่ขึ้น) · บันทึกเป็นไฟล์ใหม่/เปลี่ยนชื่อไฟล์: ตัดอักขระที่ใช้ในชื่อไฟล์ไม่ได้ และชื่อซ้ำเติม (2), (3) ให้</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#draw-highlight">กล่องข้อความและกรอบสี่เหลี่ยม</a> — ข้อความภาษาไทยในกล่องข้อความ และข้อความในกรอบสี่เหลี่ยม เห็นครบเมื่อเปิดไฟล์ที่ดาวน์โหลดใน Chrome/Edge/Acrobat/Preview และพิมพ์ออกมา (เดิมภาษาไทยหายเหลือแต่ตัวอังกฤษ ข้อความในกรอบไม่ขึ้นเลย และหายตอนรวมเลเยอร์) · กล่องข้อความจากโปรแกรมอื่นไม่หายเมื่อเปิดดูหน้า</li>
+                <li><strong>ปรับปรุง:</strong> <a class="underline" href="#draw-highlight">ไฮไลต์หลายบรรทัด</a> เป็นรายการเดียว กด Undo ครั้งเดียวหายทั้งหมด · เปลี่ยนสีไฮไลต์หลายบรรทัดแล้วไม่กลายเป็นแถบทึบทับทั้งย่อหน้า · กดตกลงโดยไม่ได้แก้ไม่เพิ่มขั้น Undo · ภาพตัวอย่างหน้าอัปเดตทันที</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#edit-text">รูปภาพและแทรกข้อความ</a> — ย้าย/ลบรูปไม่ลบข้อความที่อยู่บนรูปหรือใต้ตำแหน่งใหม่ และไม่ลบรูปสแกนพื้นหลังทั้งหน้า · ลบโลโก้ที่ใช้ซ้ำหลายหน้า หายเฉพาะหน้านั้น · แทรกข้อความทับบริเวณที่มีข้อความอยู่ ไม่ลบข้อความเดิม · วาดกรอบสี่เหลี่ยมล้อมย่อหน้าแล้วยังแก้ข้อความในนั้นได้</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#extract-pages">แยกหน้าเอกสาร</a> — ไฟล์ชื่อภาษาไทยแยกหน้าได้แล้ว (เดิมขึ้นข้อผิดพลาด) · เรียงหน้าตามลำดับที่พิมพ์ เช่น <code>5, 1-3</code> · ช่องกรอกฟอร์ม ลิงก์ และบุ๊กมาร์กยังอยู่ ไฟล์เล็กลงมาก · เอกสารที่ตั้งรหัสผ่านไว้ ไฟล์ที่แยกออกมามีรหัสผ่านเดียวกัน · ตรวจเลขหน้าก่อนกดและบอกว่าจะได้หน้าไหนบ้าง · ชื่อไฟล์ตามเอกสาร เช่น "สัญญา (หน้า 1-3).pdf"</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#page-manage">แผงหน้าเอกสาร</a> — กดเลื่อนหน้าขึ้น/ลงซ้ำได้ต่อเนื่อง (เดิมครั้งที่ 2 ไปย้ายหน้าอื่น) · หน้าที่กำลังดูตามไปเมื่อย้ายหน้า และแผงเลื่อนไปหน้าที่ดูอยู่เอง · ลบทุกหน้าไม่ได้ (เดิมลบหมดแล้วบันทึกไฟล์ไม่ได้) · บนมือถือเลื่อนแผงแล้วเมนูไม่เด้งขึ้นเอง</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#bookmarks">บุ๊กมาร์ก</a> — แก้/ลบ/เพิ่มบุ๊กมาร์กแล้วสารบัญหลายชั้นของไฟล์ไม่ยุบ ตำแหน่งกลางหน้าและบุ๊กมาร์กลิงก์เว็บไม่หาย · บุ๊กมาร์กใหม่แทรกตามลำดับหน้า · ลบหน้าแล้วบุ๊กมาร์กของหน้านั้นหายไปด้วย · ปุ่มแก้ชื่อ/ลบกดได้บนมือถือ</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#passkey">เข้าสู่ระบบด้วย Passkey</a> — ปุ่มไม่ค้าง "รอยืนยันที่อุปกรณ์..." อีก: ถ้าไม่มีหน้าต่างสแกนนิ้ว/ใบหน้าขึ้น กด <strong>ยกเลิกแล้วกดใหม่</strong> ได้ และระบบยกเลิกให้เองเมื่อรอนานเกิน 1 นาที · Safari บน Mac ที่โฟกัสช่องอีเมลให้เองตอนเปิดหน้า ไม่ทำให้ปุ่มค้างอีก</li>
+                <li><strong>ปรับปรุง:</strong> <a class="underline" href="#install-font">ติดตั้งฟอนต์จากไฟล์</a> รับ .woff/.woff2 · เตือนฟอนต์ที่ไม่มีอักษรไทยหรือห้ามฝัง · ไม่ติดตั้งไฟล์ซ้ำ · แก้ข้อความด้วยฟอนต์ที่ไม่มีตัวอักษรที่พิมพ์ จะแจ้งให้เปลี่ยนฟอนต์ (เดิมตัวอักษรไทยหายไปเงียบ ๆ)</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#compress-pdf">ลดขนาดไฟล์</a> และบันทึกสำเนาเป็น PDF/A หรือเวอร์ชัน PDF อื่น ไม่ทำให้ข้อความภาษาไทยในไฟล์จาก Word/LibreOffice เพี้ยนอีก — ระบบตรวจข้อความทุกหน้าก่อนบันทึก</li>
+                <li><strong>ปรับปรุง:</strong> <a class="underline" href="#watermark-pass">เข้ารหัส PDF</a> เลือกได้ระหว่าง AES-256 (แนะนำ) และ AES-128 สำหรับโปรแกรมรุ่นเก่า ไฟล์เป็น PDF 1.7 ตามมาตรฐาน · เตือนเมื่อไฟล์เป็น PDF/A (ซึ่งห้ามเข้ารหัส) · รหัสผ่านภาษาไทยที่ใช้กับแบบเก่าไม่ได้จะแจ้งชัดเจน</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#flatten-pdf">รวมเลเยอร์</a> ไม่ทำให้ข้อความภาษาไทยในไฟล์จาก Word/LibreOffice เพี้ยนอีก (เดิมคัดลอก/ค้นหาแล้วได้ตัวอักษรแปลก ๆ) และไม่รวมสิ่งที่ซ่อนไว้ลงหน้า</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#signing-sign">การลงนาม</a> — รูปลายเซ็นที่เสียหรือว่างเปล่าจะแจ้งให้วาด/อัปโหลดใหม่ (เดิมลงนามสำเร็จโดยไม่มีลายมือชื่อ) · รูปถ่ายลายเซ็นจากมือถือหมุนตั้งตรงให้อัตโนมัติ · เวลาบนตราลายเซ็นเป็นเวลาประเทศไทย · คำขอที่ยกเลิก/ถูกปฏิเสธแสดงผู้ที่ยังไม่ได้ลงนามว่า "ไม่ต้องลงนามแล้ว" · ส่งเอกสารชื่อเดิมซ้ำ ไฟล์ที่ลงนามครบได้ชื่อไม่ซ้ำ</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#search-redact">เซ็นเซอร์ด้วยคำค้นหา</a> ลบคำออกจากช่องกรอกฟอร์ม โน้ต/ความคิดเห็น บุ๊กมาร์ก และข้อมูลเมตาของไฟล์ด้วย (เดิมยังค้างอยู่ เปิดดูได้) · เครื่องมือด่วนมีตัวอย่าง Regex ให้กดใช้ และเลือก "ตัวพิมพ์เล็ก/ใหญ่ต้องตรงกัน" ได้</li>
+                <li><strong>ปรับปรุง:</strong> <a class="underline" href="#watermark-pass">ใส่ลายน้ำ</a> หน้าต่างใหม่มีตัวอย่างสด เลือกสีและข้อความสำเร็จรูปได้ · ลายน้ำอยู่กึ่งกลางและเอียงถูกทิศบนหน้าที่หมุนไว้ ข้อความยาว/หน้าเล็กย่อให้พอดีหน้า (เดิมล้นขอบ) · ทำซ้ำไฟล์เดิมได้ชื่อไม่ซ้ำ เช่น "ชื่อเดิม (ลายน้ำ) (2).pdf"</li>
+                <li><strong>ปรับปรุง:</strong> <a class="underline" href="#auto-gen">สร้างเอกสารอัตโนมัติ</a> — ตรวจตัวแปรใน Template กับคอลัมน์ข้อมูลให้ก่อนสร้าง · เดาตัวคั่น/ภาษาของ CSV เอง · แปลงเป็น PDF เร็วขึ้นมาก (แยกไฟล์ 12 ชุด ~4 วินาที จากเดิม ~40 วินาที) · ค่าที่มี &amp; หรือ &lt; ไม่ทำให้ไฟล์ Word เสีย · ตัวเลข/วันที่จาก Excel แสดงสวยขึ้น (1500 แทน 1500.0) · แจ้งจำนวนแถวที่ข้าม · ใช้ฟอนต์ที่คุณติดตั้งเองตอนแปลง PDF</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#merge-pdf">รวมไฟล์ PDF</a> — ไฟล์ที่รวมแล้วบันทึกเข้าเอกสารของฉันจริง (เดิมกดบันทึกไม่ได้ และไม่ขึ้นในรายการ) · เลือกไฟล์จากเอกสารของฉันมารวมได้ · บุ๊กมาร์กแบ่งตามไฟล์เดิม · แจ้งชื่อไฟล์ที่มีรหัสผ่าน/เสีย</li>
+                <li><strong>ปรับปรุง:</strong> <a class="underline" href="#pdpa">ปกปิดข้อมูลส่วนบุคคล</a> จับชื่อที่ไม่มีคำนำหน้าได้ — ชื่อหลังหัวข้อ เช่น "ชื่อลูกค้า :", "ผู้ติดต่อ :", ชื่อในวงเล็บใต้ลายเซ็น และชื่อที่อยู่ในรายชื่อคนไทย (ให้ตรวจก่อนเลือก) · ที่อยู่ไม่ดึงวันที่มาเป็นบ้านเลขที่</li>
+                <li><strong>ปรับปรุง:</strong> <a class="underline" href="#edit-text">แก้ไขข้อความในตาราง</a> — กล่องข้อความแยกตามช่องตาราง ไม่รวมข้ามคอลัมน์ · ตัวเลขที่ยาวขึ้นไม่ถูกตัดขึ้นบรรทัดใหม่</li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#scan-document">สแกนเอกสาร</a>เตือนเมื่อภาพเบลอหรือมีแสงสะท้อน ให้ถ่ายใหม่ได้ทันที (หน้าที่เลือกใช้ต่อมีป้าย ⚠ ในหน้าตรวจทาน)</li>
+                <li><strong>ปรับปรุง:</strong> อ่าน<strong>เลขไทย</strong> (๑๒๓) ในรูปภาพ/ไฟล์สแกนแม่นขึ้นมาก — วันที่และปี พ.ศ. แบบเลขไทยอ่านถูกจากราว ๕๐% เป็นราว ๙๐%</li>
+                <li><strong>ปรับปรุง:</strong> อ่านข้อความไทยในรูปภาพ (OCR) ด้วยชุดเดียวกันทุกเมนู — อัปโหลดรูปภาพ สแกนเอกสาร อ่านข้อความในรูปภาพ และแปลงไฟล์สแกนเป็น Word · รูปที่มีข้อความไทยไม่กี่บรรทัดอ่านถูกขึ้นมาก (ไม่ถูกอ่านเป็นภาษาอังกฤษ) และไม่ตัดตัวเลขอย่าง "๕๐๐" หรือ "00001" ทิ้ง</li>
+                <li><strong>ใหม่!</strong> การ์ด <a class="underline" href="#quick-tools">แปลงเป็น Word</a> ในเครื่องมือด่วน — เลือกไฟล์แล้วแปลงได้ทันที ใช้ได้ทั้ง PDF ทั่วไปและ<a class="underline" href="#scan-to-word">ไฟล์สแกน</a> (ระบบตรวจให้อัตโนมัติ)</li>
+                <li><strong>ปรับปรุง:</strong> <a class="underline" href="#scan-document">สแกนเอกสาร</a>อ่านข้อความแม่นขึ้น — โหมดขาวดำส่งภาพเทาไปให้ระบบอ่านคู่กัน (เส้นบาง/วรรณยุกต์ไม่หายตอนตัดเป็นขาวดำ) ไฟล์ที่ได้ยังเป็นขาวดำขนาดเล็กเท่าเดิม · หน้าที่มีโลโก้ใหญ่บนหัวกระดาษอ่านข้อความได้ครบ · แปลงเป็น Word ใช้ข้อความที่อ่านไว้ตอนสแกนเมื่อดีกว่า</li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#scan-to-word">แปลงไฟล์สแกนเป็น Word</a> — ข้อความทั้งหมดเป็นข้อความจริงที่แก้ไข/คัดลอกได้ (ฟอนต์ Sarabun) ตารางเป็นตาราง Word ส่วนลายเซ็น โลโก้ และบาร์โค้ดเป็นรูป · ทำจากหน้าสแกนเสร็จ หรือเมนู ☰ ของไฟล์</li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#install-font">ติดตั้งฟอนต์จากลิงก์ Google Fonts</a> — วางลิงก์หรือชื่อฟอนต์ ดูตัวอย่างทุกสไตล์ แล้วติดตั้งได้ทันที ไม่ต้องดาวน์โหลดไฟล์เอง</li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#scan-document">สแกนเอกสารด้วยกล้องมือถือ/แท็บเล็ต</a> — จับขอบกระดาษอัตโนมัติ เป็นขาวดำเหมือนเครื่องถ่ายเอกสาร ถ่ายต่อเนื่องหลายหน้า ได้ PDF ที่ค้นหาและเซ็นเซอร์คำได้</li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#edit-text">แก้ไขข้อความภาษาไทย</a> ขึ้นบรรทัดใหม่ตรงขอบคำ (ไม่ตัดกลางคำ ไม่ขึ้นบรรทัดหน้า ๆ) คำยาวเกินกล่องไม่ล้นออกนอกกรอบ · ค้นหาเพื่อเซ็นเซอร์พิมพ์คำไทยตามปกติได้เลย</li>
+                <li><strong>แก้ไขแล้ว:</strong> <a class="underline" href="#page-manage">หน้าที่หมุนไว้</a> — ไฮไลต์ กล่องข้อความ กรอบ และบันทึกย่อ อยู่ตรงตำแหน่งที่วาดทั้งตอนดาวน์โหลด พิมพ์ และรวมเลเยอร์ (เดิมบางครั้งไปอยู่อีกมุมของหน้า)</li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#quick-tools">แปลงเป็น Word จากเมนู เครื่องมือ ในหน้าแก้ไข</a> — เปิดดูไฟล์ก่อนแปลงได้</li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#my-documents">ลากวางหลายไฟล์พร้อมกัน</a> ที่หน้าเอกสารของฉัน · อ่านภาษาไทยจาก PDF ที่สร้างจาก Word/หนังสือราชการได้ถูกต้องขึ้น (สระอำ สระลอย ฟอนต์รุ่นเก่า) ทั้งตอนแก้ไขข้อความ คัดลอก แปลงเป็น Word และตรวจข้อมูลส่วนบุคคล</li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#line-login">เข้าสู่ระบบด้วย LINE</a> — กดปุ่มสีเขียวที่หน้าเข้าสู่ระบบ ไม่ต้องจำรหัสผ่าน และรับแจ้งเตือนทาง LINE ได้ทันที</li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#delete-account">ลบบัญชีได้เอง</a> พร้อมไฟล์และข้อมูลทั้งหมด ที่หน้าโปรไฟล์</li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#line-notify">รับแจ้งเตือนการลงนามทาง LINE</a> แทนอีเมล — เชื่อมต่อที่เมนู <em>ความปลอดภัย</em></li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#electronic-sign">เซ็นสดบนมือถือ/แท็บเล็ตแม่นขึ้น</a> เต็มจอ หมุนแนวนอนได้ มีเลิกทำ · ลายเซ็นดิจิทัลใส่รูปลายเซ็นแบบเซ็นสด/พิมพ์/รูปภาพได้</li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#signing-passkey">ยืนยันตัวตนด้วย Passkey ก่อนลงนาม</a> — ผู้ส่งบังคับได้รายคน และบันทึกในหนังสือรับรองการลงนาม</li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#passkey">เข้าสู่ระบบด้วย Passkey</a> — ใช้ Face ID / Touch ID / Windows Hello แทนการพิมพ์รหัสผ่าน ตั้งค่าที่เมนู <em>ความปลอดภัย</em></li>
+                <li><strong>ใหม่!</strong> <a class="underline" href="#pdpa">ปกปิดข้อมูลส่วนบุคคลอัตโนมัติ (PDPA)</a> — ตรวจหาเลขบัตรประชาชน เบอร์โทร อีเมล เลขบัญชี ชื่อ ที่อยู่ แล้วเลือกปิดทับถาวร พร้อมรายงาน (ตรวจบนเซิร์ฟเวอร์ ไม่ส่งออกภายนอก)</li>
+                <li><a class="underline" href="#signing-send">ส่งเอกสารให้ลงนามตามลำดับ</a> หรือให้หลายคน<strong>ลงนามพร้อมกัน</strong> พร้อมวันครบกำหนดและปุ่มส่งเตือน</li>
+                <li><a class="underline" href="#signing-invite">เชิญคนที่ยังไม่มีบัญชี</a>ให้ลงนามได้ด้วยอีเมล</li>
+                <li><a class="underline" href="#signing-track">หนังสือรับรองการลงนาม</a> (Certificate of Completion) และอีเมลแจ้งเตือนทุกขั้นตอน</li>
+                <li><a class="underline" href="#my-documents">เมนูไฟล์ ☰</a> บนการ์ดเอกสาร: ดาวน์โหลด · คุณสมบัติเอกสาร · เข้ารหัส PDF ได้โดย<strong>ไม่ต้องเปิดไฟล์</strong> และ<a class="underline" href="#quick-tools">แปลง PDF เป็น Word แบบรักษาหน้าตา</a></li>
+                <li>เครื่องมือด่วน <a class="underline" href="#watermark-pass">ใส่ลายน้ำ</a> และ <a class="underline" href="#search-redact">เซ็นเซอร์ด้วยคำค้นหา</a> จากหน้าเอกสารของฉัน (ผลลัพธ์เป็นไฟล์ใหม่ เตือนก่อนแก้ไฟล์ที่ลงนามแล้ว)</li>
+                <li><a class="underline" href="#auto-gen">Auto-Gen</a> เข้ารหัส PDF แต่ละไฟล์ด้วยรหัสผ่านจากคอลัมน์ในข้อมูล (เช่น สลิปเงินเดือน)</li>
+                <li><a class="underline" href="#my-documents">เลือกหลายไฟล์แล้วลบพร้อมกัน</a> · ลายเซ็นประทับเวลาโดย TSA · หน้าจอมือถือใช้งานง่ายขึ้น</li>
+            </ul>
+        </div>
+        
+        <div class="my-8 bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-xl text-amber-800 shadow-sm leading-relaxed">
+            <strong>💡 ทิปส์:</strong> แถบเครื่องมือหลัก (Menu Bar) จะอยู่ด้านบนสุดของหน้าจอ ส่วนเครื่องมือแก้ไข (Toolbar) จะอยู่แถบด้านบน (ใต้แถบเมนูหลัก) เมื่อเปิดเอกสารขึ้นมาแล้ว ส่วนด้านซ้ายมือจะเป็นแผงภาพตัวอย่างหน้ากระดาษ (Thumbnails) และบุ๊กมาร์ก
+        </div>
+
+        <!-- Section 1 -->
+        <h2 id="open-save" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 1. การเปิด บันทึก และพิมพ์เอกสาร</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">คุณสามารถเปิดไฟล์ PDF หรือไฟล์เอกสาร Office (Word, Excel, PowerPoint) เพื่อแปลงเป็น PDF บันทึก ดาวน์โหลด หรือสั่งพิมพ์ได้ทันที</p>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li><strong>เปิดไฟล์:</strong> คลิกที่เมนู <strong>ไฟล์ > เปิดไฟล์...</strong> หรือกด <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + O</kbd> (<kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + O</kbd>) หรือลากไฟล์มาวางตรงกลางหน้าจอได้เลย</li>
+            <li><strong>สร้าง PDF จากไฟล์ Office:</strong> เมนู <strong>ไฟล์ > สร้างจาก Office...</strong> แล้วเลือกไฟล์ Word, Excel หรือ PowerPoint (.docx, .doc, .xlsx, .xls, .pptx, .ppt, .rtf, .odt, .ods, .odp) — ระบบแปลงเป็น PDF แล้ว<strong>บันทึกเป็นไฟล์ .pdf ไว้ในเอกสารของฉัน</strong>ให้ทันที (ชื่อเดิม นามสกุล .pdf) จากนั้นเปิดให้แก้ไขต่อ · ไฟล์ Office ต้นฉบับไม่ได้เก็บไว้ในระบบ · อัปโหลดไฟล์ Office จากหน้าเอกสารของฉันได้ด้วยวิธีเดียวกัน (หัวข้อ 21)</li>
+            <li><strong>บันทึกทับไฟล์เดิม:</strong> คลิกไอคอนรูป <span class="inline-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 2h8l3 3v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.3" /><path d="M5 2v3.5h5V2" stroke="currentColor" stroke-width="1.3" /><path d="M5 9.5h6V14H5z" stroke="currentColor" stroke-width="1.3" /></svg></span> บน Toolbar หรือเมนู <strong>ไฟล์ > บันทึก (ทับไฟล์เดิม)</strong> (คีย์ลัด <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + S</kbd> / <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + S</kbd>) เพื่อบันทึกการแก้ไขลงไฟล์ในเอกสารของฉัน — <strong>การแก้ไขจะถูกเก็บในเอกสารของฉันเฉพาะเมื่อกดบันทึก</strong> (ดาวน์โหลด/พิมพ์ไม่บันทึกให้) · ถ้ายังไม่ได้บันทึกแล้วจะกลับหน้าเอกสารของฉัน เปิดไฟล์อื่น ปิดไฟล์ หรือปิดแท็บ ระบบจะถามยืนยันก่อน</li>
+            <li><strong>ดาวน์โหลดลงเครื่อง:</strong> เมื่อแก้ไขเสร็จแล้ว ให้คลิกไอคอนรูป <span class="inline-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2v9m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span> หรือเมนู <strong>ไฟล์ > ดาวน์โหลด</strong> เพื่อบันทึกไฟล์ PDF (รวมการแก้ไขล่าสุด) ลงคอมพิวเตอร์ของคุณ — ไฟล์ในเอกสารของฉันไม่เปลี่ยน · ถ้าตั้งรหัสผ่านไว้ ไฟล์ที่ดาวน์โหลดจะมีรหัสผ่าน</li>
+            <li><strong>พิมพ์เอกสารออกเครื่องพิมพ์ (Print):</strong> คลิกไอคอนรูปเครื่องพิมพ์ <span class="inline-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 5.5V2h8v3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /><path d="M4 11H2.5A1.5 1.5 0 0 1 1 9.5v-3A1.5 1.5 0 0 1 2.5 5h11A1.5 1.5 0 0 1 15 6.5v3a1.5 1.5 0 0 1-1.5 1.5H12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /><rect x="4" y="9" width="8" height="5" rx="0.5" stroke="currentColor" stroke-width="1.3" /><circle cx="12.5" cy="7.5" r="0.6" fill="currentColor" /></svg></span> บน Toolbar หรือเมนู <strong>ไฟล์ > พิมพ์เอกสาร...</strong> (คีย์ลัด <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + P</kbd> / <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + P</kbd>) ระบบพิมพ์ตามการแก้ไขล่าสุด (ไม่บันทึกทับไฟล์ในเอกสารของฉัน · เอกสารที่ตั้งรหัสผ่านก็พิมพ์ได้โดยไม่ต้องใส่รหัส) และเปิดหน้าต่างพิมพ์ของระบบปฏิบัติการขึ้นมาทันที โดยรักษาความคมชัดระดับเวกเตอร์สูงสุด — ถ้าเอกสารมีหน้าแนวนอน ระบบจะถามรูปแบบการพิมพ์ก่อน แนะนำ <strong>พิมพ์ตามที่เห็นบนจอ</strong> เพื่อไม่ให้มีหน้ากลับหัว · <strong>บนมือถือ/แท็บเล็ต และ Safari</strong> เอกสารจะเปิดในแท็บใหม่ ให้กดปุ่มแชร์ › พิมพ์ (หรือเมนูพิมพ์ของเบราว์เซอร์) — ถ้าเบราว์เซอร์ไม่ให้เปิดแท็บใหม่ ระบบจะดาวน์โหลดไฟล์สำหรับพิมพ์ให้แทน</li>
+            <li><strong>สร้างสำเนาใหม่:</strong> หากต้องการเก็บเวอร์ชันสำรอง สามารถใช้ <strong>ไฟล์ > บันทึกเป็นไฟล์ใหม่...</strong> เพื่อสร้างสำเนาแยกโดยไม่ทับไฟล์เดิม (ชื่อซ้ำกับไฟล์ที่มีอยู่จะเติม (2), (3) ให้ · อักขระ / \ : * ? " &lt; &gt; | ใช้ในชื่อไฟล์ไม่ได้)
+                <ul class="list-disc list-inside ml-6 mt-2 space-y-1 text-base">
+                    <li><strong>เลือกเวอร์ชัน PDF</strong> ได้ (1.4, 1.5, 1.6, 1.7, 2.0) หรือ <strong>ไม่เปลี่ยน</strong> — ไฟล์ที่ได้ตรงมาตรฐานเวอร์ชันนั้นจริง ไม่ใช่แค่เปลี่ยนเลขหัวไฟล์: ระบบตรวจทุกส่วนในไฟล์ แปลงส่วนที่เวอร์ชันนั้นไม่รองรับ แล้วตรวจไฟล์ผลลัพธ์ซ้ำก่อนบันทึก</li>
+                    <li>เลือกเวอร์ชันต่ำกว่าที่ไฟล์ใช้อยู่: เลเยอร์ถูกรวมเป็นชั้นเดียวตามที่มองเห็น รูป JPEG 2000 ถูกแปลง (ไม่ลดความคมชัด) — ข้อความ ลิงก์ บุ๊กมาร์ก ไฮไลต์ กล่องข้อความ และช่องฟอร์มยังอยู่ครบ แถบสถานะแจ้งว่าแปลงอะไรไปบ้าง</li>
+                    <li>ไฟล์ที่ตั้งรหัสผ่าน: เข้ารหัสตามเวอร์ชัน — 1.4/1.5 ใช้ RC4 128 บิต (ปลอดภัยน้อยกว่า), 1.6/1.7 ใช้ AES-128, 2.0 ใช้ AES-256</li>
+                    <li>เอกสารที่มีลายเซ็นดิจิทัลเปลี่ยนเวอร์ชันไม่ได้ (ลายเซ็นจะใช้ไม่ได้) — เลือก "ไม่เปลี่ยน"</li>
+                    <li><strong>PDF/A (เก็บเอกสารระยะยาว — ISO 19005):</strong> เลือก <strong>PDF/A-1b</strong> (เข้ากันได้กว้างสุด), <strong>PDF/A-2b</strong> (แนะนำ) หรือ <strong>PDF/A-3b</strong> — ไฟล์เปิดแล้วหน้าตาเหมือนเดิมทุกโปรแกรม: ฝังฟอนต์ทั้งหมด ใส่โปรไฟล์สี sRGB และข้อมูลระบุมาตรฐาน · ไฮไลต์ กล่องข้อความ และช่องฟอร์มถูกรวมลงเนื้อหน้า (แก้ไขต่อไม่ได้) ข้อความยังค้นหาได้ ลิงก์และบุ๊กมาร์กยังใช้ได้ · PDF/A-1 ไม่รองรับความโปร่งใส รูปที่มีพื้นโปร่งใสจะถูกเติมพื้นขาว · <strong>PDF/A ห้ามตั้งรหัสผ่าน</strong> ต้องลบรหัสผ่านก่อน</li>
+                </ul>
+                <figure class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 items-start max-w-2xl">
+                    <div class="text-center">
+                        <img src="/images/manual/save_copy_version.png" alt="หน้าต่างบันทึกเป็นไฟล์ใหม่ พร้อมตัวเลือกเวอร์ชัน PDF" width="320" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+                        <figcaption class="text-sm text-slate-500 mt-2">เลือกเวอร์ชัน PDF (เช่น 1.4)</figcaption>
+                    </div>
+                    <div class="text-center">
+                        <img src="/images/manual/save_copy_pdfa.png" alt="เลือกบันทึกเป็น PDF/A-2b" width="320" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+                        <figcaption class="text-sm text-slate-500 mt-2">เลือก PDF/A สำหรับเก็บเอกสารระยะยาว</figcaption>
+                    </div>
+                </figure>
+            </li>
+            <li><strong>คุณสมบัติเอกสารและใบรับรอง:</strong> ตรวจสอบข้อมูลเมตา (ชื่อเรื่อง, ผู้แต่ง, ฟอนต์ที่ฝัง, ขนาดหน้า) และสถานะความน่าเชื่อถือของลายเซ็นดิจิทัล (Digital Signature Trust & Certificate Expiry) ได้ที่ <strong>ไฟล์ > คุณสมบัติเอกสาร...</strong></li>
+        </ol>
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปหน้าจอเมนู File มาเซฟไว้ที่: public/images/manual/open_file.png]</p>
+            <img src="/images/manual/open_file.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+
+        <!-- Section 2 -->
+        <h2 id="edit-text" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 2. การแก้ไขข้อความและรูปภาพ</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ใช้สำหรับแก้ไขข้อความเดิมในเอกสาร PDF โดยตรง, เพิ่มข้อความใหม่, แก้ไข/ย้าย/ลบรูปภาพเดิม, แทรกรูปภาพใหม่ หรือเซ็นเซอร์ข้อความ/รูปภาพ</p>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li><strong>เพิ่มข้อความ:</strong> คลิกไอคอนรูป <span class="inline-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M2 3.5h7M2 6.5h7M2 9.5h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /><path d="M12.5 8v5M10 10.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg></span> <strong>(เส้นบรรทัดและเครื่องหมายบวก)</strong> ที่แถบด้านซ้าย เลือกลักษณะฟอนต์ ขนาด และสีที่ต้องการ จากนั้นคลิกบนหน้ากระดาษเพื่อพิมพ์ข้อความได้เลย (รองรับภาษาไทยเต็มรูปแบบ) — วางทับบริเวณที่มีข้อความอยู่ได้ ข้อความเดิมไม่ถูกลบ (เช่น เติมคำลงช่องว่างในแบบฟอร์ม)</li>
+            <li><strong>เพิ่มรูปภาพ:</strong> คลิกไอคอนรูป <span class="inline-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="8" height="7" rx="1" stroke="currentColor" stroke-width="1.3" /><circle cx="4" cy="5" r="0.9" fill="currentColor" /><path d="M2.3 8.2l2.3-2.3 1.6 1.6 1.4-1.4 1.4 1.4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" /><path d="M12.5 8v5M10 10.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg></span> <strong>(รูปภาพและเครื่องหมายบวก)</strong> เพื่อแทรกรูปลายเซ็นหรือรูปภาพประกอบลงบนเอกสาร</li>
+            <li><strong>แก้ไขข้อความเดิม (Native Text Edit):</strong> ไปที่เมนู <strong>เครื่องมือ &gt; แก้ไขข้อความ</strong> ระบบจะสแกนตรวจจับบล็อกข้อความเดิมบนหน้า PDF ทั้งหมด สามารถคลิกที่ข้อความใดๆ เพื่อแก้ไขข้อความเดิมได้ทันที — เปลี่ยนฟอนต์ ขนาด สี จัดแนว ขีดเส้นใต้ หรือลบข้อความเดิมทิ้ง เมื่อแก้ไขเสร็จกดปุ่ม <strong>ตกลง</strong> เพื่อยืนยัน แล้วกดปุ่ม <strong>บันทึกการแก้ไข</strong> เพื่อเขียนลงไฟล์จริง · <strong>ในตาราง</strong> กล่องข้อความแยกตามช่องของตัวเอง (ไม่รวมข้ามคอลัมน์) ข้อความที่ขึ้นบรรทัดใหม่ในช่องเดียวกันเป็นกล่องเดียว และถ้าข้อความใหม่ยาวกว่าเดิมเล็กน้อย (เช่น 92 → 100) กล่องจะขยายในช่องนั้นให้เอง ไม่ตัดขึ้นบรรทัดใหม่กลางตัวเลข</li>
+            <li><strong>แก้ไขรูปภาพเดิม (Native Image Edit):</strong> ไปที่เมนู <strong>เครื่องมือ &gt; แก้ไขรูปภาพ</strong> ระบบจะตรวจจับรูปภาพเดิมที่ฝังอยู่ในหน้า PDF สามารถคลิกเลือกรูปภาพเพื่อ <strong>ลากย้ายตำแหน่ง</strong>, <strong>ปรับขนาด</strong>, <strong>แทนที่ด้วยรูปใหม่</strong> (อัปโหลดไฟล์), หรือ <strong>ลบรูปภาพเดิมทิ้ง</strong> (กดปุ่มถังขยะสีแดง หรือกดปุ่ม Delete/Backspace) — ย้าย/ลบแล้วข้อความที่อยู่บนรูปหรือรอบ ๆ ยังอยู่ครบ · รูปที่ใช้ซ้ำหลายหน้า (เช่น โลโก้หัวกระดาษ) ลบ/ย้ายเฉพาะหน้าที่แก้ · รูปที่หมุน/เอียงไว้ เมื่อย้ายจะวางตั้งตรง เมื่อแก้ไขเสร็จกดปุ่ม <strong>ตกลง</strong> เพื่อยืนยัน แล้วกดปุ่ม <strong>บันทึกการแก้ไข</strong> เพื่อเขียนลงไฟล์จริง</li>
+            <li><strong>แก้ไข/ย้าย/ลบ:</strong> เมื่อสร้างข้อความหรือรูปภาพแล้ว คุณสามารถใช้เมาส์คลิกเพื่อลากเปลี่ยนตำแหน่ง หรือกดไอคอนถังขยะสีแดงเพื่อลบทิ้ง (หากกำลังพิมพ์ข้อความอยู่ สามารถกดปุ่ม <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">Ctrl + Delete</code> หรือ <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">Cmd + Delete</code> เพื่อลบกล่องข้อความทิ้งได้ทันที)</li>
+            <li><strong>เซ็นเซอร์ข้อมูล (Redact):</strong> คลิกไอคอนรูป <span class="inline-icon"><svg viewBox="0 0 16 16" style="fill: currentColor;"><rect x="2" y="4" width="12" height="8" rx="1" /><path d="M4 6L12 10M12 6L4 10" stroke="white" stroke-width="1.5" /></svg></span> <strong>(กล่องทึบสีดำ)</strong> จากนั้นลากเมาส์คลุมบริเวณข้อความหรือรูปภาพที่เป็นความลับ ระบบจะลบข้อมูลที่ถูกซ่อนออกอย่างถาวรและถมดำทับทันที (ไม่สามารถคัดลอกข้อความด้านล่างได้อีก)</li>
+            <li><strong>การปรับแต่งข้อความเพิ่มเติม:</strong> ใช้งานผ่านแผงควบคุม (Properties Panel) ด้านขวามือ คุณสามารถจัดตำแหน่งข้อความได้ทั้ง <strong>แนวนอน</strong> (ซ้าย/กลาง/ขวา) และ <strong>แนวตั้ง</strong> (ชิดบน/กึ่งกลาง/ชิดล่าง) รวมถึงเลือกสีข้อความจาก <strong>ปุ่มสีวงกลมสำเร็จรูป</strong> หรือเลือกสีแบบกำหนดเองได้อย่างรวดเร็ว</li>
+            <li><strong>การยกเลิกการแก้ไข:</strong> หากกำลังพิมพ์ข้อความ หรือเลือกรูปภาพอยู่ สามารถกดปุ่ม <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">ESC</code> บนคีย์บอร์ดเพื่อยกเลิกและออกจากโหมดแก้ไขได้ทันที</li>
+            <li><strong>การลบและกู้คืน (Undo) ก่อนบันทึก:</strong> เมื่อคุณกดปุ่ม <strong><code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">Delete</code></strong> หรือ <strong><code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">Backspace</code></strong> เพื่อลบรูปภาพหรือข้อความ รูป/ข้อความนั้นจะกลายเป็น <strong>พื้นที่ว่างโปร่งใสทันที</strong> (รอการกดยืนยัน) <br/><span style="padding-left: 1rem; display: inline-block;">💡 <em>หากเผลอลบผิด:</em> คุณสามารถเอาเมาส์ไปชี้ที่พื้นที่ว่างนั้น จะมี <strong>ไอคอนลูกศรย้อนกลับ (Restore) สีแดง</strong> ปรากฏขึ้น สามารถคลิกที่ไอคอนนั้นเพื่อยกเลิกการลบทิ้งและเรียกคืนกลับมาได้ทันที โดยไม่ต้องกดคีย์ลัด Ctrl+Z</span><br/><span style="padding-left: 1rem; display: inline-block;">📌 <em>หลังจากกดปุ่ม "บันทึกการแก้ไข" ไปแล้ว:</em> คุณยังสามารถกด <strong>Ctrl+Z</strong> (หรือ <strong>⌘+Z</strong> บน Mac) เพื่อย้อนกลับการแก้ไขทั้งหมดที่เพิ่งบันทึกไปได้อีกด้วย</span></li>
+        </ul>
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปตัวอย่างการเซ็นเซอร์มาเซฟไว้ที่: public/images/manual/redact.png]</p>
+            <img src="/images/manual/redact.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+
+        <!-- Section 3 -->
+        <h2 id="draw-highlight" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 3. การเน้นข้อความและเครื่องมือเสริม</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ใช้สำหรับตรวจทานเอกสาร เพิ่มกล่องข้อความ หรือตีเส้นกรอบ</p>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li><strong>ไฮไลท์ข้อความ:</strong> (ลากคลุมหลายบรรทัดได้ ได้เป็นไฮไลต์เดียว — คลิกเพื่อเปลี่ยนสี/ลบ) คลิกไอคอนรูป <span class="inline-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M9.5 2.5l4 4-6 6-4.2.8.8-4.2 5.4-6.6Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" /><path d="M2 14h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg></span> <strong>(ปากกาเน้นข้อความ)</strong> จากนั้นใช้เมาส์ลากคลุมข้อความเพื่อเน้นสี</li>
+            <li><strong>กล่องข้อความ:</strong> คลิกไอคอนรูป <span class="inline-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3.5h10M8 3.5V13M6 13h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg></span> <strong>(ตัว T)</strong> แล้วคลิกลงบนเอกสารเพื่อพิมพ์ข้อความ (สามารถลากย้ายตำแหน่งได้) — กล่องที่คลิกวางจะ<strong>สูงพอดีกับข้อความ</strong>ให้อัตโนมัติ ถ้าต้องการกล่องใหญ่ขึ้นลากที่จุดจับขอบกล่องขยายต่อได้ หรือลากเมาส์กำหนดขนาดตั้งแต่ตอนวาง · แก้ข้อความหรือขยายตัวอักษรจนล้นกล่อง กล่องจะขยายลงให้เอง</li>
+            <li><strong>กรอบสี่เหลี่ยม:</strong> คลิกไอคอนรูป <span class="inline-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2.5" y="3.5" width="11" height="9" rx="1" stroke="currentColor" stroke-width="1.3" /></svg></span> <strong>(สี่เหลี่ยม)</strong> ใช้สำหรับตีกรอบเน้นย้ำจุดที่สำคัญ</li>
+            <li><strong>ไฟล์ที่ดาวน์โหลด/พิมพ์:</strong> ข้อความในกล่องข้อความและกรอบสี่เหลี่ยมถูกบันทึกเป็นภาพของ annotation ในไฟล์ (ฝังฟอนต์ไทย) เปิดในโปรแกรมอ่าน PDF ใดก็เห็นเหมือนบนจอ · ต้องการให้เป็นเนื้อหน้าถาวร (แก้ต่อไม่ได้) ใช้ <a class="text-sky-700 underline" href="#flatten-pdf">รวมเลเยอร์</a></li>
+            <li><strong>เพิ่มโน้ต:</strong> คลิกไอคอนรูป <span class="inline-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 3h10v7.5H7.5L4.5 13v-2.5H3V3Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" /></svg></span> <strong>(กล่องคำพูด)</strong> เพื่อทิ้งคอมเมนต์หรือข้อความเตือนความจำ</li>
+            <li><strong>คัดลอกข้อความ (Drag to Copy):</strong> ขณะที่ใช้เครื่องมือ <span class="inline-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 2l9 4.6-3.6 1-1 3.6L3 2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" /></svg></span> <strong>(เมาส์ Pointer)</strong> คุณสามารถคลิกซ้ายค้างไว้แล้ว <strong>"ลากคลุม"</strong> เป็นสี่เหลี่ยมเหนือข้อความที่ต้องการบนหน้าเอกสาร ระบบจะทำการดึงข้อความเหล่านั้นและคัดลอกลง Clipboard ให้อัตโนมัติ (นำไปวางในโปรแกรมอื่นได้ทันที)</li>
+        </ul>
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปหน้าจอ Toolbar ด้านบนมาเซฟไว้ที่: public/images/manual/toolbar.png]</p>
+            <img src="/images/manual/toolbar.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+
+        <!-- Section 4 -->
+        <h2 id="page-manage" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 4. การจัดการหน้ากระดาษ</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">คุณสามารถจัดการลำดับหน้ากระดาษได้อย่างอิสระผ่านแผง <strong>"ภาพตัวอย่าง" (Thumbnails)</strong> ด้านซ้ายมือ รองรับการเลือกหลายหน้าพร้อมกันด้วย <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + คลิก</kbd> (หรือ <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + คลิก</kbd> บน Mac) เพื่อเลือกทีละหน้า หรือ <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Shift + คลิก</kbd> เพื่อเลือกเป็นช่วง จากนั้นสามารถสลับหน้า, หมุน, ลบ หรือส่งออกหลายหน้าพร้อมกันได้ทันที</p>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li><strong>สลับหน้า:</strong> คลิกค้างที่รูปตัวอย่างหน้ากระดาษ แล้วลากขึ้น/ลง เพื่อจัดเรียงลำดับใหม่ หรือคลิกขวาแล้วเลือกเมนู <em>เลื่อนหน้าขึ้น</em> / <em>เลื่อนหน้าลง</em> — หน้าที่เลือกยังถูกเลือกอยู่หลังย้าย จึงกดเลื่อนซ้ำต่อได้เลย</li>
+            <li><strong>หมุนหน้า:</strong> คลิกขวาที่รูปตัวอย่างหน้ากระดาษ แล้วเลือกเมนู <em>หมุนขวา ↻ (90°)</em> หรือ <em>หมุนซ้าย ↺ (-90°)</em></li>
+            <li><strong>ลบหน้า:</strong> คลิกขวาที่รูปตัวอย่างหน้ากระดาษ แล้วเลือกเมนู <em style="color: var(--color-danger, #ef4444);">ลบหน้านี้ทิ้ง</em> (หรือกดปุ่ม Delete บนคีย์บอร์ด) — เอกสารต้องเหลืออย่างน้อย 1 หน้า · บุ๊กมาร์กที่ชี้หน้าที่ลบถูกลบไปด้วย · เอกสารที่ลงลายเซ็นดิจิทัลแล้วลบ/ย้ายหน้าไม่ได้ (ลายเซ็นจะเสีย)</li>
+            <li><strong>ส่งออกหน้าที่เลือก:</strong> คลิกขวาที่หน้าที่ต้องการ แล้วเลือก <em>ส่งออกหน้าที่เลือกเป็นไฟล์ใหม่</em> (ถ้าต้องการกำหนดลำดับเองหรือแยกไฟล์ละหน้า ใช้ <a class="text-sky-700 underline" href="#extract-pages">แยกหน้าเอกสาร</a>)</li>
+            <li><strong>ใช้งานบนหน้าจอสัมผัส (Mobile / Tablet / iPad):</strong> สามารถ <strong>แตะค้าง (Long-press)</strong> บนรูปตัวอย่างหน้ากระดาษเพื่อเปิดเมนูลัด (หมุน/ลบ/เลื่อน) ได้ทันที · <strong>เลือกหลายหน้า:</strong> แตะค้าง › <em>☑ เลือกหลายหน้า</em> แล้วแตะหน้าอื่นเพื่อเลือก/เลิกเลือก (มีปุ่ม <em>ทั้งหมด</em>) จากนั้นกด <em>จัดการ ▾</em> เพื่อหมุน/ลบ/เลื่อน/ส่งออกทุกหน้าที่เลือกพร้อมกัน กด <em>เสร็จ</em> เมื่อเลิกเลือก (บนคอมพิวเตอร์ใช้ Ctrl/Shift + คลิก หรือคลิกขวา › เลือกหลายหน้า ได้เช่นกัน) และสามารถใช้สองนิ้วกาง-หุบ (Pinch-to-zoom) บนหน้ากระดาษเพื่อย่อ/ขยายหน้าเอกสารได้อย่างสะดวก</li>
+        </ol>
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปหน้าจอเมนูคลิกขวามาเซฟไว้ที่: public/images/manual/page_menu.png]</p>
+            <img src="/images/manual/page_menu.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+
+        <!-- Section 5 -->
+        <h2 id="merge-pdf" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 5. การรวมไฟล์ (Merge PDF)</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ฟีเจอร์สำหรับนำไฟล์ PDF หลายๆ ไฟล์มาต่อกันเป็นไฟล์เดียว</p>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>ที่หน้าเอกสารของฉัน กดการ์ด <strong>รวมไฟล์ PDF</strong> ในเครื่องมือด่วน</li>
+            <li>เพิ่มไฟล์ได้ 2 ทาง (ผสมกันได้): <strong>+ จากเครื่อง</strong> (เลือกได้หลายไฟล์ หรือลากไฟล์ PDF มาวางในหน้าต่างบนคอมพิวเตอร์) และ <strong>+ จากเอกสารของฉัน</strong> (ติ๊กเลือกไฟล์ที่อยู่ในระบบแล้ว ไม่ต้องอัปโหลดซ้ำ)</li>
+            <li>จัดลำดับด้วยปุ่ม <strong>↑</strong> / <strong>↓</strong> และกด <strong>✕</strong> เพื่อเอาไฟล์ออก — ด้านล่างแสดงจำนวนไฟล์และขนาดรวม</li>
+            <li>กด <strong>รวม N ไฟล์</strong> — ได้ไฟล์ใหม่ชื่อ <em>"&lt;ชื่อไฟล์แรก&gt; (รวม N ไฟล์).pdf"</em> ในเอกสารของฉัน (ไฟล์เดิมไม่เปลี่ยน) แล้วเปิดให้แก้ไขต่อ · บุ๊กมาร์กแบ่งตามชื่อไฟล์เดิม กดไปยังจุดเริ่มของแต่ละไฟล์ได้ (บุ๊กมาร์กเดิมของแต่ละไฟล์ยังอยู่)</li>
+            <li>ข้อจำกัด: รวมได้ครั้งละไม่เกิน 30 ไฟล์ · ไฟล์จากเครื่องรวมกันไม่เกิน 55 MB (ไฟล์ใหญ่ให้อัปโหลดเข้าเอกสารของฉันก่อนแล้วเลือกจากเอกสารของฉัน) · ไฟล์ที่มีรหัสผ่านต้องเอารหัสผ่านออกก่อน (ระบบบอกชื่อไฟล์ที่มีปัญหา)</li>
+        </ol>
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปหน้าต่างรวมไฟล์มาเซฟไว้ที่: public/images/manual/merge_pdf.png]</p>
+            <img src="/images/manual/merge_pdf.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+
+        <!-- Section 6 -->
+        <h2 id="watermark-pass" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 6. การใส่ลายน้ำ และตั้งรหัสผ่าน</h2>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li><strong>ใส่ลายน้ำ (Watermark):</strong> ไปที่เมนู <strong>เครื่องมือ > ใส่ลายน้ำ...</strong> พิมพ์ข้อความที่ต้องการ (เช่น "เอกสารลับที่สุด") หรือกดข้อความสำเร็จรูป (สำเนาถูกต้อง, ลับ, DRAFT ...) เลือกสี ขนาด ความทึบ และมุมเอียง — ดูตัวอย่างบนกระดาษจำลองก่อนกดได้ ระบบจะประทับลายน้ำกึ่งกลางทุกหน้าให้อัตโนมัติ (หน้าที่หมุนไว้ก็ตั้งตรงตามที่เห็น · ข้อความยาวหรือหน้าเล็กจะย่อให้พอดีหน้า · ข้อความยาวได้ 200 ตัวอักษร)
+                <br><span class="text-sm">หรือ<strong>ไม่ต้องเปิดไฟล์</strong>: ที่หน้าเอกสารของฉัน กดการ์ด <strong>ใส่ลายน้ำ</strong> ในเครื่องมือด่วน → เลือกไฟล์ → กรอกข้อความ ระบบจะบันทึกเป็นไฟล์ใหม่ชื่อ "ชื่อเดิม (ลายน้ำ).pdf" (ถ้ามีชื่อนี้แล้วจะเป็น "(ลายน้ำ) (2).pdf") โดยไฟล์เดิมไม่ถูกแก้</span></li>
+            <li><strong>ตั้งรหัสผ่าน (Encryption):</strong> ไปที่เมนู <strong>ไฟล์ > เข้ารหัส PDF...</strong> (หรือเมนู ☰ ของไฟล์ที่หน้าเอกสารของฉัน) กรอกรหัสผ่าน 2 ครั้ง แล้วเลือกวิธีเข้ารหัส — ไฟล์ที่ได้เป็น <strong>PDF 1.7</strong> เสมอ ผู้ที่ไม่มีรหัสผ่านจะเปิดอ่านไฟล์ไม่ได้
+                <ul class="list-disc list-inside ml-6 mt-1 space-y-1 text-base">
+                    <li><strong>AES-256 (แนะนำ):</strong> ปลอดภัยที่สุด เปิดได้ใน Adobe Acrobat/Reader ตั้งแต่ปี 2010, Chrome, Edge, Safari, Preview ของ Mac/iPhone และแอปมือถือทั่วไป · ใช้รหัสผ่านภาษาไทยได้</li>
+                    <li><strong>AES-128 (เข้ากันได้กับโปรแกรมรุ่นเก่า):</strong> ใช้เมื่อผู้รับใช้โปรแกรมอ่าน PDF รุ่นเก่ามาก · รหัสผ่านต้องเป็นตัวอังกฤษ ตัวเลข หรือสัญลักษณ์ ไม่เกิน 32 ตัว</li>
+                    <li><strong>ไฟล์ PDF/A</strong> (มาตรฐานเอกสารเก็บถาวร) ห้ามเข้ารหัสตามมาตรฐาน — ระบบจะเตือนก่อน ถ้าเข้ารหัสต่อ ไฟล์ที่ได้จะไม่เป็น PDF/A อีก (ระบบที่รับเฉพาะ PDF/A อาจไม่รับ) · บันทึกสำเนาเป็น PDF/A ต้องลบรหัสผ่านก่อน</li>
+                    <li>บันทึกสำเนาเป็น PDF 1.4–1.6 ขณะมีรหัสผ่าน: เข้ารหัสได้แบบเก่า (RC4/AES-128) และใช้รหัสผ่านภาษาไทยไม่ได้ — แนะนำ PDF 1.7</li>
+                </ul></li>
+            <li><strong>ลบรหัสผ่าน (Decrypt):</strong> หากเปิดเอกสารที่มีรหัสผ่านป้องกันอยู่ เมนูจะเปลี่ยนเป็น <strong>ไฟล์ &gt; ลบรหัสผ่าน...</strong> อัตโนมัติ เพื่อให้คุณสามารถถอดรหัสผ่านออกจากไฟล์ได้อย่างถาวร</li>
+        </ul>
+        <figure class="my-6">
+            <img src="/images/manual/encrypt.png" alt="หน้าต่างเข้ารหัส PDF" width="336" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-center text-sm text-slate-500 mt-2">หน้าต่างเข้ารหัส PDF — เลือก AES-256 (แนะนำ) หรือ AES-128 สำหรับโปรแกรมรุ่นเก่า</figcaption>
+        </figure>
+        <figure class="my-6">
+            <img src="/images/manual/watermark.png" alt="หน้าต่างใส่ลายน้ำ" width="432" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-center text-sm text-slate-500 mt-2">หน้าต่างใส่ลายน้ำ — ข้อความสำเร็จรูป สี มุมเอียง และตัวอย่างบนกระดาษ A4 (บนมือถือ ตัวอย่างอยู่ด้านล่าง)</figcaption>
+        </figure>
+        <div class="my-6 bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+            <h4 style="margin-top: 0; margin-bottom: 10px;">💡 ตัวอย่างการใช้งาน:</h4>
+            <div class="p-4 bg-white border border-slate-200 rounded-xl text-slate-600 text-sm">
+                <strong>กรณีที่ 1: เอกสารนำเสนองานก่อนอนุมัติ</strong><br/>
+                คุณสามารถใส่ลายน้ำคำว่า <code class="text-sky-600">"DRAFT - ห้ามเผยแพร่"</code> สีแดง โปร่งใส 50% วางพาดเอียง 45 องศา ระบบจะแสตมป์ลงไปตรงกลางทุกหน้าทันที
+                <br/><br/>
+                <strong>กรณีที่ 2: การส่งสลิปเงินเดือน (Payslip)</strong><br/>
+                คุณสามารถตั้งรหัสผ่านเป็น <code class="text-sky-600">วันเดือนปีเกิดพนักงาน</code> เพื่อป้องกันไม่ให้บุคคลอื่นเปิดอ่านไฟล์ PDF ได้ หากไม่มีรหัสผ่านที่ถูกต้อง
+            </div>
+        </div>
+
+
+        <h3 id="page-numbers" class="text-xl font-semibold text-slate-800 mt-10 mb-4 scroll-mt-24">6.1 ใส่เลขหน้า</h3>
+        <p class="text-slate-700 leading-relaxed mb-4">เลขหน้าเป็นข้อความจริงในไฟล์ (ค้นหาและคัดลอกได้) เปิดได้ 2 ทาง: หน้าแก้ไข › เมนู <strong>แทรก › เลขหน้า...</strong> หรือหน้าเอกสารของฉัน › เครื่องมือด่วน <strong>ใส่เลขหน้า</strong> (ได้ไฟล์ใหม่ ไฟล์เดิมไม่ถูกแก้)</p>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li><strong>รูปแบบ:</strong> <em>1, 2, 3 …</em> หรือ <em>1/N</em> (มีจำนวนหน้าทั้งหมด) · ตัวคั่นพิมพ์เองได้ เช่น <code>/</code> หรือ <code> จาก </code> · เติมข้อความหน้า/หลังเลขได้ เช่น <em>"หน้า "</em> → "หน้า 1 จาก 9"</li>
+            <li><strong>เลขไทย:</strong> กด <em>เลขไทย ๑ ๒ ๓</em> → "๑/๙"</li>
+            <li><strong>เริ่มใส่ที่หน้า:</strong> เช่น เริ่มหน้า 2 (หน้าปกไม่มีเลข) — หน้า 2 จะขึ้นเลข <strong>1</strong> และจำนวนหน้าทั้งหมดนับเฉพาะหน้าที่ใส่เลข (ไฟล์ 10 หน้า → 1/9 … 9/9) · เปลี่ยนเลขเริ่มนับ หรือหยุดก่อนหน้าสุดท้ายได้</li>
+            <li><strong>ตำแหน่ง:</strong> ด้านบน/ล่าง × ซ้าย/กลาง/ขวา ปรับขนาด ระยะขอบ และสีได้</li>
+            <li><strong>พิมพ์สองหน้า (duplex):</strong> เลือกซ้ายหรือขวาแล้วติ๊ก <em>หน้าคู่วางฝั่งตรงข้าม</em> — หน้าคี่อยู่ฝั่งที่เลือก หน้าคู่สลับข้าง (นับตามลำดับหน้าจริงในไฟล์ จึงตรงกับแผ่นที่พิมพ์ออกมา)</li>
+            <li>ตัวอย่างในหน้าต่างแสดงหน้าแรกที่ใส่เลข 2 หน้า · ค่าที่ใส่ไม่ถูกต้อง (เช่น หน้าเริ่มเกินจำนวนหน้า) จะแจ้งเหตุผลและกดใส่ไม่ได้ · ใส่ผิด กด <em>เลิกทำ</em> ได้</li>
+        </ul>
+
+        <h3 id="barcode" class="text-xl font-semibold text-slate-800 mt-10 mb-4 scroll-mt-24">6.2 แทรกบาร์โค้ด / QR Code</h3>
+        <p class="text-slate-700 leading-relaxed mb-4">หน้าแก้ไข › เมนู <strong>แทรก › บาร์โค้ด / QR Code...</strong></p>
+        <ol class="space-y-3 text-slate-700 leading-relaxed list-decimal pl-6 mb-4">
+            <li>เลือก<strong>ประเภท</strong> แล้วกรอก<strong>ข้อมูล</strong> — ระบบตรวจข้อมูลและแสดงตัวอย่างจริงทันที ถ้าไม่ถูกต้องจะบอกเหตุผล และกด <em>ตกลง</em> ไม่ได้</li>
+            <li>กด <strong>ตกลง</strong> → บาร์โค้ดวางกลางหน้า ลากไปตำแหน่งที่ต้องการ และย่อ/ขยายที่มุม (คงสัดส่วนให้เอง — บีบหรือยืดแล้วสแกนไม่ติด)</li>
+            <li>กด <strong>ตกลง</strong> ใต้กล่อง แล้วกด <strong>ยืนยัน</strong> บนแถบเครื่องมือ — บันทึกเป็นภาพเวกเตอร์ คมทุกขนาด พิมพ์แล้วสแกนได้</li>
+        </ol>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li><strong>ใส่ภาษาไทยได้:</strong> QR Code, Data Matrix, PDF417, Aztec (เข้ารหัส UTF-8 พร้อมตัวบอกให้เครื่องอ่านรู้ว่าเป็นภาษาไทย) · QR เลือกระดับแก้ไขข้อผิดพลาด L/M/Q/H ได้ (สูงขึ้น = สแกนได้แม้เปื้อน/เสียหายบางส่วน แต่ลายถี่ขึ้น)</li>
+            <li><strong>1 มิติ (อังกฤษ/ตัวเลข):</strong> Code 128, Code 39, EAN-13, EAN-8, UPC-A, ITF, Codabar — EAN/UPC พิมพ์ไม่ครบหลักสุดท้าย ระบบเติมเลขตรวจสอบให้ (แสดง "ข้อมูลจริง") ถ้าพิมพ์ครบแต่เลขตรวจสอบผิดจะแจ้ง · เลือกแสดงตัวเลขใต้บาร์โค้ดได้</li>
+            <li><strong>สี:</strong> เลือกสีเส้น/พื้นได้ แต่เส้นต้องเข้มกว่าพื้นและตัดกันพอ ไม่งั้นระบบเตือนว่าสแกนไม่ติด</li>
+        </ul>
+
+        <!-- Section 7 -->
+        <h2 id="electronic-sign" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 7. ลายเซ็นอิเล็กทรอนิกส์ (Electronic Signature)</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">การแปะลายเซ็นแบบรูปภาพลงบนเอกสาร (เหมือนการเซ็นชื่อบนกระดาษ) สามารถวาดด้วยเมาส์ พิมพ์ชื่อ หรืออัปโหลดรูปลายเซ็นที่มีอยู่แล้วได้เลย</p>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>ไปที่เมนู <strong>ลายเซ็นดิจิทัล > ลายเซ็นอิเล็กทรอนิกส์...</strong></li>
+            <li>เลือกวิธีสร้างลายเซ็น:
+                <ul class="list-disc list-inside ml-6 mt-2 space-y-1 text-base">
+                    <li><strong>เซ็นสด:</strong> เซ็นด้วยนิ้ว ปากกา (Apple Pencil รับแรงกด) หรือเมาส์ เหนือเส้นบอกตำแหน่ง — กด <em>↶ เลิกทำ</em> ลบทีละเส้น หรือ <em>ล้าง</em> เพื่อเริ่มใหม่ บนมือถือหน้าต่างจะเต็มจอ และ<strong>หมุนจอเป็นแนวนอน</strong>ได้เพื่อให้มีพื้นที่เซ็นกว้างขึ้น</li>
+                    <li><strong>พิมพ์:</strong> พิมพ์ชื่อ แล้วเลือกแบบอักษร (ลายมือ / ไทย / ทางการ)</li>
+                    <li><strong>รูปภาพ:</strong> เลือกรูปหรือถ่ายรูปลายเซ็นบนกระดาษขาว ระบบลบพื้นหลังสีขาวและตัดขอบให้อัตโนมัติ</li>
+                </ul>
+                เลือกสีปากกาได้ (ดำ / น้ำเงิน / แดง หรือกด <em>+</em> เลือกสีอื่น) — ระบบตัดขอบว่างรอบลายเซ็นให้เอง
+            </li>
+            <li>เมื่อได้ลายเซ็นที่พอใจ ให้กดปุ่ม <strong>นำไปใช้</strong></li>
+            <li>คลิกจุดที่ต้องการประทับลายเซ็นบนเอกสาร (สามารถใช้เมาส์ลากปรับขนาดหรือย้ายตำแหน่งได้เหมือนรูปภาพทั่วไป)</li>
+        </ol>
+        <figure class="my-6">
+            <img src="/images/manual/electronic_sign.png" alt="หน้าต่างลายเซ็นอิเล็กทรอนิกส์" width="380" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-center text-sm text-slate-500 mt-2">ลายเซ็นอิเล็กทรอนิกส์ — เซ็นสด / พิมพ์ชื่อ / รูปภาพ</figcaption>
+        </figure>
+
+        <!-- Section 8 -->
+        <h2 id="digital-sign" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 8. การเซ็นลายเซ็นดิจิทัล (Digital Signature)</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">การเซ็นลายเซ็นดิจิทัลไม่ใช่แค่การแปะรูปภาพ แต่เป็นการฝังใบรับรอง (Certificate) เพื่อยืนยันตัวตนทางกฎหมาย และป้องกันการแก้ไขเอกสาร</p>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>ไปที่เมนู <strong>ลายเซ็นดิจิทัล > เซ็นดิจิทัลรับรอง...</strong></li>
+            <li>แนบไฟล์ใบรับรอง (<code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">.p12</code> หรือ <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">.pfx</code>) และกรอกรหัสผ่านของใบรับรอง — เมื่อกด <strong>ตกลง</strong> ระบบตรวจใบรับรองก่อนทันที: รหัสผ่านผิด ใบรับรองหมดอายุ/ยังไม่ถึงวันเริ่มใช้ หรือใบรับรองที่ไม่ได้อนุญาตให้ลงนาม จะแจ้งในหน้าต่างนี้ (แก้แล้วกดใหม่ได้เลย) · ใบรับรองที่สร้างเอง (self-signed) หรือใกล้หมดอายุจะมีหมายเหตุที่แถบสถานะ</li>
+            <li>กรอกเหตุผลในการเซ็น (เช่น "อนุมัติเอกสาร")</li>
+            <li>(ไม่บังคับ) <strong>รูปลายเซ็น:</strong> เลือก <em>เซ็นสด</em>, <em>พิมพ์</em> หรือ <em>รูปภาพ</em> ได้เหมือนลายเซ็นอิเล็กทรอนิกส์ — หรือ <em>ไม่ใส่รูป</em> ให้แสดงเป็นข้อความชื่อผู้ลงนามและเวลา</li>
+            <li>กรอบตำแหน่งลายเซ็นจะปรากฏที่มุมล่างขวาของหน้า — ลากย้าย/ย่อ/ขยายไปยังจุดที่ต้องการ (เปลี่ยนหน้าได้ก่อนกด)</li>
+            <li>กดปุ่ม <strong>ตกลง</strong> ที่กรอบ — ถ้าเซ็นไม่สำเร็จ กรอบยังอยู่ ลองใหม่หรือกดยกเลิกได้</li>
+            <li>เอกสารที่ตั้งรหัสผ่านไว้ ต้อง<strong>ลบรหัสผ่านก่อน</strong> (การเข้ารหัสหลังเซ็นทำให้ลายเซ็นใช้ไม่ได้) · หน้าที่หมุนไว้ (เช่น ไฟล์สแกนแนวนอน) ลายเซ็นอยู่ตรงตามที่วางและตั้งตรงตามที่เห็นบนจอ</li>
+        </ol>
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปหน้าต่าง Digital Signature มาเซฟไว้ที่: public/images/manual/digital_sign.png]</p>
+            <img src="/images/manual/digital_sign.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+        <div class="my-8 bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-xl text-amber-800 shadow-sm leading-relaxed">
+            <strong>⚠️ ข้อควรระวัง:</strong> เมื่อประทับลายเซ็นดิจิทัลแล้ว หากมีการนำไฟล์ไปแก้ไขด้วยโปรแกรมอื่น ลายเซ็นจะแจ้งเตือนว่าเอกสารโดนดัดแปลง (Invalidated) ทันที
+        </div>
+        <div class="my-6 bg-sky-50 border border-sky-200 p-5 rounded-2xl text-sky-900 shadow-sm leading-relaxed">
+            <strong>💡 ต้องการให้หลายคนเซ็นเอกสารเดียวกัน?</strong> ใช้ <a class="underline" href="#signing-send">ส่งเอกสารให้ลงนาม</a> แทน ระบบจะสร้างช่องลายเซ็นของทุกคนไว้ล่วงหน้า ลายเซ็นของแต่ละคนจึงไม่ทำให้ลายเซ็นก่อนหน้าเสีย<br><br>
+            <strong>🛡️ การตรวจสอบความน่าเชื่อถือ (Signature Verification):</strong> คุณสามารถตรวจสอบสถานะลายเซ็นดิจิทัล ผู้ลงนาม วันที่เซ็น วันหมดอายุของใบรับรอง และการรับรองโดย Trusted Root CA ได้ตลอดเวลาผ่านเมนู <strong>ไฟล์ &gt; คุณสมบัติเอกสาร...</strong>
+        </div>
+
+        <!-- Section 9 -->
+        <h2 id="auto-gen" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 9. สร้างเอกสารอัตโนมัติ (Auto-Gen / Mail Merge)</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ฟีเจอร์ทรงพลังสำหรับสร้างเอกสารจำนวนมากจาก Template (เช่น ใบเสร็จรับเงิน, สัญญา) โดยดึงข้อมูลจากไฟล์ Excel หรือ CSV มาหยอดลงในช่องว่างอัตโนมัติ</p>
+        
+        <div id="auto-gen-samples" class="my-8 bg-sky-50 border border-sky-200 p-6 rounded-2xl shadow-sm scroll-mt-24">
+            <h4 class="text-lg font-semibold text-slate-800 mb-2">📥 ดาวน์โหลดไฟล์ตัวอย่าง</h4>
+            <p class="text-slate-600 mb-4">ลองใช้งานได้ทันที: ดาวน์โหลด Template คู่กับไฟล์ Data ของชุดเดียวกัน แล้วอัปโหลดทั้งสองไฟล์ในขั้นตอนที่ 3 — หรือเปิดไฟล์ Word ดูวิธีเขียนตัวแปรแล้วแก้เป็นเอกสารของคุณเอง</p>
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div class="bg-white border border-slate-200 rounded-xl p-4">
+                    <p class="font-semibold text-slate-800 mb-1">ชุดที่ 1: หนังสือทวงถามหนี้ (ข้อมูลแบบตาราง)</p>
+                    <p class="text-sm text-slate-500 mb-3">ตัวแปรธรรมดา <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{{ customer_name }}</code> <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{{ invoice_no }}</code> <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{{ total_amount }}</code> — ข้อมูลหนึ่งแถว = เอกสารหนึ่งฉบับ</p>
+                    <ul class="space-y-1.5 text-sm">
+                        <li><a class="text-sky-600 font-medium hover:underline" href="/api/autogen/samples/template_flat.docx" download>📄 Template: template_flat.docx</a></li>
+                        <li><a class="text-sky-600 font-medium hover:underline" href="/api/autogen/samples/data_flat.xlsx" download>📊 Data (Excel): data_flat.xlsx</a></li>
+                        <li><a class="text-sky-600 font-medium hover:underline" href="/api/autogen/samples/data_flat.csv" download>📊 Data (CSV): data_flat.csv</a></li>
+                    </ul>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl p-4">
+                    <p class="font-semibold text-slate-800 mb-1">ชุดที่ 2: ใบแจ้งหนี้พร้อมตารางรายการ (JSON)</p>
+                    <p class="text-sm text-slate-500 mb-3">วนลูปสร้างแถวตารางด้วย <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{%tr for p in purchases %}</code> จากรายการย่อยในไฟล์ JSON (รายการสินค้า และประวัติการชำระเงิน)</p>
+                    <ul class="space-y-1.5 text-sm">
+                        <li><a class="text-sky-600 font-medium hover:underline" href="/api/autogen/samples/template.docx" download>📄 Template: template.docx</a></li>
+                        <li><a class="text-sky-600 font-medium hover:underline" href="/api/autogen/samples/data.json" download>🧾 Data (JSON): data.json</a></li>
+                    </ul>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl p-4 sm:col-span-2">
+                    <p class="font-semibold text-slate-800 mb-1">ชุดที่ 3: บัตรพนักงานพร้อม QR Code และบาร์โค้ด</p>
+                    <p class="text-sm text-slate-500 mb-3">QR มุมขวาเป็น<strong>รูปตัวแทน</strong> (Alt Text <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{{ qr(profile_url) }}</code>) · บาร์โค้ด <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{{ barcode("code128", emp_id, 60) }}</code> และ QR ข้อความภาษาไทยพิมพ์ในบรรทัด · คนที่ 4 ไม่มีลิงก์ → ไม่มี QR มุมขวา (ดู <a class="underline" href="#auto-gen-barcode">วิธีใส่ QR/บาร์โค้ด</a>)</p>
+                    <ul class="space-y-1.5 text-sm sm:flex sm:gap-6 sm:space-y-0">
+                        <li><a class="text-sky-600 font-medium hover:underline" href="/api/autogen/samples/template_qr.docx" download>📄 Template: template_qr.docx</a></li>
+                        <li><a class="text-sky-600 font-medium hover:underline" href="/api/autogen/samples/data_qr.xlsx" download>📊 Data (Excel): data_qr.xlsx</a></li>
+                        <li><a class="text-sky-600 font-medium hover:underline" href="/api/autogen/samples/data_qr.csv" download>📊 Data (CSV): data_qr.csv</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="text-xl font-semibold text-slate-800 mt-10 mb-4">ขั้นตอนที่ 1: เตรียมไฟล์ Template (Word)</h3>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">สร้างไฟล์ <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">.docx</code> และพิมพ์ตัวแปรที่ต้องการให้ระบบแทนค่าโดยใช้ปีกกาคู่ เช่น <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{{customer_name}}</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{{invoice_no}}</code></p>
+        
+        <div class="my-10 bg-slate-50 border border-slate-200 p-6 sm:p-8 rounded-2xl shadow-sm">
+            <h4 style="margin-top: 0; margin-bottom: 10px;">✨ ลูกเล่นขั้นสูง (Advanced Features)</h4>
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ระบบ Auto-Gen ของเราใช้กลไก Template Engine คุณภาพสูง (Jinja2) ทำให้คุณสามารถเขียนตรรกะลงใน Word ได้โดยตรง ไม่ใช่แค่แทนที่คำธรรมดา:</p>
+            
+            <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <li style="margin-bottom: 15px;">
+                    <strong>การตั้งเงื่อนไข (If-Else)</strong> - ซ่อนหรือแสดงข้อความอัตโนมัติตามค่าใน Excel (เช่น คอลัมน์ Score):
+                    <pre class="bg-slate-800 text-sky-100 p-5 rounded-xl border border-slate-700 overflow-x-auto text-sm my-4 font-mono leading-relaxed shadow-inner">{% if Score >= 80 %}
+เกรด A ยอดเยี่ยม! 🌟
+{% elif Score >= 50 %}
+สอบผ่านตามเกณฑ์ปกติ
+{% else %}
+ไม่ผ่านเกณฑ์ กรุณาติดต่ออาจารย์ ❌
+{% endif %}</pre>
+                </li>
+                
+                <li style="margin-bottom: 15px;">
+                    <strong>การคำนวณตัวเลข (Math Operations)</strong> - บวก ลบ คูณ หาร จากค่าใน Excel ได้ทันที (เช่น คอลัมน์ Price):
+                    <pre class="bg-slate-800 text-sky-100 p-5 rounded-xl border border-slate-700 overflow-x-auto text-sm my-4 font-mono leading-relaxed shadow-inner">ราคาสินค้า: {{ Price }} บาท
+ภาษี (7%): {{ Price * 0.07 }} บาท
+รวมทั้งสิ้น: {{ Price + (Price * 0.07) }} บาท</pre>
+                </li>
+
+                <li style="margin-bottom: 15px;">
+                    <strong>การจัดรูปแบบตัวเลข (Number Formatting)</strong> - ใส่ลูกน้ำ (Comma) และทศนิยม 2 ตำแหน่ง:
+                    <pre class="bg-slate-800 text-sky-100 p-5 rounded-xl border border-slate-700 overflow-x-auto text-sm my-4 font-mono leading-relaxed shadow-inner">ยอดรวมทั้งหมด: {{ "{:,.2f}".format(Total_Amount) }} บาท</pre>
+                </li>
+
+                <li style="margin-bottom: 15px;" id="auto-gen-barcode" class="scroll-mt-24">
+                    <strong>QR Code และบาร์โค้ด</strong> - สร้างรูป QR/บาร์โค้ดจากข้อมูลของแต่ละแถว (ภาษาไทยใส่ได้ใน QR, Data Matrix, PDF417, Aztec) ใส่ได้ 2 แบบ:
+                    <p class="mt-3"><em>แบบที่ 1 — พิมพ์ในข้อความ</em> รูปแทรกในบรรทัดตรงตำแหน่งที่พิมพ์ (ในช่องตารางก็ได้) ขนาดเป็นมิลลิเมตร:</p>
+                    <pre class="bg-slate-800 text-sky-100 p-5 rounded-xl border border-slate-700 overflow-x-auto text-sm my-4 font-mono leading-relaxed shadow-inner">{{ qr(link) }}                          QR กว้าง 25 มม. (ค่าเริ่มต้น)
+{{ qr(link, 30) }}                      QR กว้าง 30 มม.
+{{ qr("ชื่อ: " ~ name ~ " โทร: " ~ phone) }}   รวมหลายคอลัมน์ด้วย ~
+{{ barcode("code128", emp_id, 60) }}    Code 128 กว้าง 60 มม. สูงตามสัดส่วน
+{{ barcode("ean13", sku, 40, 20) }}     กำหนดกว้าง × สูง = กรอบ (เติมขอบขาว ไม่บีบภาพ)
+{{ barcode("code39", code, 50, none, false) }}   ไม่แสดงตัวเลขใต้เส้น</pre>
+                    <p><em>แบบที่ 2 — รูปตัวแทน (แนะนำสำหรับงานออกแบบ)</em> แทรกรูปอะไรก็ได้ใน Word จัดขนาด ตำแหน่ง และการตัดข้อความรอบรูปตามต้องการ (ลอยทับพื้นหลัง/มุมหน้าได้) แล้ว <strong>คลิกขวาที่รูป › ดู/แก้ไข Alt Text (ข้อความแสดงแทน)</strong> พิมพ์ <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{{ qr(profile_url) }}</code> หรือ <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{{ barcode("code128", emp_id) }}</code> — ระบบเปลี่ยนเป็นรูปของแต่ละแถวในกรอบเดิมพอดี (คงสัดส่วนบาร์โค้ด เติมขอบให้เต็มกรอบ)</p>
+                    <ul class="list-disc list-inside text-base mt-3 space-y-1">
+                        <li><strong>ประเภท:</strong> <code>qr</code> <code>datamatrix</code> <code>pdf417</code> <code>aztec</code> <code>code128</code> <code>code39</code> <code>ean13</code> <code>ean8</code> <code>upca</code> <code>itf</code> <code>codabar</code> · QR กำหนดระดับแก้ไขข้อผิดพลาดได้ <code>{{ qr(link, 25, "H") }}</code></li>
+                        <li><strong>ข้อมูลว่าง</strong> (บางแถวไม่มีค่า) → ไม่ใส่รูป (รูปตัวแทนถูกเอาออก) · <strong>ข้อมูลผิดรูปแบบ</strong> (เช่น EAN-13 ไม่ใช่ตัวเลข, ยาวเกิน) → แถวนั้นไม่ถูกสร้าง มีไฟล์ <code>error_item_N.txt</code> บอกเหตุผลใน .zip</li>
+                        <li>อย่าตั้งชื่อคอลัมน์ว่า <code>qr</code> หรือ <code>barcode</code> (ชื่อซ้ำกับคำสั่ง) · ตัวเลขยาวใน Excel ให้จัดรูปแบบช่องเป็น <em>ข้อความ</em> ก่อน ไม่งั้น Excel ตัดเป็น 1.23E+12</li>
+                    </ul>
+                </li>
+
+                <li style="margin-bottom: 15px;">
+                    <strong>การสร้างตารางและรายการซ้อน (Loops สำหรับ JSON)</strong> - หากอัปโหลดข้อมูลเป็นไฟล์ JSON คุณสามารถดึงรายการย่อยมาวนลูปสร้างบรรทัดตารางใหม่ หรือสร้าง Bullet Point ได้:
+                    <pre class="bg-slate-800 text-sky-100 p-5 rounded-xl border border-slate-700 overflow-x-auto text-sm my-4 font-mono leading-relaxed shadow-inner">รายการสินค้าที่คุณสั่งซื้อ:
+{% for item in Product_List %}
+   - {{ item.Name }} จำนวน {{ item.Qty }} ชิ้น
+{% endfor %}
+
+// สำหรับทำตาราง ให้พิมพ์คำสั่งข้างล่างในช่องตาราง (ช่องแรก - ช่องสุดท้าย)
+{% tr for item in Product_List %}  ... {{ item.Name }} ... {% endfor %}</pre>
+                </li>
+            </ol>
+
+            <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+                <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปหน้าจอตัวอย่างโค้ดในไฟล์ Word มาเซฟไว้ที่: public/images/manual/array_template.png]</p>
+                <img src="/images/manual/array_template.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+            </div>
+        </div>
+        
+        <h3 class="text-xl font-semibold text-slate-800 mt-10 mb-4">ขั้นตอนที่ 2: เตรียมไฟล์ Data (Excel/CSV/JSON)</h3>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">เตรียมไฟล์ข้อมูลที่มีหัวคอลัมน์ตรงกับชื่อตัวแปรใน Template เช่น คอลัมน์ <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">customer_name</code> และ <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">invoice_no</code> (หากต้องการใช้ข้อมูลแบบ Array แนะนำให้ใช้ไฟล์ประเภท JSON)</p>
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปตัวอย่างไฟล์ Data มาเซฟไว้ที่: public/images/manual/data_file.png]</p>
+            <img src="/images/manual/data_file.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+        
+        <h3 class="text-xl font-semibold text-slate-800 mt-10 mb-4">ขั้นตอนที่ 3: สั่งสร้างเอกสาร</h3>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>ที่หน้าเอกสารของฉัน กดการ์ด <strong>สร้างเอกสารอัตโนมัติ</strong> ในเครื่องมือด่วน</li>
+            <li>เลือกไฟล์ Template (Word) และไฟล์ข้อมูล (Excel/CSV/TXT/JSON) — ยังไม่มีไฟล์? กด <em>ดาวน์โหลดไฟล์ตัวอย่าง</em> ในหน้าต่าง หรือใช้<a class="text-sky-600 hover:underline" href="#auto-gen-samples">ไฟล์ตัวอย่างด้านบน</a></li>
+            <li>ตรวจ <strong>ตัวอย่างข้อมูล</strong> 3 แถวแรก — ระบบบอกให้ด้วยว่า <em>ตัวแปรใน Template ตัวไหนไม่มีในไฟล์ข้อมูล</em> (มักเป็นชื่อคอลัมน์สะกดไม่ตรง จะแสดงเป็นช่องว่างในเอกสาร) · ไฟล์ CSV/TXT ระบบเดาตัวคั่นคอลัมน์ (, ; Tab |) และภาษา (UTF-8 หรือ Windows-874/TIS-620 จาก Excel รุ่นเก่า) ให้อัตโนมัติ ถ้าภาษาไทยยังอ่านไม่ออกให้เลือกเอง</li>
+            <li>เลือกรูปแบบไฟล์ (Word หรือ PDF) และ <strong>แยกไฟล์</strong> (ดาวน์โหลดเป็น .zip) หรือ <strong>รวมเป็นไฟล์เดียว</strong> (ขึ้นหน้าใหม่ทุกแถว)</li>
+            <li>(ไม่บังคับ) ตั้งชื่อไฟล์ย่อยจากคอลัมน์ เช่น <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">invoice_no customer_name</code> หรือ <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{{ invoice_no }}_{{ customer_name }}</code> — ชื่อซ้ำจะเติม -2, -3 และตัวอักษรที่ใช้ในชื่อไฟล์ไม่ได้ (/ \ : * ? " &lt; &gt; |) จะเปลี่ยนเป็น _</li>
+            <li><strong>(ไม่บังคับ) เข้ารหัสแต่ละไฟล์ด้วยรหัสผ่านจากข้อมูล</strong> — เมื่อเลือก PDF + แยกไฟล์ ติ๊ก <em>"เข้ารหัสไฟล์ PDF แต่ละไฟล์ด้วยรหัสผ่านจากคอลัมน์"</em> แล้วระบุชื่อคอลัมน์ เช่น <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">citizen_id</code> หรือประกอบหลายคอลัมน์ด้วย <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{{ emp_id }}{{ birth_year }}</code> — แต่ละไฟล์จะเปิดได้ด้วยรหัสของแถวนั้น (เหมาะกับสลิปเงินเดือน ใบแจ้งผล) แถวที่ไม่มีค่ารหัสผ่านจะไม่ถูกสร้าง และมีไฟล์ <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">error_item_*.txt</code> แจ้งใน .zip แทน</li>
+            <li>กด <strong>สร้างเอกสาร (N แถว)</strong> — ดาวน์โหลดอัตโนมัติ แล้วหน้าต่างแจ้งจำนวนเอกสารที่สร้าง และจำนวนแถวที่ข้ามเพราะมีปัญหา (รายละเอียดอยู่ในไฟล์ <em>error_item_*.txt</em> ใน .zip)</li>
+            <li>ข้อจำกัด: ครั้งละไม่เกิน <strong>300 แถวเมื่อเป็น PDF</strong> และ 2,000 แถวเมื่อเป็น Word (ข้อมูลมากกว่านี้ให้แบ่งไฟล์) · ไฟล์ละไม่เกิน 20 MB · เวลาเปิดไฟล์ CSV ตัวเลขเป็นข้อความ ถ้าจะคำนวณใน Template ให้ใช้ <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">{{ Price|float * 0.07 }}</code> (ไฟล์ Excel ใช้ได้เลย)</li>
+        </ol>
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปหน้าต่าง Auto-Gen มาเซฟไว้ที่: public/images/manual/auto_gen.png]</p>
+            <img src="/images/manual/auto_gen.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+
+
+        <!-- Section 10 -->
+        <h2 id="compress-pdf" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 10. เครื่องมือลดขนาดไฟล์ (Compress PDF)</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ฟีเจอร์สำหรับบีบอัดไฟล์ PDF ให้มีขนาดเล็กลง เพื่อประหยัดพื้นที่จัดเก็บหรือส่งต่อได้ง่ายขึ้น</p>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>คลิกที่เมนู <strong>เครื่องมือ</strong> > <strong>ลดขนาดไฟล์ (Compress)...</strong> — หรือจากหน้า <strong>เอกสารของฉัน</strong> กดปุ่ม ☰ บนการ์ดไฟล์ > <strong>ลดขนาดไฟล์</strong> (ไม่ต้องเปิดไฟล์ ได้เป็นไฟล์ใหม่ "ชื่อเดิม (ลดขนาด).pdf")</li>
+            <li>เลือกระดับการบีบอัดที่ต้องการ: เล็กสุด (ดูบนจอ), ปานกลาง (eBook) หรือ ใหญ่ (สำหรับพิมพ์)</li>
+            <li>กดปุ่ม <strong>ตกลง</strong> เพื่อเริ่มการบีบอัด — แถบสถานะด้านล่างจะแสดงขนาดก่อน/หลัง เช่น <em>748 KB → 346 KB (−54%)</em></li>
+        </ol>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base mb-8">
+            <li>ไฮไลต์ กล่องข้อความ กรอบ บันทึกย่อ ลิงก์ บุ๊กมาร์ก และช่องฟอร์ม <strong>ยังอยู่ครบและแก้ไขได้</strong> หลังลดขนาด · ข้อความยังคัดลอก/ค้นหาได้เหมือนเดิม รวมถึงภาษาไทยในไฟล์จาก Word/LibreOffice (ระบบตรวจข้อความทุกหน้าก่อนบันทึก ถ้าวิธีลดขนาดแบบเต็มทำให้ข้อความเปลี่ยน จะลดขนาดเฉพาะรูปแทน)</li>
+            <li>ถ้าบีบแล้วเล็กลง<strong>ไม่ถึง 3%</strong> (เช่น ไฟล์ที่บีบมาแล้ว หรือรูปความละเอียดต่ำอยู่แล้ว) ระบบจะไม่เปลี่ยนไฟล์และแจ้งให้ทราบ — ลองเลือกระดับ <strong>เล็กสุด</strong> ซึ่งลดความละเอียดรูปลงมากที่สุด</li>
+            <li>ระดับ <strong>ปานกลาง/ใหญ่</strong> ลดได้มากเฉพาะไฟล์ที่มีรูปความละเอียดสูง (สแกน/ภาพถ่าย) ส่วนไฟล์ข้อความล้วนจะลดได้จากการฝังฟอนต์เฉพาะตัวอักษรที่ใช้</li>
+            <li>กด <strong>Undo</strong> (Ctrl+Z) เพื่อย้อนกลับเป็นไฟล์ก่อนบีบอัดได้</li>
+        </ul>
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปหน้าต่างลดขนาดไฟล์มาเซฟไว้ที่: public/images/manual/compress_menu.png]</p>
+            <img src="/images/manual/compress_menu.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+        <div class="my-6 bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+            <h4 style="margin-top: 0; margin-bottom: 10px;">💡 ตัวอย่างการใช้งาน:</h4>
+            <div class="p-4 bg-white border border-slate-200 rounded-xl text-slate-600 text-sm">
+                <strong>กรณี: ส่งเอกสารผ่าน LINE หรือแนบอีเมล</strong><br/>
+                บ่อยครั้งที่คุณได้ไฟล์สแกนความละเอียดสูงมากๆ ขนาด 50MB ทำให้ส่งผ่านอีเมลไม่ผ่าน (จำกัด 25MB) คุณสามารถใช้เครื่องมือ Compress เลือกระดับ "เล็กสุด" เพื่อย่อขนาดไฟล์ลงเหลือเพียงไม่กี่ MB ทำให้ส่งได้อย่างราบรื่น
+            </div>
+        </div>
+
+        <!-- Section 11 -->
+        <h2 id="flatten-pdf" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 11. เครื่องมือรวมเลเยอร์ (Flatten PDF)</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ฟีเจอร์สำหรับบดรวมองค์ประกอบทุกอย่างที่ลอยอยู่ (ไฮไลต์, ลายเซ็น, ฟอร์ม) ให้ติดเป็นเนื้อเดียวกับกระดาษ เพื่อป้องกันการแก้ไขในภายหลัง</p>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>คลิกที่เมนู <strong>เครื่องมือ</strong> > <strong>รวมเลเยอร์...</strong></li>
+            <li>อ่านคำเตือนอย่างละเอียด เนื่องจากขั้นตอนนี้จะไม่สามารถแก้ไขกล่องข้อความหรือไฮไลต์ได้อีก (แต่ยังแก้ไขตัวหนังสือหลักได้)</li>
+            <li>กดปุ่ม <strong>ตกลง</strong> เพื่อฝังเลเยอร์ — ถ้าต้องการกลับไปแก้ ใช้ <strong>เลิกทำ</strong> (Ctrl+Z) ได้ก่อนปิดเอกสาร</li>
+        </ol>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base mb-6 pl-2">
+            <li><strong>สิ่งที่ยังอยู่ครบหลังรวมเลเยอร์:</strong> เนื้อหาเดิมของหน้าไม่ถูกเขียนใหม่ — ข้อความเลือก/คัดลอก/ค้นหาได้เหมือนเดิม รวมถึงภาษาไทยในไฟล์จาก Word/LibreOffice (รวมข้อความในกล่องข้อความและค่าที่กรอกในฟอร์ม) · สิ่งที่ซ่อนไว้ไม่ถูกรวมลงหน้า · ลิงก์ไปเว็บไซต์และลิงก์ไปหน้าอื่นในเอกสาร · บุ๊กมาร์ก · หน้าที่หมุนไว้หรือหน้าแนวนอนคงทิศเดิม</li>
+            <li><strong>เอกสารที่มีลายเซ็นดิจิทัล</strong> รวมเลเยอร์ (และลดขนาดไฟล์) ไม่ได้ เพราะต้องเขียนไฟล์ใหม่ทั้งหมด ซึ่งทำให้ลายเซ็นใช้งานไม่ได้ — ให้รวมเลเยอร์ก่อนเซ็น</li>
+        </ul>
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปหน้าต่างรวมเลเยอร์มาเซฟไว้ที่: public/images/manual/flatten_menu.png]</p>
+            <img src="/images/manual/flatten_menu.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+        <div class="my-6 bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+            <h4 style="margin-top: 0; margin-bottom: 10px;">💡 ตัวอย่างการใช้งาน:</h4>
+            <div class="p-4 bg-white border border-slate-200 rounded-xl text-slate-600 text-sm">
+                <strong>กรณี: ส่งเอกสารสัญญาที่เซ็นแล้วให้คู่ค้า</strong><br/>
+                หลังจากที่คุณวางรูปภาพลายเซ็น (Electronic Signature) และพิมพ์วันที่กำกับลงไปแล้ว หากส่งไฟล์ PDF ไปทั้งอย่างนั้น คู่ค้าอาจจะคลิกย้ายรูปลายเซ็นของคุณได้ การใช้คำสั่ง <strong>รวมเลเยอร์ (Flatten)</strong> จะทำให้ลายเซ็นและวันที่หลอมรวมเป็นเนื้อเดียวกับกระดาษ ไม่สามารถลากย้ายได้อีกต่อไป เพิ่มความปลอดภัยให้เอกสารสำคัญ
+            </div>
+        </div>
+
+        <!-- Section 12 -->
+        <h2 id="copy-ocr" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 12. การคัดลอกข้อความด้วย AI (Fusion OCR)</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ฟีเจอร์สำหรับแก้ปัญหาการคัดลอกข้อความใน PDF แล้วได้ตัวอักษรภาษาไทยขยะ (ต่างด้าว) หรือสระเพี้ยน ซึ่งเกิดจากการที่ผู้สร้างไฟล์ไม่ได้ฝังฟอนต์มาให้สมบูรณ์ หรือเป็นไฟล์สแกนรูปภาพ โดยระบบจะอ่านข้อความจาก "ภาพ" ของพื้นที่ที่เลือก (OCR) แล้วแปลงเป็นตัวอักษรที่ถูกต้อง</p>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>บนแถบเครื่องมือหลัก ตรวจสอบให้แน่ใจว่าเลือก <strong>ลูกศร (Selection)</strong> อยู่</li>
+            <li>ลากเมาส์เป็นกรอบสี่เหลี่ยมคลุมข้อความที่ต้องการบนหน้า PDF</li>
+            <li>จะมีหน้าต่าง "คัดลอกข้อความ" แสดงข้อความที่ระบบสกัดมาได้ 
+                <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+                    <li>หากข้อความถูกต้อง: สามารถกดปุ่ม <strong>คัดลอก</strong> ได้เลย</li>
+                    <li>หากข้อความเพี้ยน (เป็นต่างด้าว) หรือว่างเปล่า: ให้กดปุ่ม <strong>🤖 ดึงข้อความด้วย AI (OCR)</strong> (ถ้าคุณไม่ได้ตั้ง API key ส่วนตัว ปุ่มชื่อ <strong>🔍 อ่านข้อความจากภาพ (OCR)</strong> — อ่านด้วย OCR บนเซิร์ฟเวอร์)</li>
+                </ul>
+            </li>
+            <li>รอระบบวิเคราะห์ภาพครู่หนึ่ง ข้อความภาษาไทยที่สมบูรณ์จะแสดงขึ้นมาให้ตรวจสอบและแก้ไขก่อนกดปุ่มคัดลอก</li>
+        </ol>
+        
+        <div class="my-6 bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+            <h4 style="margin-top: 0; margin-bottom: 10px;">💡 ตัวอย่างการใช้งาน:</h4>
+            <div class="p-4 bg-white border border-slate-200 rounded-xl text-slate-600 text-sm">
+                <strong>ปัญหาสุดคลาสสิกของคนทำงาน:</strong> คุณได้รับไฟล์ PDF รายงานการประชุมที่ถูกสแกนมาจากเครื่องถ่ายเอกสาร เมื่อคุณใช้เมาส์ลากคลุมเพื่อจะก๊อปปี้ข้อความไปใส่ใน Word ปรากฏว่าก๊อปปี้ไม่ได้ หรือได้ออกมาเป็นตัวหนังสือต่างด้าว 
+                <br/><br/>
+                <strong>ทางแก้:</strong> เพียงลากเมาส์คลุมบริเวณนั้นแล้วกดปุ่ม <strong>"ดึงข้อความด้วย AI"</strong> ระบบจะอ่านข้อความจาก "ภาพ" แล้วแปลงเป็นตัวอักษรภาษาไทยที่ถูกต้องให้คุณคัดลอกไปใช้งานได้ทันที ประหยัดเวลาพิมพ์ใหม่ไปได้มหาศาล!
+            </div>
+        </div>
+
+        <div class="my-10 bg-slate-50 border border-slate-200 p-6 sm:p-8 rounded-2xl shadow-sm">
+            <h4 style="margin-top: 0; margin-bottom: 10px;">🔑 ระบบอ่านข้อความที่ใช้ (Fusion OCR)</h4>
+            <ul class="list-disc list-inside space-y-2 text-sm text-slate-600">
+                <li><strong>ตั้งค่า API Key ส่วนตัวไว้ (หัวข้อ 14 — Gemini / Claude / OpenAI):</strong> ใช้ AI ของผู้ให้บริการที่เลือกอ่านข้อความ — แม่นที่สุดกับลายมือ ตารางซับซ้อน หรือภาพถ่ายไม่ชัด โดยใช้โควต้าจาก API Key ของคุณเอง</li>
+                <li><strong>ไม่ได้ตั้งค่า (หรือ AI ใช้ไม่ได้ชั่วคราว):</strong> ใช้ระบบอ่านข้อความของเซิร์ฟเวอร์ (Tesseract) ที่ปรับมาเพื่อภาษาไทยโดยเฉพาะ — ตัดบรรทัดโดยไม่ทำวรรณยุกต์หาย หมุนภาพที่เอียงให้ตรง ลบเส้นตารางและจุดไข่ปลา แล้วตรวจคำกับพจนานุกรมไทย ไม่มีค่าใช้จ่าย</li>
+                <li>ทั้งสองแบบอาจอ่านผิดได้บางตัว (โดยเฉพาะตัวเลขไทย ๑–๙) — ตรวจและแก้ข้อความในหน้าต่างก่อนกดคัดลอกเสมอ</li>
+            </ul>
+        </div>
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปหน้าต่างคัดลอกด้วย OCR มาเซฟไว้ที่: public/images/manual/ocr_copy.png]</p>
+            <img src="/images/manual/ocr_copy.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+
+        <!-- Section 13 -->
+        <h2 id="quick-tools" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 13. เครื่องมือด่วน (Quick Tools)</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ชุดเครื่องมือลัดที่หน้าแรก (Dashboard) เพื่อให้คุณสามารถจัดการไฟล์ได้อย่างรวดเร็วโดยไม่ต้องเปิดเข้าไปในหน้าแก้ไข (Editor) ได้แก่ <strong>สแกนเอกสาร</strong> (หัวข้อ 13.1 — เฉพาะมือถือ/แท็บเล็ต), <strong>สร้างเอกสารอัตโนมัติ</strong> (หัวข้อ 9), <strong>รวมไฟล์ PDF</strong> (หัวข้อ 5), <strong>ใส่ลายน้ำ</strong> (หัวข้อ 6), <strong>เซ็นเซอร์ด้วยคำค้นหา</strong> (หัวข้อ 16), <strong>ปกปิดข้อมูลส่วนบุคคล</strong> (หัวข้อ 16.1) และ <strong>ติดตั้งฟอนต์</strong> (หัวข้อ 19 — อยู่ท้ายสุดเสมอ) — ใส่ลายน้ำ เซ็นเซอร์ และปกปิดข้อมูล กดแล้วเลือกไฟล์ได้เลย ไม่ต้องเปิดไฟล์ก่อน ส่วนการแปลง PDF เป็น Word ทำจากเมนู ☰ ของแต่ละไฟล์ หรือจากเมนู <strong>เครื่องมือ</strong> ในหน้าแก้ไข (ด้านล่าง — ไฟล์สแกนดูหัวข้อ 13.2)</p>
+        
+        <h3 class="text-xl font-semibold text-slate-800 mt-10 mb-4">ฟีเจอร์: แปลงไฟล์ PDF เป็น Word (พร้อมระบบ AI แก้คำผิด)</h3>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li>ที่หน้าเอกสารของฉัน กดการ์ด <strong>แปลงเป็น Word</strong> ในเครื่องมือด่วนแล้วเลือกไฟล์ หรือกดปุ่ม ☰ ของไฟล์ (หรือคลิกขวา) แล้วเลือก <em>"แปลงเป็น Word (รองรับไฟล์สแกน)"</em> — หรือ<strong>เปิดไฟล์ดูก่อน</strong> แล้วเลือกเมนู <strong>เครื่องมือ &gt; แปลงเป็น Word...</strong> ในหน้าแก้ไข (ระบบบันทึกการแก้ไขล่าสุดทับไฟล์เดิมก่อนแปลง เหมือนตอนดาวน์โหลด/พิมพ์)</li>
+            <li>เลือกรูปแบบการแปลง:
+                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                    <li><strong>แก้ไขข้อความได้อิสระ</strong> — แปลงเป็นย่อหน้าและตาราง ข้อความไหลต่อกันเหมือนเอกสาร Word ทั่วไป AI ช่วยแก้คำไทย (ใช้โควต้า AI) เหมาะกับรายงาน บทความ</li>
+                    <li><strong>รักษาหน้าตาเหมือนต้นฉบับ</strong> — พื้นหลัง รูป และกราฟิกเหมือนเดิม ข้อความแต่ละบรรทัดเป็นกล่องที่แก้ไขได้ (ไม่ใช้โควต้า AI) เหมาะกับไฟล์ที่ออกแบบด้วย Canva/PowerPoint ฟอร์ม ใบงาน · ไฮไลต์และเส้นใต้กลายเป็นรูปแบบของตัวอักษร จึงยาวพอดีกับข้อความแม้เครื่องที่เปิดจะไม่มีฟอนต์เดียวกับต้นฉบับ</li>
+                </ul>
+            </li>
+            <li>ระบบจะแปลงไฟล์และดาวน์โหลด .docx ให้อัตโนมัติ (ใช้เวลาประมาณ 10-30 วินาที) หน้าที่หมุนไว้จะถูกจัดให้ตั้งตรงในไฟล์ Word</li>
+            <li><strong>จุดเด่น (AI Auto-Fix):</strong> ในการแปลงไฟล์ภาษาไทย มักจะเจอปัญหาสระลอยหรือวรรณยุกต์ซ้อนทับกัน (เช่น "ส าหรับ", "จ าเป็น") ระบบจัดเรียงสระ/วรรณยุกต์และซ่อมสระอำให้ทุกไฟล์ก่อน แล้วจึงให้ AI ช่วยแก้คำที่ยังสะกดผิด — ผลจาก AI จะถูกตรวจก่อนใช้ทุกย่อหน้า ถ้า AI แปลภาษา เปลี่ยนตัวเลข/คำภาษาอังกฤษ ตัดหรือเติมข้อความ หรือทำให้คำผิดมากขึ้น ระบบจะไม่ใช้ผลนั้นและคงข้อความที่จัดรูปแล้วไว้แทน · หมดโควต้า AI ก็ยังได้ข้อความที่จัดรูปแล้ว</li>
+            <li><strong>คงรูปแบบตัวอักษรเดิม:</strong> ตัวหนา ตัวเอียง ขีดเส้นใต้ สี ไฮไลต์ และขนาดอักษรของแต่ละคำคงอยู่ตามต้นฉบับหลังแก้คำไทย (เช่น "<strong>หมายเหตุ:</strong>" ตัวหนาตามด้วยข้อความปกติในบรรทัดเดียวกัน) รวมถึงการขึ้นบรรทัดและ tab ภายในย่อหน้า (เช่น เลขหน้าในสารบัญ)</li>
+            <li><strong>เส้นใต้และไฮไลต์ตรงกับข้อความ (ทั้งสองรูปแบบ):</strong> เส้นใต้ที่ลากยาวถึงเครื่องหมาย ":" (เช่น "<u>หมายเหตุ:</u>") ยังเป็นเส้นใต้ ไม่มีช่องว่างแทรกก่อน ":" · แถบไฮไลต์อยู่เฉพาะบนข้อความ ไม่กลายเป็นสีพื้นทั้งช่องตาราง และไม่ขาดตรงสระบน/วรรณยุกต์</li>
+            <li><strong>ขึ้นบรรทัดตามต้นฉบับ:</strong> bullet แต่ละข้อ และบรรทัดต่อของ bullet ที่เยื้องเข้า ขึ้นบรรทัดใหม่เหมือนใน PDF ไม่ต่อท้ายบรรทัดก่อนหน้า (รวมถึงในช่องตาราง) · หัวข้อที่มีเลขหัวข้อ (เช่น "2.1.6 ...") แยกเป็นย่อหน้าของตัวเองพร้อมระยะห่างด้านบน</li>
+            <li><strong>ความกว้างคอลัมน์ตาราง:</strong> คอลัมน์กว้าง/แคบตามต้นฉบับทั้งใน Word และ LibreOffice/Pages (เดิมบางโปรแกรมแสดงทุกคอลัมน์กว้างเท่ากัน)</li>
+            <li><strong>สัญลักษณ์ bullet:</strong> bullet จากฟอนต์ Symbol/Wingdings/OpenSymbol (มักพบใน PDF ที่สร้างจาก LibreOffice หรือ Word) ถูกแปลงเป็นอักขระมาตรฐาน (•, ▪, ✓ ฯลฯ) จึงไม่แสดงเป็น "?" ในเครื่องที่ไม่มีฟอนต์นั้น</li>
+        </ul>
+        <div class="grid gap-4 sm:grid-cols-2 my-6">
+        <figure class="">
+            <img src="/images/manual/tools_menu.png" alt="เมนูเครื่องมือในหน้าแก้ไข" width="240" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-center text-sm text-slate-500 mt-2">เครื่องมือ → แปลงเป็น Word... (รองรับไฟล์สแกน · เปิดดูไฟล์ก่อนแปลง)</figcaption>
+        </figure>
+        <figure class="">
+            <img src="/images/manual/convert_mode.png" alt="หน้าต่างเลือกรูปแบบการแปลงเป็น Word" width="460" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-center text-sm text-slate-500 mt-2">เลือกรูปแบบการแปลง</figcaption>
+        </figure>
+        </div>
+
+        <div class="my-10 bg-slate-50 border border-slate-200 p-6 sm:p-8 rounded-2xl shadow-sm">
+            <h4 style="margin-top: 0; margin-bottom: 10px;">📊 นโยบายโควต้าการใช้งาน AI (PDF to Word — แบบ "แก้ไขข้อความได้อิสระ")</h4>
+            <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <li><strong>โควต้าฟรีรายวัน:</strong> ผู้ใช้แต่ละท่านสามารถใช้ AI ส่วนกลางของระบบได้ฟรี <strong>2 ครั้งต่อวัน</strong></li>
+                <li><strong>เมื่อโควต้าฟรีหมด:</strong> 
+                    <ul class="list-disc list-inside ml-6 mt-2">
+                        <li>หากคุณมีการตั้งค่า <strong>API Key ส่วนตัว</strong> ระบบจะสลับไปใช้คีย์ของคุณอัตโนมัติ (ใช้งานต่อได้ไร้ขีดจำกัด)</li>
+                        <li>หากไม่ได้ตั้ง API Key ระบบจะสลับไปใช้วิธีจัดเรียงคำแบบพื้นฐาน (Regex) แทน ซึ่งอาจมีคำเพี้ยนหลงเหลืออยู่บ้าง</li>
+                    </ul>
+                </li>
+            </ol>
+            <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-800 text-sm">
+                <strong>ตัวอย่างการทำงาน:</strong><br/>
+                - ครั้งที่ 1-2 ของวัน: ระบบใช้ AI ส่วนกลาง (แปลงภาษาไทยเนียน 100%)<br/>
+                - ครั้งที่ 3: ระบบตรวจสอบพบว่าโควต้าฟรีหมด จะมีข้อความเตือน ⚠️ ขึ้นที่แถบโควต้า หากคุณตั้ง API KEY ไว้ ระบบจะทำงานต่อด้วย AI ของคุณทันที
+            </div>
+        </div>
+        
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปเครื่องมือด่วนมาเซฟไว้ที่: public/images/manual/quick_tools.png]</p>
+            <img src="/images/manual/quick_tools.png" alt="เครื่องมือด่วนและกลุ่มการลงนามเอกสารบนหน้าเอกสารของฉัน" class="max-w-full mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+
+        <!-- Section 13.1 -->
+        <h2 id="scan-document" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 13.1 สแกนเอกสารด้วยมือถือ</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ถ่ายเอกสารด้วยกล้องหลังของมือถือหรือแท็บเล็ต (iPhone, iPad, Android) ระบบจับขอบกระดาษ ดัดภาพให้ตรง ลบเงา และแปลงเป็นขาวดำเหมือนออกจากเครื่องถ่ายเอกสาร ถ่ายต่อกันได้หลายหน้า แล้วบันทึกเป็น PDF ใน <strong>เอกสารของฉัน</strong> พร้อมชั้นข้อความ (OCR) ภาษาไทย/อังกฤษ — ค้นหาคำ คัดลอก และเซ็นเซอร์คำได้เหมือนไฟล์ทั่วไป</p>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>ที่หน้าเอกสารของฉัน กดการ์ด <strong>สแกนเอกสาร</strong> ในเครื่องมือด่วน (การ์ดนี้แสดงเฉพาะบนมือถือและแท็บเล็ต) แล้วกด<strong>อนุญาต</strong>ให้ใช้กล้อง</li>
+            <li>ส่องเอกสารบนพื้นที่สีตัดกับกระดาษ (เช่น โต๊ะสีเข้ม) เมื่อเห็น<strong>กรอบสีเขียว</strong>รอบเอกสารและปุ่มชัตเตอร์เป็นสีเขียว กดถ่าย — ที่มืดกดปุ่ม ⚡ เปิดไฟฉายได้ (Android)</li>
+            <li><strong>ปรับมุม:</strong> ลากจุดสีเขียวทั้ง 4 มุมให้ตรงขอบกระดาษ (มีแว่นขยายช่วยวางให้แม่น) · <strong>ทั้งภาพ</strong> = ใช้ภาพทั้งหมด · <strong>หมุน</strong> = หมุนครั้งละ 90° ให้ตัวหนังสือตั้งตรง แล้วกด <strong>ใช้ภาพนี้</strong></li>
+            <li>กล้องกลับมาให้ถ่าย<strong>หน้าถัดไป</strong>ทันที — ภาพย่อมุมซ้ายล่างบอกจำนวนหน้าที่ถ่ายแล้ว ถ่ายครบกด <strong>เสร็จ</strong></li>
+            <li><strong>ตรวจทาน:</strong> สลับลำดับ (← →) แก้มุม (✎) หรือลบหน้า (🗑) · เลือกโหมด <strong>ขาวดำ</strong> (ค่าเริ่มต้น) / <strong>สีเทา</strong> / <strong>สี</strong> และความเข้ม จาง/ปกติ/เข้ม · ชื่อไฟล์ตั้งให้อัตโนมัติแบบกล้องมือถือ เช่น <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">Scan_20261025_152133</code> แก้ได้</li>
+            <li>กด <strong>บันทึก PDF</strong> — ระบบอัปโหลดและอ่านข้อความทุกหน้า (หน้าละไม่กี่วินาที) เสร็จแล้วเลือก <strong>เปิดไฟล์</strong> / <strong>แปลงเป็น Word</strong> (หัวข้อ 13.2) / <strong>กลับเอกสารของฉัน</strong> / <strong>สแกนเอกสารใหม่</strong></li>
+        </ol>
+        <figure class="my-6 grid grid-cols-2 sm:grid-cols-4 gap-3 items-start">
+            <div class="text-center"><img src="/images/manual/scan_camera.png" alt="กล้องพร้อมกรอบสีเขียวรอบเอกสาร" width="180" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm"><figcaption class="text-xs text-slate-500 mt-2">1. ส่องจนเห็นกรอบเขียว แล้วกดถ่าย</figcaption></div>
+            <div class="text-center"><img src="/images/manual/scan_adjust.png" alt="ลากมุมเอกสารพร้อมแว่นขยาย" width="180" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm"><figcaption class="text-xs text-slate-500 mt-2">2. ลาก 4 มุมให้ตรงขอบ</figcaption></div>
+            <div class="text-center"><img src="/images/manual/scan_review.png" alt="ตรวจทานหน้าที่สแกน" width="180" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm"><figcaption class="text-xs text-slate-500 mt-2">3. ตรวจทาน เลือกโหมด ตั้งชื่อ</figcaption></div>
+            <div class="text-center"><img src="/images/manual/scan_done.png" alt="บันทึกเสร็จ เลือกเปิดไฟล์" width="180" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm"><figcaption class="text-xs text-slate-500 mt-2">4. บันทึกแล้ว เปิดไฟล์ได้ทันที</figcaption></div>
+        </figure>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base mb-8">
+            <li><strong>ไม่เห็นกรอบเขียว:</strong> วางเอกสารบนพื้นสีเข้มกว่ากระดาษ ให้เห็นทั้ง 4 มุม แสงพอ — หรือกดถ่ายแล้วลากมุมเอง</li>
+            <li><strong>เปิดกล้องไม่ได้:</strong> อนุญาตกล้องในการตั้งค่าเบราว์เซอร์ · ถ้าเปิดลิงก์จากในแอป LINE/Facebook ให้กด ⋯ แล้ว "เปิดใน Safari/Chrome" หรือใช้ปุ่ม <strong>กล้องของเครื่อง</strong> แทน</li>
+            <li><strong>ปิดแท็บ/แอปกลางทาง:</strong> หน้าที่ถ่ายไว้ยังเก็บในเครื่อง เปิดสแกนเอกสารอีกครั้งจะกู้กลับมาให้ทำต่อ (ลบเมื่อบันทึกสำเร็จหรือกด <strong>เริ่มใหม่</strong>)</li>
+            <li><strong>ภาพเบลอ/แสงสะท้อน:</strong> หลังกด <strong>ใช้ภาพนี้</strong> ถ้าภาพไม่คมหรือมีแสงไฟสะท้อนบนกระดาษ ระบบจะเตือนพร้อมวิธีแก้ — กด <strong>ถ่ายใหม่</strong> (แนะนำ) หรือ <strong>ใช้ภาพนี้ต่อ</strong> (หน้านั้นมีป้าย ⚠ ในหน้าตรวจทาน แตะเพื่อแก้ได้)</li>
+            <li><strong>โหมดขาวดำ:</strong> ระบบส่งภาพสีเทาของหน้าเดียวกันไปช่วยอ่านข้อความด้วย แล้วเลือกผลที่อ่านได้ดีกว่าทีละหน้า (ตัวหนังสือบาง/วรรณยุกต์ที่จางหายตอนตัดเป็นขาวดำยังอ่านได้) — ภาพเทาใช้อ่านอย่างเดียว ไม่เก็บลงไฟล์ ไฟล์ PDF ยังเล็กเท่าเดิม แต่อัปโหลดนานขึ้นเล็กน้อย</li>
+            <li>สแกนได้สูงสุด 50 หน้าต่อไฟล์ · ระบบเก็บเฉพาะไฟล์ PDF ที่ได้ ไม่เก็บภาพถ่ายต้นฉบับ · เปลี่ยนชื่อไฟล์ทีหลังได้จากเมนู ☰ (หัวข้อ 18)</li>
+        </ul>
+
+        <!-- Section 13.2 -->
+        <h2 id="scan-to-word" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 13.2 แปลงไฟล์สแกนเป็น Word</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">นำข้อความจากเอกสารที่สแกนไปใช้ต่อได้ทันที — ระบบอ่านข้อความทุกหน้าด้วย OCR แล้วสร้างไฟล์ Word ที่<strong>ข้อความทั้งหมดเป็นข้อความจริง</strong> (แก้ไข คัดลอก ค้นหาได้) ด้วยฟอนต์ <strong>Sarabun</strong> ส่วน<strong>ลายเซ็น โลโก้ ตราประทับ และบาร์โค้ด</strong>ใส่เป็นรูปภาพในตำแหน่งใกล้เคียงเดิม ใช้ได้ทั้งไฟล์จากเมนูสแกนเอกสาร (หัวข้อ 13.1) และไฟล์สแกน/รูปภาพที่อัปโหลดเข้ามา — ไฟล์จากเมนูสแกนเอกสาร ระบบเทียบข้อความที่อ่านไว้ตอนสแกน (อ่านจากภาพเทา) กับการอ่านใหม่ แล้วใช้ชุดที่ดีกว่า</p>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>หลังสแกนเสร็จ กด <strong>แปลงเป็น Word (ข้อความแก้ไขได้)</strong> — หรือที่หน้าเอกสารของฉัน กดการ์ด <strong>แปลงเป็น Word</strong> ในเครื่องมือด่วนแล้วเลือกไฟล์ / กด ☰ ของไฟล์ แล้วเลือก <em>"แปลงเป็น Word (รองรับไฟล์สแกน)"</em> (เมนู <strong>เครื่องมือ</strong> ในหน้าแก้ไขก็ได้)</li>
+            <li>ระบบตรวจให้อัตโนมัติว่าเป็นไฟล์สแกน แล้วแสดงหน้าต่าง <strong>แปลงไฟล์สแกนเป็น Word</strong> (ไม่ต้องเลือกรูปแบบเอง)</li>
+            <li>ถ้าต้องการให้แม่นขึ้น ติ๊ก <strong>ให้ AI ช่วยแก้คำไทยที่ OCR อ่านผิด</strong> (ใช้โควต้า AI และส่งข้อความไปประมวลผลที่ ผู้ให้บริการ AI ที่ตั้งไว้ — ปิดไว้เป็นค่าเริ่มต้น ถ้าไม่ติ๊ก ข้อมูลไม่ออกนอกเซิร์ฟเวอร์)</li>
+            <li>กด <strong>แปลงเป็น Word</strong> — ใช้เวลาประมาณ 5–15 วินาทีต่อหน้า เสร็จแล้วดาวน์โหลด .docx ให้อัตโนมัติ</li>
+        </ol>
+        <div class="grid gap-4 sm:grid-cols-3 my-6 items-start">
+        <figure class="sm:col-span-1">
+            <img src="/images/manual/scan_to_word_chooser.png" alt="หน้าต่างแปลงไฟล์สแกนเป็น Word พร้อมตัวเลือก AI" width="300" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-center text-sm text-slate-500 mt-2">ระบบรู้เองว่าเป็นไฟล์สแกน · AI เป็นตัวเลือก</figcaption>
+        </figure>
+        <figure class="sm:col-span-2">
+            <img src="/images/manual/scan_to_word_result.png" alt="เทียบไฟล์สแกนกับไฟล์ Word ที่ได้" width="560" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-center text-sm text-slate-500 mt-2">ซ้าย: ไฟล์สแกน · ขวา: ไฟล์ Word — ข้อความ ตาราง และจุดไข่ปลาแก้ไขได้ โลโก้/บาร์โค้ดเป็นรูป</figcaption>
+        </figure>
+        </div>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base mb-6">
+            <li><strong>สิ่งที่ได้:</strong> ย่อหน้าต่อเนื่องแก้ไขง่าย (จัดชิดซ้าย/กลาง/ขวา ย่อหน้าเยื้อง ตัวหนา ขนาดอักษรใกล้เคียงเดิม) · <strong>ตารางที่มีเส้น</strong>เป็นตาราง Word จริง (รวมหัวตารางพื้นเข้ม) · กรอบสี่เหลี่ยมรอบข้อความเป็นกรอบ · <strong>จุดไข่ปลา</strong>ในแบบฟอร์มเป็นแท็บแบบจุดนำ พิมพ์กรอกต่อได้ · ช่องติ๊ก ☐ · ขนาดกระดาษและหนึ่งหน้าสแกน = หนึ่งหน้า Word</li>
+            <li><strong>ฟอนต์ Sarabun ฝังมาในไฟล์</strong> — เปิดใน Microsoft Word (Windows/Mac) ที่ไม่มีฟอนต์นี้ก็ยังแสดงถูก · Google Docs / LibreOffice อาจแสดงเป็นฟอนต์อื่นแต่ยังอ่านได้ปกติ</li>
+            <li><strong>ควรตรวจทานก่อนใช้งานจริง:</strong> OCR อาจอ่านบางคำผิด (โดยเฉพาะวรรณยุกต์ ตัวอักษรที่คล้ายกัน ภาพมืด/เบลอ/ตัวเล็ก) — ติ๊กให้ AI ช่วยแก้ หรือแก้เองใน Word</li>
+            <li><strong>ข้อจำกัด:</strong> หน้าตาใกล้เคียงแต่ไม่ตรงต้นฉบับทุกมิลลิเมตร · ตารางที่ไม่มีเส้น และฟอร์มซับซ้อนอาจจัดเป็นย่อหน้า/แท็บแทน · <strong>ลายมือเขียน</strong>อ่านเป็นข้อความไม่ได้ (ใส่เป็นรูป) · แปลงได้ครั้งละไม่เกิน 50 หน้า</li>
+            <li>สแกนให้ได้ผลดี: แสงสว่างพอ กระดาษเรียบ ถ่ายให้ตัวหนังสือคมชัด และใช้โหมดขาวดำหรือสีเทา (หัวข้อ 13.1)</li>
+        </ul>
+
+        <h2 id="compare-pdf" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 13.3 เปรียบเทียบเอกสาร (Compare PDF)</h2>
+        <p class="text-slate-700 leading-relaxed mb-4">หาว่าเอกสารฉบับใหม่ต่างจากฉบับเดิมตรงไหน — เหมาะกับตรวจสัญญา ร่างหนังสือ หรือเอกสารที่ถูกส่งกลับมาแก้ เปิดได้ 3 ทาง:</p>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-4 pl-2">
+            <li><strong>หน้าเอกสารของฉัน › เครื่องมือด่วน › เปรียบเทียบเอกสาร</strong> — เลือกไฟล์เดิม (A) และไฟล์ใหม่ (B) จากเอกสารของฉัน หรืออัปโหลดไฟล์จากเครื่อง</li>
+            <li><strong>เลือก 2 ไฟล์</strong> (เมนู ☰ › เลือกหลายไฟล์) แล้วกด <em>เปรียบเทียบ 2 ไฟล์</em> — ไฟล์ที่แก้ไขก่อนเป็นไฟล์เดิม ไฟล์ที่แก้ไขล่าสุดเป็นไฟล์ใหม่ (สลับได้ในหน้าต่าง)</li>
+            <li><strong>หน้าแก้ไข › เครื่องมือ › เปรียบเทียบกับ...</strong> — เทียบเอกสารที่กำลังแก้ (รวมการแก้ที่ยังไม่บันทึก) กับ <em>ฉบับที่บันทึกไว้</em>, <em>เวอร์ชันก่อนหน้า</em> (ฉบับก่อนกดบันทึกครั้งล่าสุด — ระบบเก็บไว้ให้ 1 ชุดต่อไฟล์ ไม่นับในพื้นที่ของคุณ), ไฟล์อื่น หรือไฟล์ที่อัปโหลด</li>
+        </ul>
+        <p class="text-slate-700 leading-relaxed mb-2"><strong>ผลการเปรียบเทียบ</strong></p>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-4 pl-2">
+            <li><strong>สี:</strong> <span class="text-orange-600">ส้ม = แก้ไข</span> · <span class="text-green-700">เขียว = เพิ่ม</span> · <span class="text-red-600">แดง = ลบ</span> · <span class="text-purple-600">ม่วง = ภาพต่าง</span> (รูป ลายเซ็น ตราประทับ เส้นตาราง ที่ไม่ใช่ข้อความ) — รูปที่เพิ่ม/ลบ/เปลี่ยน (เช่น ตราลงนามหลังเซ็นเอกสาร) แสดงเป็นจุดเดียวตรงกรอบรูปพอดี</li>
+            <li><strong>เคียงข้าง:</strong> ไฟล์เดิมซ้าย ไฟล์ใหม่ขวา เลื่อนพร้อมกันทีละคู่หน้า — หน้าที่ถูกแทรกหรือลบทั้งหน้าจะจับคู่ให้ถูกต้อง และข้อความที่แค่ไหลข้ามไปหน้าถัดไปไม่นับเป็นจุดต่าง · มือถือแสดงทีละฝั่ง กด <em>เดิม / ใหม่</em> สลับ</li>
+            <li><strong>ซ้อนทับ:</strong> <em>ไฮไลต์ต่าง</em> — ส่วนที่เหมือนกันเป็นสีขาว ส่วนที่ต่างเป็นสีเข้ม · <em>โปร่งใส</em> — เลื่อนแถบให้เห็นไฟล์ใหม่ทับไฟล์เดิม</li>
+            <li><strong>รายการจุดต่าง</strong> (ด้านขวา / ปุ่ม <em>รายการ</em> บนมือถือ): แสดงข้อความเดิม → ใหม่ และเลขหน้า กดแล้วเลื่อนไปที่ตำแหน่งนั้น · ปุ่ม ↑ ↓ หรือคีย์ <kbd>j</kbd> / <kbd>k</kbd> ไปจุดถัดไป/ก่อนหน้า · กดชนิด (แก้ไข/เพิ่ม/ลบ/ภาพต่าง) เพื่อซ่อน/แสดง</li>
+            <li><strong>ดาวน์โหลดรายงาน:</strong> PDF มีหน้าสรุป (จำนวนและตารางจุดต่างทั้งหมด) และหน้าคู่ A | B ที่ไฮไลต์พร้อมเลขจุดต่าง — ส่งให้ผู้เกี่ยวข้องตรวจต่อได้</li>
+        </ul>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li><strong>ไฟล์สแกน:</strong> หน้าที่เป็นภาพจะอ่านข้อความด้วย OCR ก่อนเทียบ (ปิดได้ในหน้าต่าง) — ใช้เวลานานกว่าและอาจอ่านผิดบางคำ จึงควรตรวจทานจุดต่างที่พบ · ไฟล์สแกนคนละครั้งจะไม่เทียบภาพทีละพิกเซล (ภาพต่างทั้งหน้าเสมอ)</li>
+            <li><strong>ตัวเลือก:</strong> ปิดการเทียบข้อความหรือภาพได้ · <em>ไม่สนตัวพิมพ์เล็ก/ใหญ่</em> · เลขไทยกับเลขอารบิก (๕๐๐ กับ 500) ถือว่าเหมือนกันเสมอ</li>
+            <li><strong>ข้อจำกัด:</strong> สูงสุด 300 หน้าต่อไฟล์ · ไฟล์ที่มีรหัสผ่านต้องปลดล็อกก่อน · ผลเปรียบเทียบเก็บไว้ 24 ชั่วโมง · เอกสารยาวอาจรอสักครู่ (แสดงความคืบหน้า)</li>
+        </ul>
+
+        <!-- Section 14 -->
+        <h2 id="api-key" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 14. การตั้งค่า API KEY สำหรับ AI</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ระบบใช้ปัญญาประดิษฐ์ (AI) ช่วยแก้คำไทยตอน <a class="text-sky-600 underline" href="#quick-tools">แปลง PDF เป็น Word</a> และอ่านข้อความจากพื้นที่ที่เลือก (<a class="text-sky-600 underline" href="#copy-ocr">คัดลอกข้อความด้วย AI</a>) รองรับหลายผู้ให้บริการ: <strong>Google Gemini</strong>, <strong>Anthropic Claude</strong> และ <strong>OpenAI / API แบบ OpenAI</strong> (เช่น Azure OpenAI หรือโมเดลที่องค์กรรันเอง)</p>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li><strong>AI ของระบบ:</strong> ผู้ดูแลระบบตั้งไว้ (ใช้ได้ตามโควต้ารายวัน) — หน้าตั้งค่า AI แสดงว่าระบบใช้ผู้ให้บริการและรุ่นใด</li>
+            <li><strong>API Key ส่วนตัว:</strong> ใช้เครดิตของคุณเองหรือของแผนก เมื่อโควต้าของระบบหมด หรือเลือกผู้ให้บริการที่ต่างจากระบบได้ (ระบบที่ติดตั้งในองค์กรอาจปิดตัวเลือกนี้)</li>
+            <li><strong>ถ้าระบบยังไม่ได้ตั้ง AI และคุณไม่มี key ส่วนตัว:</strong> หน้าเอกสารของฉันไม่แสดงกล่อง "โควต้าแปลงไฟล์ฟรี (AI)" และตัวเลือกที่ใช้ AI จะถูกซ่อน — แปลงเป็น Word ยังใช้ได้ (จัดรูปคำไทยด้วยระบบในเครื่อง) และปุ่ม <strong>"อ่านข้อความจากภาพ (OCR)"</strong> ในหน้าต่างคัดลอกข้อความใช้ OCR บนเซิร์ฟเวอร์ · ถ้าระบบปิดตัวเลือก key ส่วนตัวด้วย เมนูตั้งค่า AI จะไม่แสดง</li>
+        </ul>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>คลิกที่รูปโปรไฟล์มุมขวาบน แล้วเลือกเมนู <strong>"ตั้งค่า API KEY สำหรับ AI"</strong></li>
+            <li>เลือก <strong>ผู้ให้บริการ AI</strong> แล้วสร้าง API key จากเว็บของผู้ให้บริการนั้น:
+                <ul class="list-disc pl-6 mt-2 space-y-1 text-sm text-slate-600">
+                    <li>Google Gemini — <a href="https://aistudio.google.com/apikey" target="_blank" class="text-sky-600 underline">Google AI Studio</a></li>
+                    <li>Anthropic Claude — <a href="https://console.anthropic.com/settings/keys" target="_blank" class="text-sky-600 underline">Claude Console</a> (คิดเงินตามการใช้งาน — แผนสมาชิก Claude Pro/Max/Team ใช้แทน API key ไม่ได้)</li>
+                    <li>OpenAI — <a href="https://platform.openai.com/api-keys" target="_blank" class="text-sky-600 underline">OpenAI Platform</a> · Azure OpenAI หรือ API ขององค์กร: ใส่ <strong>URL ของ API</strong> ด้วย (เช่น <code class="bg-slate-100 px-1 rounded text-xs">https://&lt;resource&gt;.openai.azure.com/openai/v1</code>)</li>
+                </ul>
+            </li>
+            <li>วาง API key — <strong>รุ่น (model)</strong> เว้นว่างได้สำหรับ Gemini/Claude (ใช้รุ่นเร็วเป็นค่าเริ่มต้น) แต่ OpenAI ต้องระบุ</li>
+            <li>กด <strong>"ทดสอบและบันทึก"</strong> — ระบบลองเรียกผู้ให้บริการจริงก่อน ถ้า key ใช้ไม่ได้จะแจ้งสาเหตุและไม่บันทึก</li>
+            <li><em>หมายเหตุ: key ถูกเข้ารหัส (Encrypt) ก่อนเก็บ ใช้ส่งคำขอในนามของคุณเท่านั้น · ข้อความ/ภาพส่วนที่สั่งประมวลผลด้วย AI จะถูกส่งไปยังผู้ให้บริการที่เลือก</em></li>
+        </ol>
+        <div class="my-8 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-50 p-4 text-center flex flex-col items-center justify-center">
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">📸 [นำรูปหน้าตั้งค่า API KEY มาเซฟไว้ที่: public/images/manual/api_key_settings.png]</p>
+            <img src="/images/manual/api_key_settings.png" class="max-w-full lg:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        </div>
+
+        
+        <!-- 15. แยกหน้าเอกสาร -->
+        <h2 id="extract-pages" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 15. แยกหน้าเอกสาร (Extract Pages)</h2>
+        <p class="text-slate-700 leading-relaxed mb-4">ฟีเจอร์นี้ช่วยให้คุณดึงเฉพาะหน้าที่ต้องการออกมาเป็นไฟล์ PDF ใหม่ได้</p>
+        <ol class="space-y-3 text-slate-700 leading-relaxed list-decimal pl-6 mb-6">
+            <li>เปิดไฟล์ PDF ที่ต้องการแยกหน้า</li>
+            <li>ไปที่เมนู <strong>ไฟล์ → แยกหน้า (Extract Pages)...</strong></li>
+            <li>ในช่อง <strong>หน้าที่ต้องการ</strong> พิมพ์เลขหน้า (หรือกด <strong>ทุกหน้า</strong>) เช่น:
+                <ul class="list-disc pl-6 mt-2 space-y-1 text-sm text-slate-600">
+                    <li><code class="bg-slate-100 px-2 py-0.5 rounded text-xs font-mono">1, 3, 5</code> — เฉพาะหน้า 1, 3 และ 5</li>
+                    <li><code class="bg-slate-100 px-2 py-0.5 rounded text-xs font-mono">1-5</code> — หน้า 1 ถึง 5 · <code class="bg-slate-100 px-2 py-0.5 rounded text-xs font-mono">8-</code> — หน้า 8 ถึงหน้าสุดท้าย</li>
+                    <li><code class="bg-slate-100 px-2 py-0.5 rounded text-xs font-mono">5, 1-3</code> — <strong>เรียงตามที่พิมพ์</strong>: หน้า 5 มาก่อน แล้วตามด้วย 1, 2, 3 (ใช้จัดลำดับหน้าใหม่ได้) · <code class="bg-slate-100 px-2 py-0.5 rounded text-xs font-mono">10-1</code> — กลับลำดับ</li>
+                </ul>
+                ใต้ช่องจะบอกว่า "จะได้กี่หน้า หน้าไหนบ้าง" — ถ้าพิมพ์เลขหน้าที่ไม่มีในเอกสาร จะแจ้งทันทีก่อนกด
+            </li>
+            <li>เลือก <strong>รูปแบบไฟล์</strong>:
+                <ul class="list-disc pl-6 mt-2 space-y-1 text-sm text-slate-600">
+                    <li><strong>รวมเป็นไฟล์เดียว</strong> — ได้ไฟล์ชื่อ <em>"&lt;ชื่อเอกสาร&gt; (หน้า 1-3).pdf"</em></li>
+                    <li><strong>แยกไฟล์ละหน้า</strong> — ได้ไฟล์ .zip ข้างในเป็น PDF หน้าละไฟล์ ชื่อเรียงถูก เช่น <em>"สัญญา_หน้า_01.pdf"</em> (ครั้งละไม่เกิน 500 หน้า)</li>
+                </ul>
+            </li>
+            <li>กดปุ่ม <strong>ดาวน์โหลด</strong> เพื่อรับไฟล์</li>
+        </ol>
+        <p class="text-slate-700 leading-relaxed mb-4">ไฟล์ที่ได้มีการแก้ไขล่าสุดแล้ว (ไม่ต้องกดบันทึกก่อน) · ช่องกรอกฟอร์ม ลิงก์ไปหน้าอื่น และบุ๊กมาร์กของหน้าที่เลือกยังใช้ได้ · ถ้าตั้งรหัสผ่านเอกสารไว้ (ไฟล์ → เข้ารหัส PDF) ไฟล์ที่แยกออกมาต้องใช้รหัสผ่านเดียวกันเปิด · เอกสารที่เปิดอยู่ไม่เปลี่ยน</p>
+        <figure class="my-6">
+            <img src="/images/manual/extract_pages.png" alt="หน้าต่างแยกหน้าเอกสาร" width="460" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-center text-sm text-slate-500 mt-2">ไฟล์ → แยกหน้า (Extract Pages)...</figcaption>
+        </figure>
+
+        <!-- 16. เซ็นเซอร์ด้วยคำค้นหา -->
+        <h2 id="search-redact" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 16. เซ็นเซอร์ด้วยคำค้นหา (Search &amp; Redact)</h2>
+        <p class="text-slate-700 leading-relaxed mb-4">ใช้ค้นหาคำหรือข้อความที่ต้องการปกปิดในเอกสาร แล้วสั่งเซ็นเซอร์ (ทาดำทับ) ทุกจุดที่พบโดยอัตโนมัติ</p>
+        <ol class="space-y-3 text-slate-700 leading-relaxed list-decimal pl-6 mb-6">
+            <li>เปิดไฟล์ PDF ที่ต้องการเซ็นเซอร์</li>
+            <li>ไปที่เมนู <strong>เครื่องมือ → เซ็นเซอร์ด้วยคำค้นหา...</strong></li>
+            <li>พิมพ์คำหรือข้อความที่ต้องการเซ็นเซอร์ในช่องค้นหา</li>
+            <li>(ไม่บังคับ) ติ๊ก <strong>ใช้ Regular Expression (Regex)</strong> สำหรับรูปแบบขั้นสูง เช่น เลขบัตรประชาชน 13 หลัก</li>
+            <li>กดปุ่ม <strong>เริ่มเซ็นเซอร์</strong> ระบบจะทาดำทับทุกจุดที่พบในเอกสารทั้งฉบับ</li>
+        </ol>
+        <figure class="my-6">
+            <img src="/images/manual/search_redact.png" alt="หน้าต่างเซ็นเซอร์ด้วยคำค้นหา" width="396" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-center text-sm text-slate-500 mt-2">เครื่องมือ → เซ็นเซอร์ด้วยคำค้นหา...</figcaption>
+        </figure>
+        <ul class="list-disc pl-6 space-y-2 text-slate-700 leading-relaxed mb-6">
+            <li><strong>พิมพ์คำไทยตามปกติได้เลย</strong> — ระบบค้นเจอแม้ PDF จะเก็บตัวอักษรไว้ผิดรูป (เช่น ไฟล์จาก Word ที่สระอำถูกเก็บเป็น "จ าเป็น" หรือหนังสือราชการที่ดึงข้อความได้เป็น "ส ำนักงำน") และค้นเจอแม้คำถูกตัดข้ามบรรทัดหรือมีช่องว่างคั่น ("บริษัท ตัวอย่าง" = "บริษัทตัวอย่าง")</li>
+            <li><strong>ลบออกจากทุกที่ในไฟล์</strong> — นอกจากข้อความบนหน้า ระบบลบคำนั้นออกจากค่าในช่องกรอกฟอร์ม ข้อความในโน้ต/ความคิดเห็น ชื่อบุ๊กมาร์ก และข้อมูลเมตา (ชื่อเรื่อง ผู้เขียน) แทนด้วย ███ ด้วย เพื่อไม่ให้ข้อมูลยังเปิดดูหรือคัดลอกได้</li>
+            <li><strong>Regex</strong> — รูปแบบที่มีตัวซ้ำซ้อนกัน เช่น <code>(a+)+</code> ระบบจะไม่รับ เพราะอาจทำให้ค้นนานจนค้าง ให้เขียนแบบง่าย เช่น <code>0[689]\d-?\d{3}-?\d{4}</code> (เบอร์มือถือ)</li>
+            <li><strong>ข้อความที่อยู่ในรูปภาพค้นไม่เจอ</strong> เช่น ลายเซ็นพร้อมชื่อและตำแหน่งผู้ลงนามที่ฝังมาเป็นรูป ตราประทับ หรือเอกสารสแกน — ถ้าค้นไม่เจอ ระบบจะบอกว่าหน้าไหนมีรูปภาพ และมีปุ่ม <strong>อ่านข้อความในรูป (OCR) แล้วค้นหาอีกครั้ง</strong> — ระบบอ่านตัวอักษรในรูปแล้ววางเป็นข้อความล่องหนทับตำแหน่งเดิม (หน้าตาเอกสารไม่เปลี่ยน) จากนั้นเซ็นเซอร์ได้ทั้งข้อความและพิกเซลของรูปตรงนั้น · สั่งอ่านทั้งเอกสารล่วงหน้าได้ที่เมนู <strong>เครื่องมือ → อ่านข้อความในรูปภาพ (OCR)</strong> (หลังจากนั้นคัดลอก/ตรวจข้อมูลส่วนบุคคลในรูปได้ด้วย · เลิกทำได้) · OCR อาจอ่านผิดบางตัว ตรวจผลก่อนบันทึก ถ้ายังไม่เจอให้ใช้เครื่องมือ <strong>กล่องทึบ</strong> ลากปิดทับ</li>
+        </ul>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+            <p class="text-amber-800 text-sm"><strong>คำเตือน:</strong> การเซ็นเซอร์เป็นการลบข้อมูลถาวร ข้อมูลที่ถูกเซ็นเซอร์ไม่สามารถกู้คืนได้ แนะนำให้บันทึกสำเนาไฟล์ต้นฉบับไว้ก่อน</p>
+        </div>
+        <h3 class="text-xl font-semibold text-slate-800 mt-8 mb-4">เซ็นเซอร์โดยไม่ต้องเปิดไฟล์ (จากหน้าเอกสารของฉัน)</h3>
+        <ol class="space-y-3 text-slate-700 leading-relaxed list-decimal pl-6 mb-6">
+            <li>กดการ์ด <strong>เซ็นเซอร์ด้วยคำค้นหา</strong> ในเครื่องมือด่วน แล้วเลือกไฟล์</li>
+            <li>พิมพ์คำที่ต้องการเซ็นเซอร์ แล้วกด <strong>เซ็นเซอร์</strong> — ติ๊ก <strong>Regex</strong> แล้วกดตัวอย่างสำเร็จรูปได้ (เบอร์มือถือ เลขบัตรประชาชน อีเมล เลขบัญชี) · คำที่มีอักษรอังกฤษเลือก <strong>ตัวพิมพ์เล็ก/ใหญ่ต้องตรงกัน</strong> ได้</li>
+            <li>ถ้าพบ ระบบบันทึกเป็นไฟล์ใหม่ "ชื่อเดิม (เซ็นเซอร์).pdf" (ชื่อซ้ำจะเติม (2), (3) ...) และบอกจำนวนจุดที่เซ็นเซอร์ — ไฟล์เดิมไม่ถูกแก้ · ถ้าไม่พบคำ จะไม่สร้างไฟล์ใหม่</li>
+        </ol>
+        <p class="text-slate-700 leading-relaxed mb-6 text-sm">ทั้งลายน้ำและเซ็นเซอร์จากเครื่องมือด่วน: ถ้าไฟล์ที่เลือก<strong>ลงนามแล้ว</strong> ระบบจะเตือนก่อน เพราะลายเซ็นในไฟล์ใหม่จะไม่ถูกต้อง · ถ้าไฟล์มีรหัสผ่าน ระบบจะถามรหัส และไฟล์ใหม่ใช้รหัสผ่านเดิม</p>
+
+
+        <!-- 16.1 PDPA -->
+        <h3 id="pdpa" class="text-xl font-semibold text-slate-800 mt-12 mb-4 scroll-mt-24">16.1 ปกปิดข้อมูลส่วนบุคคลอัตโนมัติ (PDPA)</h3>
+        <p class="text-slate-700 leading-relaxed mb-4">ระบบช่วยตรวจหาข้อมูลส่วนบุคคลทั้งเอกสารให้ ไม่ต้องพิมพ์ค้นหาทีละคำ แล้วให้คุณตรวจทานและเลือกก่อนปิดทับถาวร — เหมาะกับการส่งเอกสารให้บุคคลภายนอกตาม พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล (PDPA) · ตรวจทั้งข้อความบนหน้า <strong>ค่าที่กรอกในช่องฟอร์ม กล่องข้อความ กรอบสี่เหลี่ยม และบันทึกย่อ</strong> — ปิดแล้วค่าเดียวกันที่ซ้ำอยู่ในบุ๊กมาร์ก ข้อมูลเมตา หรือช่องอื่นจะถูกปิดด้วย ส่วนในช่องฟอร์ม/กล่องข้อความปิดเฉพาะค่านั้นด้วย ███ (ข้อความอื่นในช่องและเนื้อหน้าใต้ช่องยังอยู่) <strong>การตรวจทำบนเซิร์ฟเวอร์ของระบบเท่านั้น ไม่ส่งข้อความในเอกสารไปยัง AI หรือบริการภายนอก</strong></p>
+        <div class="overflow-x-auto mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+        <table class="w-full table-fixed text-sm" style="min-width: 640px;">
+            <colgroup><col style="width: 11rem;"><col><col style="width: 10rem;"></colgroup>
+            <thead class="bg-slate-50 text-slate-700 border-b border-slate-200"><tr><th class="px-4 py-3 text-left font-semibold">ประเภท</th><th class="px-4 py-3 text-left font-semibold">วิธีตรวจ</th><th class="px-4 py-3 text-center font-semibold">การเลือก</th></tr></thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700 align-top">
+                <tr><td class="px-4 py-3 font-medium text-slate-900">เลขประจำตัวประชาชน / ผู้เสียภาษี 13 หลัก</td><td class="px-4 py-3 leading-relaxed">ตรวจหลักตรวจสอบ (check digit) — ตัวเลขที่สุ่มมาจะไม่ถูกจับผิด · ตรวจได้ทั้งเลขอารบิกและเลขไทย (๑-๒๓๔๕-…)</td><td class="px-4 py-3 text-center"><span class="inline-block whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">✔ เลือกให้อัตโนมัติ</span></td></tr>
+                <tr><td class="px-4 py-3 font-medium text-slate-900">บัตรเครดิต</td><td class="px-4 py-3 leading-relaxed">รูปแบบ Visa / Mastercard / Amex + ตรวจ Luhn</td><td class="px-4 py-3 text-center"><span class="inline-block whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">✔ เลือกให้อัตโนมัติ</span></td></tr>
+                <tr><td class="px-4 py-3 font-medium text-slate-900">เบอร์โทรศัพท์</td><td class="px-4 py-3 leading-relaxed">มือถือ 06/08/09 · เบอร์บ้าน 02–07 (รวมแบบ 0 2123 4567) · +66 · เลขไทยได้ (๐๘๑-…)</td><td class="px-4 py-3 text-center"><span class="inline-block whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">✔ เลือกให้อัตโนมัติ</span></td></tr>
+                <tr><td class="px-4 py-3 font-medium text-slate-900">อีเมล</td><td class="px-4 py-3 leading-relaxed">รูปแบบอีเมล</td><td class="px-4 py-3 text-center"><span class="inline-block whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">✔ เลือกให้อัตโนมัติ</span></td></tr>
+                <tr><td class="px-4 py-3 font-medium text-slate-900">เลขบัญชีธนาคาร</td><td class="px-4 py-3 leading-relaxed">ตัวเลข 10–12 หลักที่มีคำว่า "บัญชี / ธนาคาร / A/C" อยู่ข้างหน้า</td><td class="px-4 py-3 text-center"><span class="inline-block whitespace-nowrap rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">ตรวจก่อนเลือก</span></td></tr>
+                <tr><td class="px-4 py-3 font-medium text-slate-900">อาจเป็นชื่อ-นามสกุล</td><td class="px-4 py-3 leading-relaxed">ชื่อที่<strong>ไม่มีคำนำหน้าและไม่มีหัวข้อ</strong> เช่น "ผู้อนุมัติ วิชัย ศรีสุข" — ระบบเทียบกับรายชื่อคนไทย (ชื่อจริงราว 12,000 ชื่อ นามสกุลราว 9,800 สกุล) ต้องเป็นชื่อจริงตามด้วยนามสกุลที่อยู่ในรายชื่อทั้งคู่<p class="mt-2 text-xs text-slate-500">ชื่อที่ไม่อยู่ในรายชื่อจะจับไม่ได้ — ตรวจเอกสารด้วยตาอีกครั้ง หรือใช้ <strong>เซ็นเซอร์ด้วยคำค้นหา</strong> (หัวข้อ 16)</p></td><td class="px-4 py-3 text-center"><span class="inline-block whitespace-nowrap rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">ตรวจก่อนเลือก</span></td></tr>
+                <tr><td class="px-4 py-3 font-medium text-slate-900">ชื่อ-นามสกุล</td><td class="px-4 py-3 leading-relaxed">คำนำหน้าตามด้วยชื่อและนามสกุล<ul class="mt-2 space-y-1 list-disc pl-5 text-slate-600"><li>ทั่วไป: นาย / นาง / นางสาว / คุณ / ด.ช. / ด.ญ. / Mr. / Ms.</li><li>ยศทหาร/ตำรวจ ทั้งแบบย่อและเต็ม: พ.ต.อ., ร.ต., จ.ส.อ., พันเอก, ร้อยตำรวจเอกหญิง, ว่าที่ ร.ต.</li><li>ตำแหน่งวิชาการและแพทย์: ศ.ดร., รศ., ผศ., นพ., พญ.</li><li>ราชสกุลและสมณศักดิ์: ม.ร.ว., ม.ล., หม่อมหลวง, พระครู, พระมหา</li><li>ชื่อหลังหัวข้อแบบฟอร์ม เช่น "ชื่อ-นามสกุล:", "ชื่อลูกค้า :", "ชื่อผู้รับ:", "ผู้ติดต่อ :", "ผู้ขอ :", "Name:" (แม้หัวข้อกับชื่อจะอยู่คนละคอลัมน์) และชื่อที่ถูกตัดขึ้นบรรทัดใหม่ (ปิดทั้งสองบรรทัด)</li><li>ชื่อในวงเล็บใต้ "ลงชื่อ ......" เช่น (สมชาย ใจดี)</li></ul><p class="mt-2 text-xs text-slate-500">คำที่ขึ้นต้นเหมือนคำนำหน้าแต่เป็นคำทั่วไป เช่น "คุณภาพ", "คุณสมบัติ", "นายจ้าง" จะไม่ถูกจับ</p></td><td class="px-4 py-3 text-center"><span class="inline-block whitespace-nowrap rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">ตรวจก่อนเลือก</span></td></tr>
+                <tr><td class="px-4 py-3 font-medium text-slate-900">ที่อยู่</td><td class="px-4 py-3 leading-relaxed">เลขที่ / หมู่ / ตำบล / อำเภอ / จังหวัด ไปจนถึงรหัสไปรษณีย์ (เลขอารบิกหรือเลขไทย)</td><td class="px-4 py-3 text-center"><span class="inline-block whitespace-nowrap rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">ตรวจก่อนเลือก</span></td></tr>
+            </tbody>
+        </table>
+        </div>
+        <p class="text-sm text-slate-500 mb-6"><span class="inline-block align-middle whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">✔ เลือกให้อัตโนมัติ</span> แม่นยำสูง ติ๊กไว้ให้แล้ว · <span class="inline-block align-middle whitespace-nowrap rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">ตรวจก่อนเลือก</span> อาจจับผิด/ไม่ครบ ระบบแสดงรายการแต่ยังไม่ติ๊ก ให้คุณตรวจแล้วเลือกเอง</p>
+        <h4 class="font-semibold text-slate-800 mt-6 mb-3">ใน Editor (เห็นตำแหน่งบนหน้าเอกสาร)</h4>
+        <ol class="space-y-3 text-slate-700 leading-relaxed list-decimal pl-6 mb-6">
+            <li>เปิดไฟล์ แล้วไปที่เมนู <strong>เครื่องมือ → ตรวจหาข้อมูลส่วนบุคคล (PDPA)...</strong></li>
+            <li>แผงด้านขวาแสดงรายการที่พบ แยกตามประเภท บนหน้าเอกสารจะมีกรอบ<strong>สีส้ม</strong> = เลือกไว้ (จะถูกปิด) และ<strong>เส้นประสีเทา</strong> = ยังไม่ได้เลือก</li>
+            <li>คลิกข้อความในรายการเพื่อกระโดดไปยังหน้านั้น · ติ๊ก/เอาติ๊กออกทีละรายการ หรือติ๊กที่หัวกลุ่มเพื่อเลือกทั้งประเภท</li>
+            <li>(ไม่บังคับ) ติ๊ก <strong>ล้างข้อมูลเมตาของไฟล์ด้วย</strong> เพื่อลบชื่อผู้สร้าง ชื่อเรื่อง ฯลฯ ที่ซ่อนอยู่ในไฟล์</li>
+            <li>กด <strong>ปกปิด N รายการ</strong> — ข้อความถูกลบออกจากไฟล์จริง (คัดลอก/ค้นหาไม่ได้อีก) และปิดด้วยแถบสีดำ ย้อนกลับได้ด้วย Undo จากนั้นกด <strong>บันทึก</strong></li>
+            <li>กด <strong>ดาวน์โหลดรายงานการปกปิด (CSV)</strong> เพื่อเก็บเป็นหลักฐานว่าปิดอะไรไปบ้าง (ในรายงานแสดงค่าแบบปิดบางส่วน เช่น 3-xxxx-xxxxx-x5-8)</li>
+        </ol>
+        <figure class="my-6">
+            <img src="/images/manual/pdpa.png" alt="แผงตรวจหาข้อมูลส่วนบุคคล (PDPA) ใน Editor พร้อมกรอบบนหน้าเอกสาร" width="1100" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-center text-sm text-slate-500 mt-2">แผง PDPA: กรอบสีส้ม = เลือกไว้ (จะถูกปิด) · เส้นประสีเทา = ยังไม่ได้เลือก</figcaption>
+        </figure>
+        <h4 class="font-semibold text-slate-800 mt-6 mb-3">จากหน้าเอกสารของฉัน (ไม่ต้องเปิดไฟล์)</h4>
+        <ol class="space-y-3 text-slate-700 leading-relaxed list-decimal pl-6 mb-6">
+            <li>กดการ์ด <strong>ปกปิดข้อมูลส่วนบุคคล</strong> ในเครื่องมือด่วน แล้วเลือกไฟล์ (หรือเลือก <strong>ปกปิดข้อมูลส่วนบุคคล</strong> จากเมนู ☰ ของไฟล์)</li>
+            <li>ตรวจทานรายการแล้วกด <strong>ปกปิด N รายการ</strong> ระบบบันทึกเป็นไฟล์ใหม่ "ชื่อเดิม (PDPA).pdf" — ไฟล์เดิมไม่ถูกแก้ และดาวน์โหลดรายงานได้จากหน้าต่างผลลัพธ์</li>
+        </ol>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-amber-800 text-sm space-y-1">
+            <p><strong>ข้อจำกัด:</strong> ตรวจได้เฉพาะข้อความที่เป็นตัวอักษรในไฟล์ — หน้าที่เป็นภาพสแกน หรือข้อความที่อยู่ในรูปภาพ ระบบจะแจ้งว่า "ไม่มีชั้นข้อความ" ให้กดเมนู <strong>เครื่องมือ → อ่านข้อความในรูปภาพ (OCR)</strong> ก่อนแล้วตรวจใหม่ (OCR อาจอ่านผิดบางตัว) หรือใช้เครื่องมือ <strong>เซ็นเซอร์</strong> ลากปิดเอง</p>
+            <p>ประเภท "ตรวจก่อนเลือก" อาจจับผิดหรือจับไม่ครบ (เช่น ชื่อที่ไม่มีคำนำหน้าและไม่ได้อยู่หลังหัวข้อ "ชื่อ-นามสกุล") ควรอ่านทวนเอกสารอีกครั้งก่อนส่งออก · ไฟล์ที่ลงนามแล้ว ระบบจะเตือนก่อน เพราะลายเซ็นในไฟล์ใหม่จะไม่ถูกต้อง</p>
+        </div>
+
+        <!-- 17. บุ๊กมาร์ก -->
+        <h2 id="bookmarks" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 17. บุ๊กมาร์ก / สารบัญ (Bookmarks)</h2>
+        <p class="text-slate-700 leading-relaxed mb-4">จัดการสารบัญ (Bookmarks / Outline) ของเอกสาร PDF เพื่อให้กระโดดไปหน้าที่ต้องการได้อย่างรวดเร็ว</p>
+        <ol class="space-y-3 text-slate-700 leading-relaxed list-decimal pl-6 mb-6">
+            <li>เปิดไฟล์ PDF แล้วคลิกที่แท็บ <strong>บุ๊คมาร์ค</strong> ที่แถบข้าง (Sidebar) ด้านซ้าย</li>
+            <li>ระบบจะแสดงรายการบุ๊กมาร์กที่มีอยู่แล้วในเอกสาร (ถ้ามี)</li>
+            <li><strong>เพิ่มบุ๊กมาร์ก:</strong> กดปุ่ม <strong>+ เพิ่มที่คั่นหน้าหน้านี้</strong> จะเพิ่มบุ๊กมาร์กที่หน้าเอกสารปัจจุบัน แทรกตามลำดับหน้า</li>
+            <li><strong>เปลี่ยนชื่อ:</strong> ดับเบิลคลิกที่ชื่อ หรือกดไอคอนดินสอ ✎ แล้วกด Enter (ยาวได้ไม่เกิน 300 ตัวอักษร · Esc = ยกเลิก)</li>
+            <li><strong>ลบ:</strong> กดไอคอน × ข้างชื่อ (บนคอมพิวเตอร์ ไอคอนแสดงเมื่อชี้เมาส์ · บนมือถือแสดงตลอด)</li>
+            <li><strong>สารบัญหลายชั้น:</strong> บุ๊กมาร์กย่อย (เช่น บทที่ 1 → 1.1) แสดงย่อหน้าเข้าไป · แก้/ลบ/เพิ่มบุ๊กมาร์กแล้วโครงสร้างเดิม ตำแหน่งบนหน้า และบุ๊กมาร์กที่เป็นลิงก์เว็บยังอยู่ครบ (ลบบุ๊กมาร์กแม่ บุ๊กมาร์กย่อยจะเลื่อนขึ้นมาแทน)</li>
+            <li><strong>กระโดดไปหน้า:</strong> คลิกที่ชื่อบุ๊กมาร์กเพื่อไปยังหน้านั้นทันที</li>
+        </ol>
+        <figure class="my-6">
+            <img src="/images/manual/bookmarks.png" alt="แท็บบุ๊คมาร์คที่แถบด้านซ้ายของ Editor" width="232" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-center text-sm text-slate-500 mt-2">แท็บบุ๊คมาร์ค: คลิกชื่อเพื่อไปยังหน้านั้น</figcaption>
+        </figure>
+        <p class="text-sm text-slate-500 italic mb-8">บุ๊กมาร์กจะถูกบันทึกลงในไฟล์ PDF โดยตรง สามารถเปิดดูสารบัญได้จากโปรแกรมอ่าน PDF ทุกตัว</p>
+
+        <!-- 18. เปลี่ยนชื่อไฟล์ -->
+        <h2 id="rename-file" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 18. เปลี่ยนชื่อไฟล์ (Rename)</h2>
+        <p class="text-slate-700 leading-relaxed mb-4">เปลี่ยนชื่อไฟล์ PDF ที่อัปโหลดไว้ในระบบ โดยไม่กระทบไฟล์ต้นฉบับบนเซิร์ฟเวอร์</p>
+        <ol class="space-y-3 text-slate-700 leading-relaxed list-decimal pl-6 mb-6">
+            <li>ไปที่หน้า <strong>เอกสารของฉัน (Dashboard)</strong></li>
+            <li>กดปุ่ม ☰ ของไฟล์ หรือ <strong>คลิกขวา</strong> ที่ไฟล์ที่ต้องการเปลี่ยนชื่อ (ทั้งมุมมอง Grid และ List)</li>
+            <li>เลือก <strong>เปลี่ยนชื่อไฟล์</strong> จากเมนูที่ปรากฏ</li>
+            <li>พิมพ์ชื่อไฟล์ใหม่ในช่อง แล้วกดปุ่ม <strong>เปลี่ยนชื่อ</strong></li>
+        </ol>
+        <p class="text-sm text-slate-500 italic mb-8">ระบบจะเพิ่มนามสกุล .pdf ให้อัตโนมัติหากไม่ได้ระบุ</p>
+
+        <!-- 19. ติดตั้งฟอนต์ -->
+        <h2 id="install-font" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 19. ติดตั้งฟอนต์ (Install Font)</h2>
+        <p class="text-slate-700 leading-relaxed mb-4">เพิ่มฟอนต์เข้าบัญชีของคุณ เพื่อใช้แก้ไขข้อความและแทรกข้อความใหม่ — ติดตั้งได้ 2 ทาง: <strong>จากลิงก์ Google Fonts</strong> (ไม่ต้องดาวน์โหลดไฟล์เอง สะดวกบนมือถือ) หรือ <strong>จากไฟล์</strong> .ttf/.otf/.woff ที่มีอยู่ ฟอนต์ 1 ตระกูลมีได้ 4 สไตล์ (ปกติ/หนา/เอียง/หนาเอียง) ใช้กับปุ่ม B / I ตอนแก้ไขข้อความ</p>
+        <p class="text-slate-700 mb-2">กดการ์ด <strong>ติดตั้งฟอนต์</strong> (อยู่ท้ายสุดของเครื่องมือด่วนในหน้าเอกสารของฉัน)</p>
+
+        <h3 class="text-xl font-semibold text-slate-800 mt-8 mb-4">ทางที่ 1: จาก Google Fonts</h3>
+        <ol class="space-y-3 text-slate-700 leading-relaxed list-decimal pl-6 mb-4">
+            <li>เปิด <a class="text-sky-700 hover:underline" href="https://fonts.google.com/?subset=thai" target="_blank" rel="noopener noreferrer">Google Fonts (ฟอนต์ที่รองรับภาษาไทย)</a> เลือกฟอนต์ที่ชอบ แล้ว<strong>คัดลอกลิงก์หน้าฟอนต์</strong> เช่น <code class="bg-slate-100 px-2 py-0.5 rounded text-xs font-mono">https://fonts.google.com/specimen/Kanit</code> — หรือพิมพ์แค่ชื่อฟอนต์ เช่น <code class="bg-slate-100 px-2 py-0.5 rounded text-xs font-mono">Kanit</code></li>
+            <li>วางในแท็บ <strong>จาก Google Fonts</strong> แล้วกด <strong>ตรวจลิงก์</strong> — ระบบแสดงทุกสไตล์ที่ฟอนต์มี พร้อมข้อความตัวอย่างภาษาไทย/อังกฤษ</li>
+            <li>ตั้ง<strong>ชื่อที่จะแสดง</strong> (ถ้าชื่อซ้ำกับฟอนต์ที่มีอยู่ ระบบเสนอชื่อใหม่ให้) แล้วกด <strong>ติดตั้ง</strong></li>
+        </ol>
+        <ul class="list-disc pl-6 space-y-1 text-sm text-slate-600 mb-6">
+            <li>รับลิงก์หน้าฟอนต์ (รวมตระกูล Noto), ลิงก์ CSS จากปุ่ม <em>Get embed code</em> และชื่อฟอนต์เปล่าๆ — <strong>เฉพาะ https ของ Google Fonts</strong> เพื่อความปลอดภัย ฟอนต์จากเว็บอื่นให้ดาวน์โหลดไฟล์แล้วใช้ทางที่ 2</li>
+            <li>ฟอนต์ที่<strong>ไม่มีอักษรไทย</strong> ระบบเตือนก่อน (ยังติดตั้งได้ — ข้อความไทยจะใช้ฟอนต์สำรอง) · ฟอนต์ที่ไม่มีบางสไตล์ (เช่น ไม่มีตัวเอียง) ติดตั้งเท่าที่มี</li>
+            <li>ติดตั้งเฉพาะฟอนต์ที่คุณมีสิทธิ์ใช้ — ฟอนต์ใน Google Fonts ส่วนใหญ่ใช้ใบอนุญาตแบบเปิด (OFL)</li>
+        </ul>
+        <figure class="my-6 grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <div class="text-center">
+                <img src="/images/manual/install_font_google.png" alt="ตรวจลิงก์ Google Fonts พร้อมตัวอย่างทุกสไตล์" width="340" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+                <figcaption class="text-sm text-slate-500 mt-2">ตรวจลิงก์แล้วเห็นตัวอย่างทุกสไตล์</figcaption>
+            </div>
+            <div class="text-center">
+                <img src="/images/manual/install_font_google_done.png" alt="ติดตั้งแล้ว ฟอนต์อยู่ในรายการพร้อม R B I BI" width="340" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+                <figcaption class="text-sm text-slate-500 mt-2">ติดตั้งแล้ว ใช้ได้ทันทีในรายการฟอนต์</figcaption>
+            </div>
+        </figure>
+
+        <h3 class="text-xl font-semibold text-slate-800 mt-8 mb-4">ทางที่ 2: จากไฟล์</h3>
+        <ol class="space-y-3 text-slate-700 leading-relaxed list-decimal pl-6 mb-6">
+            <li>เลือกแท็บ <strong>จากไฟล์</strong></li>
+            <li>(ไม่บังคับ) พิมพ์ <strong>ชื่อฟอนต์ที่จะแสดง</strong> เช่น TH Sarabun New — เว้นว่างได้ ระบบใช้ชื่อจากไฟล์</li>
+            <li>เลือกไฟล์ <code class="bg-slate-100 px-2 py-0.5 rounded text-xs font-mono">.ttf</code> หรือ <code class="bg-slate-100 px-2 py-0.5 rounded text-xs font-mono">.otf</code> ให้แต่ละสไตล์: <strong>ตัวปกติ (Regular)</strong> ต้องมี ส่วนตัวหนา / ตัวเอียง / ตัวหนาเอียง ใส่หรือไม่ก็ได้ (บนมือถือเลือกไฟล์จากแอป Files/Downloads ได้)</li>
+            <li>กด <strong>ติดตั้งฟอนต์</strong></li>
+        </ol>
+        <ul class="list-disc pl-6 space-y-2 text-slate-700 leading-relaxed mb-6 text-sm">
+            <li>รับไฟล์ <strong>.ttf, .otf</strong> และฟอนต์สำหรับเว็บ <strong>.woff / .woff2</strong> (ระบบแปลงให้) ไฟล์ละไม่เกิน 20 MB · ไฟล์ <strong>.ttc</strong> (หลายฟอนต์ในไฟล์เดียว) ยังไม่รองรับ</li>
+            <li>หลังติดตั้ง ระบบเตือนถ้าฟอนต์<strong>ไม่มีตัวอักษรไทย</strong> หรือผู้ออกแบบ<strong>ตั้งค่าห้ามฝังลงในเอกสาร</strong> (ตรวจสิทธิ์การใช้งานก่อนใช้กับเอกสารที่ส่งต่อ)</li>
+            <li>เลือกไฟล์เดิมซ้ำ ระบบแจ้งว่าติดตั้งไว้แล้ว (ไม่สร้างรายการซ้ำ)</li>
+        </ul>
+        <p class="text-slate-700 mb-6">ฟอนต์ที่ติดตั้งทั้งสองทางอยู่ในส่วน <strong>ฟอนต์ที่ติดตั้งเองไว้แล้ว</strong> ด้านล่างหน้าต่าง — กดป้ายสไตล์ที่ยังว่าง (เส้นประ) เพื่อเพิ่มไฟล์สไตล์นั้น หรือกดถังขยะเพื่อลบ · ฟอนต์ผูกกับบัญชี ติดตั้งจากเครื่องไหนก็ใช้ได้ทุกเครื่อง</p>
+
+        <!-- Section 20 -->
+        <h2 id="keyboard-shortcuts" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 20. คีย์ลัดการใช้งาน (Keyboard Shortcuts)</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ระบบได้รองรับคีย์ลัดบนคีย์บอร์ดเพื่อช่วยให้คุณทำงานได้รวดเร็วขึ้น (รองรับทั้ง Windows และ Mac)</p>
+        
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-sm sm:text-base">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="px-4 py-3 font-semibold text-slate-700 w-1/3">คำสั่งการใช้งาน</th>
+                        <th class="px-4 py-3 font-semibold text-slate-700 w-1/3">Windows</th>
+                        <th class="px-4 py-3 font-semibold text-slate-700 w-1/3">Mac</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-600">
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">เปิดไฟล์เอกสาร</td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + O</kbd></td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + O</kbd></td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">บันทึกทับไฟล์เดิม</td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + S</kbd></td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + S</kbd></td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">พิมพ์เอกสารออกเครื่องพิมพ์</td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + P</kbd></td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + P</kbd></td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">ปิดเอกสาร</td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Alt + Q</kbd></td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌥ + Q</kbd></td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">เลิกทำ (Undo) / ทำซ้ำ (Redo)</td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + Z</kbd> / <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + Y</kbd> หรือ <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + Shift + Z</kbd></td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + Z</kbd> / <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + Y</kbd> หรือ <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + Shift + Z</kbd></td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">ซูมเข้า / ซูมออก</td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + +</kbd> / <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + -</kbd></td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + +</kbd> / <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + -</kbd></td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">ขนาดจริง (100%)</td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + 0</kbd></td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ + 0</kbd></td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">สลับหน้าเอกสาร</td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Page Up</kbd> / <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Page Down</kbd></td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Fn + ↑</kbd> / <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Fn + ↓</kbd></td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">ยกเลิก / ปิดหน้าต่าง Popup</td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">ESC</kbd></td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Esc ⎋</kbd></td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">ลบข้อความ หรือรูปภาพ หรือไฮไลท์</td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Delete</kbd> หรือ <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Backspace</kbd></td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Delete ⌫</kbd> หรือ <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Fn + Delete</kbd></td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">ลบกล่องข้อความทิ้ง (ขณะกำลังพิมพ์)</td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Ctrl + Delete</kbd> / <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Backspace</kbd></td>
+                        <td class="px-4 py-3"><kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">⌘ Cmd + Delete</kbd> / <kbd class="px-2 py-1 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Backspace</kbd></td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">ซูมและเลื่อนหน้า (จอสัมผัส/iPad)</td>
+                        <td class="px-4 py-3 text-slate-500">กาง-หุบสองนิ้ว (Pinch-to-zoom) / ลากนิ้วเดียวเพื่อเลื่อน</td>
+                        <td class="px-4 py-3 text-slate-500">กาง-หุบสองนิ้ว (Pinch-to-zoom) / ลากนิ้วเดียวเพื่อเลื่อน</td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">หน้าถัดไป / ก่อนหน้า (จอสัมผัส/iPad)</td>
+                        <td class="px-4 py-3 text-slate-500">ปัดนิ้วไปทางซ้าย / ขวาบนหน้าเอกสาร</td>
+                        <td class="px-4 py-3 text-slate-500">ปัดนิ้วไปทางซ้าย / ขวาบนหน้าเอกสาร</td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">คัดลอกข้อความบนหน้า (จอสัมผัส/iPad)</td>
+                        <td class="px-4 py-3 text-slate-500">แตะค้างบนหน้าเอกสารครู่หนึ่ง แล้วลากคลุมข้อความ (มีแว่นขยายเหนือนิ้ว)</td>
+                        <td class="px-4 py-3 text-slate-500">แตะค้างบนหน้าเอกสารครู่หนึ่ง แล้วลากคลุมข้อความ (มีแว่นขยายเหนือนิ้ว)</td>
+                    </tr>
+                    <tr class="hover:bg-sky-50/50">
+                        <td class="px-4 py-3 font-medium">เมนูลัดรูปหน้ากระดาษ (จอสัมผัส/iPad)</td>
+                        <td class="px-4 py-3 text-slate-500">แตะค้างที่รูปตัวอย่างหน้า (Long-press)</td>
+                        <td class="px-4 py-3 text-slate-500">แตะค้างที่รูปตัวอย่างหน้า (Long-press)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+        <!-- 21. เอกสารของฉัน -->
+        <h2 id="my-documents" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 21. หน้าเอกสารของฉัน และเมนูไฟล์ (☰)</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ไฟล์ทุกไฟล์ที่อัปโหลด สร้าง หรือได้กลับมาจากการลงนาม จะอยู่ในหน้า <strong>เอกสารของฉัน</strong> (หน้าแรกหลังเข้าสู่ระบบ) สลับมุมมองแบบการ์ดหรือแบบตารางได้ที่ปุ่มมุมขวาบน และค้นหาไฟล์จากชื่อได้ทันที</p>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li><strong>อัปโหลดไฟล์ (ได้หลายไฟล์พร้อมกัน):</strong> ลากไฟล์มาวางบนหน้านี้ หรือกด <strong>อัปโหลด PDF/รูปภาพ/Office</strong> แล้วเลือกไฟล์ — ระบบอัปโหลดทีละไฟล์ (แสดง "กำลังอัปโหลด 2/5") แล้วเก็บไว้ในรายการ ไฟล์ที่ไม่รองรับหรืออัปโหลดไม่สำเร็จจะแจ้งชื่อไว้ · ถ้าเลือกไฟล์เดียวจากปุ่ม จะเปิดเข้าหน้าแก้ไขทันที — ทุกไฟล์ถูกเก็บเป็น <strong>PDF</strong>:
+                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                    <li><strong>PDF</strong> — เก็บตามเดิม</li>
+                    <li><strong>รูปภาพ (PNG, JPG)</strong> — แปลงเป็น PDF หนึ่งหน้า พร้อมอ่านข้อความในรูป (OCR) ให้ค้นหา คัดลอก และเซ็นเซอร์ข้อความได้ · ภาพถ่ายจากมือถือที่ถ่ายแนวตั้ง/แนวนอนจะถูกหมุนให้ตั้งตรงให้</li>
+                    <li><strong>ไฟล์ Office</strong> (Word, Excel, PowerPoint: .docx, .doc, .xlsx, .xls, .pptx, .ppt, .rtf, .odt, .ods, .odp) — แปลงเป็น PDF บนเซิร์ฟเวอร์ แล้วเก็บเป็นไฟล์ชื่อเดิมนามสกุล .pdf (อาจใช้เวลาสักครู่ต่อไฟล์) · ไฟล์ Office ต้นฉบับไม่ได้เก็บไว้</li>
+                </ul>
+            </li>
+            <li><strong>เปิดไฟล์:</strong> คลิกที่การ์ด (หรือแถวในตาราง) ของไฟล์ เพื่อเข้าหน้าแก้ไข (Editor) — ใต้ชื่อไฟล์แสดงเวลาแก้ไขล่าสุดและ<strong>ขนาดไฟล์</strong></li>
+            <li><strong>เมนูไฟล์:</strong> คลิกปุ่ม <span class="inline-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span> ที่มุมขวาของการ์ด หรือ <strong>คลิกขวา</strong> ที่ไฟล์ จะมีคำสั่ง
+                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                    <li><strong>เปลี่ยนชื่อไฟล์</strong> — ดูหัวข้อ 18</li>
+                    <li><strong>ดาวน์โหลด</strong> — ดาวน์โหลดไฟล์เวอร์ชันที่บันทึกไว้ล่าสุด โดยไม่ต้องเปิดไฟล์</li>
+                    <li><strong>แปลงเป็น Word</strong> — ดูหัวข้อ 13</li>
+                    <li><strong>ส่งให้ลงนาม</strong> — ส่งเอกสารให้ผู้อื่นลงนามตามลำดับ ดูหัวข้อ 22</li>
+                    <li><strong>ปกปิดข้อมูลส่วนบุคคล</strong> — ตรวจหาและปิดข้อมูลส่วนบุคคลของไฟล์นี้ ดูหัวข้อ 16.1</li>
+                    <li><strong>เข้ารหัส PDF</strong> — ตั้งรหัสผ่าน ระบบสร้างไฟล์ใหม่ "ชื่อเดิม (เข้ารหัส).pdf" ที่ต้องใช้รหัสผ่านเปิด (ไฟล์เดิมไม่เปลี่ยน · เอกสารที่ลงนามแล้วเข้ารหัสไม่ได้ เพราะลายเซ็นจะใช้ไม่ได้)</li>
+                    <li><strong>ลดขนาดไฟล์</strong> — เลือกระดับการบีบอัด ระบบสร้างไฟล์ใหม่ "ชื่อเดิม (ลดขนาด).pdf" และแสดงขนาดก่อน/หลัง (ไฟล์เดิมไม่เปลี่ยน · ถ้าเล็กลงไม่ถึง 3% จะไม่สร้างไฟล์ · เอกสารที่ลงนามแล้วลดขนาดไม่ได้) ดูหัวข้อ 10</li>
+                    <li><strong>คุณสมบัติเอกสาร</strong> — ดูชื่อเรื่อง ผู้แต่ง จำนวนหน้า ขนาดหน้า ฟอนต์ ลายเซ็นดิจิทัล ฯลฯ (ไฟล์มีรหัสผ่านจะถามรหัสก่อน)</li>
+                    <li><strong>เลือกหลายไฟล์</strong> — เข้าโหมดเลือกโดยเลือกไฟล์นี้ไว้ก่อน (ดูข้อถัดไป)</li>
+                    <li><strong>ลบเอกสาร</strong> — ลบไฟล์ออกจากระบบ (มีหน้าต่างยืนยันก่อนลบ)</li>
+                </ul>
+            </li>
+            <li><strong>ลบหลายไฟล์พร้อมกัน:</strong> กดปุ่ม <strong>เลือกหลายไฟล์</strong> ข้างช่องค้นหา แล้วคลิกการ์ด (หรือแถว) ของไฟล์ที่ต้องการ — ในโหมดนี้การคลิกคือการเลือก ไม่ใช่การเปิดไฟล์
+                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                    <li><strong>เลือกทั้งหมด</strong> — เลือกทุกไฟล์ที่แสดงอยู่ (ถ้าพิมพ์ค้นหาไว้ จะเลือกเฉพาะไฟล์ที่ค้นพบ)</li>
+                    <li><strong>ลบที่เลือก</strong> — แสดงรายชื่อไฟล์ให้ยืนยันอีกครั้งก่อนลบ ถ้าบางไฟล์ลบไม่สำเร็จ ไฟล์นั้นจะยังถูกเลือกไว้ให้ลองใหม่</li>
+                    <li>กด <strong>เสร็จสิ้น</strong>, <strong>ยกเลิก</strong> หรือ <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Esc</kbd> เพื่อออกจากโหมดเลือก</li>
+                </ul>
+            </li>
+            <li>ปิดเมนูได้ด้วยการกด <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Esc</kbd> คลิกที่อื่น หรือเลื่อนหน้าจอ</li>
+        </ol>
+        <figure class="my-8 text-center">
+            <img src="/images/manual/file_menu.png" alt="เมนูไฟล์ ☰ บนการ์ดเอกสาร" loading="lazy" class="max-w-full sm:max-w-sm mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-sm text-slate-500 mt-2">เมนูไฟล์เมื่อกดปุ่ม ☰ บนการ์ดเอกสาร</figcaption>
+        </figure>
+        <figure class="my-8 text-center">
+            <img src="/images/manual/bulk_select.png" alt="โหมดเลือกหลายไฟล์ พร้อมแถบลบที่เลือก" loading="lazy" class="max-w-full mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-sm text-slate-500 mt-2">โหมดเลือกหลายไฟล์ — ติ๊กเลือกแล้วกด “ลบที่เลือก”</figcaption>
+        </figure>
+
+        <!-- 22. ส่งเอกสารให้ลงนาม -->
+        <h2 id="signing-send" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 22. ส่งเอกสารให้ลงนาม (ตามลำดับ / พร้อมกัน)</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ส่งเอกสาร PDF ให้ผู้ลงนามหลายคนเซ็นต่อกันเป็นขั้น ๆ เช่น ผู้อนุมัติ → ผู้บริหาร ระบบจะแจ้งเตือนคนที่ถึงคิว ล็อกเนื้อหาเอกสารไม่ให้ถูกแก้ระหว่างทาง และเมื่อทุกคนเซ็นครบ ไฟล์ที่ลงนามแล้วจะกลับมาอยู่ใน <strong>เอกสารของฉัน</strong> ของผู้ส่งโดยอัตโนมัติ</p>
+        <h3 class="text-xl font-semibold text-slate-800 mt-10 mb-4">ขั้นตอนการส่ง</h3>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>ที่หน้า <strong>เอกสารของฉัน</strong> กดการ์ด <strong>ส่งเอกสารให้ลงนาม</strong> (กลุ่มการลงนามเอกสาร) แล้วเลือกไฟล์ — หรือกดปุ่ม ☰ ของไฟล์ แล้วเลือก <strong>ส่งให้ลงนาม</strong></li>
+            <li>กรอก <strong>ชื่อเอกสาร</strong> (ระบบใส่ชื่อไฟล์ให้ก่อน) และ <strong>ข้อความถึงผู้ลงนาม</strong> (ไม่บังคับ) ข้อความนี้จะแสดงในหน้าคำขอและในอีเมลแจ้งเตือน</li>
+            <li><strong>ครบกำหนดลงนาม</strong> (ไม่บังคับ): เลือกวันและเวลา ระบบจะเตือนผู้ลงนามเมื่อเหลือเวลาไม่ถึง 24 ชั่วโมง และแจ้งคุณเมื่อเลยกำหนด</li>
+            <li>ในกล่อง <strong>ผู้ลงนาม</strong> พิมพ์อีเมลแล้วกด <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Enter</kbd>
+                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                    <li>ขึ้น <span class="text-green-700">✓ ชื่อผู้ใช้</span> = มีบัญชีในระบบแล้ว</li>
+                    <li>ขึ้น <span class="text-amber-700">✉ ยังไม่มีบัญชีในระบบ</span> = ระบบจะส่งอีเมลเชิญให้สมัครด้วยอีเมลนั้น (ดูหัวข้อ 25)</li>
+                </ul>
+            </li>
+            <li>เลือก <strong>ประเภทลายเซ็น</strong> ของแต่ละคน: ลายเซ็นอิเล็กทรอนิกส์, ลายเซ็นดิจิทัล (ใบรับรอง .p12/.pfx) หรือ <em>เลือกได้</em> (ให้ผู้ลงนามเลือกเอง)</li>
+            <li id="signing-passkey-require" class="scroll-mt-24">(ไม่บังคับ) ติ๊ก <strong>ต้องยืนยันตัวตนด้วย Passkey ก่อนลงนาม</strong> ให้ผู้ลงนามคนนั้น — ผู้ลงนามต้องสแกนหน้า/นิ้วด้วย passkey ของบัญชีตัวเองก่อนเซ็น ใช้ยืนยันว่าเจ้าของบัญชีเป็นคนเซ็นเอง (ไม่ใช่คนอื่นที่รู้รหัสผ่าน) และระบบบันทึกลงหนังสือรับรองการลงนาม
+                <img src="/images/manual/signing_passkey_create.png" alt="ตัวเลือกต้องยืนยันตัวตนด้วย Passkey ของผู้ลงนาม" class="mt-3 max-w-xs rounded-xl border border-slate-200 shadow-sm" onerror="this.style.display='none'">
+            </li>
+            <li>กด <strong>วางกล่องลายเซ็น</strong> แล้วเลื่อนเมาส์ไปบนเอกสาร จะเห็นกล่องลอยตามเมาส์ คลิกตรงตำแหน่งที่ต้องการวาง (เปลี่ยนหน้าได้ก่อนคลิก · กด <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded shadow-sm text-xs font-mono">Esc</kbd> เพื่อยกเลิก) วางแล้วลากย้ายหรือลากมุมเพื่อปรับขนาดได้</li>
+            <li>กด <strong>+ เพิ่มผู้ลงนาม</strong> เพื่อเพิ่มคนถัดไป ใช้ปุ่ม ↑ ↓ จัดลำดับ หรือ ✕ เพื่อลบ</li>
+            <li>ตรวจรายการแจ้งเตือนสีเทาใต้ปุ่ม (ถ้ามี เช่น ยังไม่ได้วางกล่อง) แล้วกด <strong>ส่งให้ลงนาม (N คน)</strong></li>
+        </ol>
+        <figure class="my-8 text-center">
+            <img src="/images/manual/signing_create.png" alt="หน้าส่งเอกสารให้ลงนาม" loading="lazy" class="max-w-full mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-sm text-slate-500 mt-2">ตัวอย่าง: สมหญิงกับสมชายลงนามพร้อมกันในขั้นที่ 1 แล้วจึงถึงคิวผู้ถูกเชิญในขั้นที่ 2</figcaption>
+        </figure>
+        <h3 class="text-xl font-semibold text-slate-800 mt-10 mb-4">ลงนามตามลำดับ หรือ ลงนามพร้อมกัน</h3>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li><strong>ตามลำดับ (ค่าเริ่มต้น):</strong> แต่ละคนอยู่คนละขั้น คนถัดไปจะได้รับแจ้งเมื่อคนก่อนหน้าเซ็นเสร็จ</li>
+            <li><strong>พร้อมกัน:</strong> ติ๊ก <em>ลงนามพร้อมกับคนก่อนหน้า</em> ที่ผู้ลงนามคนนั้น ทั้งสองคนจะอยู่ <strong>ขั้นเดียวกัน</strong> (เลขในวงกลมเหมือนกัน) ได้รับแจ้งพร้อมกัน ใครเซ็นก่อนก็ได้ และขั้นถัดไปจะเริ่มเมื่อทุกคนในขั้นนั้นเซ็นครบ</li>
+        </ul>
+        <div class="my-8 bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-xl text-amber-800 shadow-sm leading-relaxed">
+            <strong>⚠️ ข้อควรรู้:</strong> หลังส่งแล้วแก้ไขเนื้อหาเอกสาร รายชื่อผู้ลงนาม หรือวันครบกำหนดไม่ได้ หากต้องการเปลี่ยน ให้ <strong>ยกเลิกคำขอ</strong> แล้วส่งใหม่ · ไฟล์ที่มีหน้าหมุน (แนวนอน) ส่งลงนามได้ตามปกติ กล่องลายเซ็นจะอยู่ตรงตำแหน่งที่เห็นบนจอ
+        </div>
+
+        <!-- 23. ลงนามเมื่อได้รับคำขอ -->
+        <h2 id="signing-sign" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 23. ลงนามเมื่อได้รับคำขอ (สำหรับผู้ลงนาม)</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">เมื่อถึงคิวของคุณ จะมีแจ้งเตือนที่ <strong>กระดิ่ง</strong> มุมขวาบน และอีเมล "ถึงคิวคุณลงนาม" พร้อมปุ่มเปิดเอกสาร</p>
+        <figure class="my-8 text-center">
+            <img src="/images/manual/signing_notifications.png" alt="แจ้งเตือนถึงคิวลงนามที่กระดิ่ง" loading="lazy" class="max-w-full sm:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-sm text-slate-500 mt-2">คลิกที่แจ้งเตือนเพื่อเปิดคำขอได้ทันที · "อ่านทั้งหมด" เพื่อล้างตัวเลขสีแดง</figcaption>
+        </figure>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>คลิกแจ้งเตือน หรือไปที่เมนู <strong>การลงนาม</strong> แท็บ <strong>รอฉันลงนาม</strong> แล้วคลิกชื่อเอกสาร (รายการที่ถึงคิวจะมีป้าย <span class="text-xs text-white bg-blue-600 rounded px-1.5 py-0.5">ถึงคิวคุณ</span>)</li>
+            <li>อ่านเอกสารให้ครบทุกหน้า (ปุ่ม ‹ › ด้านบน) — กล่องสีน้ำเงินที่มีคำว่า <em>(คุณ)</em> คือตำแหน่งลายเซ็นของคุณ</li>
+            <li>ในกล่อง <strong>ถึงคิวคุณลงนาม</strong> ด้านขวา เลือก
+                <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                    <li><strong>ลงนามอิเล็กทรอนิกส์:</strong> สร้างลายเซ็นด้วยการพิมพ์ชื่อ อัปโหลดรูป หรือวาดด้วยเมาส์/นิ้ว เลือกสีปากกา แล้วกด <strong>ตกลง</strong> (รูปลายเซ็นต้องเป็นไฟล์ PNG/JPG ที่มีลายเซ็นอยู่จริง — รูปถ่ายจากมือถือระบบหมุนให้ตั้งตรงเอง)</li>
+                    <li><strong>ลงนามดิจิทัล (ใบรับรอง):</strong> เลือกไฟล์ใบรับรอง <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">.p12</code>/<code class="px-1.5 py-0.5 rounded bg-slate-100 text-sky-600 border border-slate-200 font-mono text-sm">.pfx</code> ของคุณ กรอกรหัสผ่าน (ใส่รูปลายมือชื่อเพิ่มได้) แล้วกด <strong>ตกลง</strong></li>
+                </ul>
+                <div id="signing-passkey" class="mt-3 p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-base">
+                    <p><strong>🔑 ยืนยันตัวตนด้วย Passkey:</strong> ถ้าบัญชีของคุณมี passkey (หัวข้อ 26.1) เมื่อกดปุ่มลงนาม อุปกรณ์จะขอสแกนหน้า/นิ้วก่อน แล้วจึงเปิดหน้าต่างลงนาม — ระบบบันทึกว่า "ยืนยันตัวตนด้วย Passkey (ชื่ออุปกรณ์)" ในลำดับผู้ลงนาม ประวัติ และหนังสือรับรอง</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1 text-slate-600">
+                        <li>ไม่บังคับ: เอาติ๊ก <em>ยืนยันตัวตนด้วย Passkey ก่อนลงนาม</em> ออกได้</li>
+                        <li>ผู้ส่งบังคับ: จะขึ้น <em>ผู้ส่งกำหนดให้ยืนยันตัวตนด้วย Passkey</em> — ถ้ายังไม่มี passkey กดลิงก์ <strong>เพิ่ม passkey ที่หน้าความปลอดภัย</strong> แล้วกลับมาที่คำขอ</li>
+                        <li>ใช้ passkey ของคนอื่นแทนไม่ได้ ระบบตรวจว่าเป็น passkey ของบัญชีที่เข้าสู่ระบบอยู่</li>
+                    </ul>
+                    <img src="/images/manual/signing_passkey_sign.png" alt="กล่องถึงคิวคุณลงนาม เมื่อผู้ส่งกำหนดให้ยืนยันด้วย Passkey" class="mt-3 max-w-sm rounded-xl border border-slate-200 shadow-sm" onerror="this.style.display='none'">
+                </div>
+            </li>
+            <li>เมื่อขึ้นข้อความ <span class="text-green-700">ลงนามเรียบร้อยแล้ว</span> ระบบจะแจ้งผู้ลงนามขั้นถัดไปให้อัตโนมัติ</li>
+            <li>หากไม่เห็นด้วยกับเอกสาร กด <strong>ปฏิเสธ</strong> และระบุเหตุผล — คำขอจะหยุดทันที และผู้ส่งจะได้รับแจ้งพร้อมเหตุผล</li>
+        </ol>
+        <figure class="my-8 text-center">
+            <img src="/images/manual/signing_my_turn.png" alt="หน้าคำขอเมื่อถึงคิวลงนาม" loading="lazy" class="max-w-full mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-sm text-slate-500 mt-2">หน้าคำขอเมื่อถึงคิวคุณ: เอกสารด้านซ้าย ปุ่มลงนาม/ปฏิเสธ และลำดับผู้ลงนามด้านขวา</figcaption>
+        </figure>
+        <figure class="my-8 text-center">
+            <img src="/images/manual/signing_sign_modal.png" alt="หน้าต่างลงนามอิเล็กทรอนิกส์" width="240" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-sm text-slate-500 mt-2">หน้าต่างลงนามบนมือถือ (เต็มจอ) — เซ็นสดด้วยนิ้ว / พิมพ์ / รูปภาพ</figcaption>
+        </figure>
+        <div class="my-6 bg-sky-50 border border-sky-200 p-5 rounded-2xl text-sky-900 shadow-sm leading-relaxed">
+            <strong>🛡️ ลายเซ็นอิเล็กทรอนิกส์ในระบบนี้ปลอดภัยแค่ไหน?</strong> ไม่ใช่การแปะรูปลงเอกสาร แต่เป็นลายเซ็น PDF จริง (PAdES) ที่ระบบลงนามกำกับพร้อมชื่อและอีเมลบัญชีที่ยืนยันตัวตนแล้ว ตราลายเซ็นมีพื้นหลังโปร่งใส ไม่บังข้อความเดิม และหากเอกสารถูกแก้ไขหลังลงนาม การตรวจสอบลายเซ็นจะแจ้งว่าไม่ถูกต้องทันที
+        </div>
+
+        <!-- 24. ติดตามสถานะ -->
+        <h2 id="signing-track" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 24. ติดตามสถานะ ส่งเตือน และหนังสือรับรองการลงนาม</h2>
+        <h3 class="text-xl font-semibold text-slate-800 mt-6 mb-4">หน้า "การลงนาม"</h3>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ในหน้าเอกสารของฉัน กลุ่ม <strong>การลงนามเอกสาร</strong> มีการ์ด <strong>รอฉันลงนาม</strong> (มีตัวเลขแดงเมื่อมีเอกสารรอคุณ) และ <strong>ที่ฉันส่ง</strong> หรือกด <strong>ดูทั้งหมด →</strong> หน้ารายการแบ่งเป็น 3 แท็บ: <strong>รอฉันลงนาม</strong>, <strong>ที่ฉันส่ง</strong> และ <strong>ทั้งหมด</strong> แต่ละแถวบอกสถานะ จำนวนที่ลงนามแล้ว คนที่ระบบกำลังรอ และวันครบกำหนด (ขึ้นป้าย <span class="text-xs text-white bg-red-600 rounded px-1.5 py-0.5">เลยกำหนด</span> เมื่อเลยเวลา)</p>
+        <figure class="my-8 text-center">
+            <img src="/images/manual/signing_inbox_sent.png" alt="รายการคำขอที่ฉันส่ง" loading="lazy" class="max-w-full mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-sm text-slate-500 mt-2">แท็บ "ที่ฉันส่ง" · มุมขวาบนมีช่องติ๊ก "รับอีเมลแจ้งเตือนการลงนาม"</figcaption>
+        </figure>
+        <h3 class="text-xl font-semibold text-slate-800 mt-10 mb-4">สิ่งที่ผู้ส่งทำได้ในหน้าคำขอ</h3>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li><strong>ส่งเตือนผู้ลงนาม:</strong> ส่งแจ้งเตือนและอีเมลไปยังทุกคนที่ระบบกำลังรออยู่ (กดซ้ำได้ทุก 60 นาที) — สำหรับผู้ถูกเชิญที่ยังไม่สมัคร ระบบจะส่งอีเมลเชิญซ้ำ</li>
+            <li><strong>ยกเลิกคำขอนี้:</strong> หยุดการลงนามทันที ผู้ที่รออยู่จะได้รับแจ้ง (ยกเลิกได้เฉพาะคำขอที่ยังไม่จบ)</li>
+            <li><strong>ดาวน์โหลดเอกสาร (เวอร์ชันล่าสุด):</strong> ไฟล์พร้อมลายเซ็นที่เซ็นไปแล้ว ณ ตอนนั้น</li>
+            <li><strong>ตรวจสอบลายเซ็นในเอกสาร:</strong> ตรวจทุกลายเซ็นว่าเอกสารไม่ถูกแก้หลังลงนาม แสดงชื่อในใบรับรอง และเวลาประทับจาก TSA (ถ้าผู้ดูแลระบบเปิดใช้)</li>
+            <li><strong>ประวัติ (หลักฐาน):</strong> ทุกเหตุการณ์ — ส่ง เปิดดู ลงนาม ส่งเตือน ปฏิเสธ — พร้อมเวลาและ IP</li>
+        </ul>
+        <figure class="my-8 text-center">
+            <img src="/images/manual/signing_owner_status.png" alt="หน้าคำขอฝั่งผู้ส่ง" loading="lazy" class="max-w-full mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-sm text-slate-500 mt-2">ขั้นที่ 1 ลงนามครบแล้ว ตอนนี้รอผู้ถูกเชิญในขั้นที่ 2 · ผลตรวจลายเซ็นแสดงใต้ปุ่ม</figcaption>
+        </figure>
+        <h3 class="text-xl font-semibold text-slate-800 mt-10 mb-4">หนังสือรับรองการลงนาม (Certificate of Completion)</h3>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">กด <strong>ดาวน์โหลดหนังสือรับรองการลงนาม</strong> เพื่อรับ PDF สรุปหลักฐานทั้งหมด: ผู้ลงนาม วิธีลงนาม เวลา IP ประวัติทุกเหตุการณ์ และค่า SHA-256 ของต้นฉบับกับฉบับล่าสุด ระบบลงนามกำกับไฟล์นี้ไว้เพื่อป้องกันการแก้ไข ผู้ส่งและผู้ลงนามทุกคนดาวน์โหลดได้</p>
+        <figure class="my-8 text-center">
+            <img src="/images/manual/signing_evidence.png" alt="ตัวอย่างหนังสือรับรองการลงนาม" loading="lazy" class="max-w-full sm:max-w-lg mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-sm text-slate-500 mt-2">ตัวอย่างหนังสือรับรองการลงนาม</figcaption>
+        </figure>
+        <div class="my-6 bg-sky-50 border border-sky-200 p-5 rounded-2xl text-sky-900 shadow-sm leading-relaxed">
+            <strong>🔍 ตรวจว่าไฟล์ที่ถืออยู่คือฉบับเดียวกับที่ลงนาม:</strong> คำนวณ SHA-256 ของไฟล์ (macOS/Linux: <code class="font-mono text-sm">shasum -a 256 ชื่อไฟล์.pdf</code> · Windows: <code class="font-mono text-sm">certutil -hashfile ชื่อไฟล์.pdf SHA256</code>) แล้วเทียบกับค่า "SHA-256 ฉบับล่าสุด" ในหนังสือรับรอง ต้องตรงกันทุกตัวอักษร
+        </div>
+        <h3 class="text-xl font-semibold text-slate-800 mt-10 mb-4">เมื่อทุกคนลงนามครบ</h3>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li>ทุกคนได้รับแจ้ง "ลงนามครบทุกคนแล้ว" ทั้งที่กระดิ่งและอีเมล</li>
+            <li>ไฟล์ชื่อ <em>"ชื่อเอกสาร (ลงนามครบแล้ว).pdf"</em> จะอยู่ใน <strong>เอกสารของฉัน</strong> ของผู้ส่ง</li>
+            <li><strong>อย่าแก้ไขเนื้อหาไฟล์ที่ลงนามแล้ว</strong> (เช่น เปิดใน Editor แล้วบันทึก) เพราะลายเซ็นจะไม่ถูกต้อง ให้ดาวน์โหลดไปใช้งาน/ส่งต่อได้เลย</li>
+            <li>เมื่อเปิดใน Adobe Acrobat ลายเซ็นจะแสดงว่า "เอกสารไม่ถูกแก้ไข" ส่วนการแสดงเครื่องหมายถูกสีเขียวขึ้นกับใบรับรองที่ใช้: ลายเซ็นดิจิทัลแสดงตามใบรับรองของผู้ลงนาม ลายเซ็นอิเล็กทรอนิกส์แสดงตามใบรับรองระบบที่ผู้ดูแลตั้งค่า</li>
+        </ul>
+        <h3 class="text-xl font-semibold text-slate-800 mt-10 mb-4">อีเมลแจ้งเตือน</h3>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li>ระบบส่งอีเมลเมื่อ: ถึงคิวลงนาม · ถูกส่งเตือน · ใกล้ครบกำหนด · เลยกำหนด · มีผู้ปฏิเสธ · ลงนามครบ · คำขอถูกยกเลิก</li>
+            <li>อีเมลส่งจากที่อยู่ของระบบ ชื่อผู้ส่งจะแสดงเป็น "<em>ชื่อผู้ส่งคำขอ</em> ผ่าน JA PDF Editor" และกด <strong>ตอบกลับ</strong> ได้ถึงตัวผู้ส่งโดยตรง</li>
+            <li>ไม่อยากได้อีเมล: เอาติ๊กออกที่ <strong>รับอีเมลแจ้งเตือนการลงนาม</strong> ในหน้าการลงนาม (แจ้งเตือนที่กระดิ่งยังทำงานตามปกติ)</li>
+            <li>ไม่เห็นอีเมล: ตรวจโฟลเดอร์ Junk/สแปม</li>
+        </ul>
+
+        <!-- 25. ผู้ถูกเชิญ -->
+        <h2 id="signing-invite" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 25. เชิญคนที่ยังไม่มีบัญชีให้ลงนาม</h2>
+        <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">ผู้ลงนามไม่จำเป็นต้องมีบัญชีก่อน ใส่อีเมลของเขาได้เลย ระบบจะส่งอีเมล <em>"คุณได้รับเชิญให้ลงนามเอกสาร"</em> พร้อมปุ่ม <strong>สมัครสมาชิกเพื่อลงนาม</strong></p>
+        <ol class="list-decimal list-inside space-y-3 text-slate-600 text-base sm:text-lg mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <li>ผู้ถูกเชิญกดปุ่มในอีเมล จะเข้าหน้า <strong>สร้างบัญชีใหม่</strong> ที่กรอกอีเมลไว้ให้แล้ว</li>
+            <li>ตั้งรหัสผ่าน (อย่างน้อย 8 ตัว มีตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก และตัวเลข) แล้วกด <strong>สมัครใช้งาน</strong></li>
+            <li>เปิดอีเมล <em>"ยืนยันอีเมลของคุณ"</em> แล้วกดปุ่ม <strong>ยืนยันอีเมลของฉัน</strong></li>
+            <li>เข้าสู่ระบบ — เอกสารจะถูกผูกกับบัญชีอัตโนมัติ และอยู่ในเมนู <strong>การลงนาม</strong> (ถ้าถึงคิวแล้วจะมีแจ้งเตือนที่กระดิ่ง)</li>
+        </ol>
+        <figure class="my-8 text-center">
+            <img src="/images/manual/signing_invite_register.png" alt="หน้าสมัครจากลิงก์เชิญ" loading="lazy" class="max-w-full sm:max-w-md mx-auto rounded-xl border border-slate-200 shadow-sm">
+            <figcaption class="text-sm text-slate-500 mt-2">หน้าสมัครเมื่อเปิดจากลิงก์ในอีเมลเชิญ</figcaption>
+        </figure>
+        <div class="my-8 bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-xl text-amber-800 shadow-sm leading-relaxed">
+            <strong>⚠️ ต้องสมัครด้วยอีเมลเดียวกับที่ได้รับเชิญเท่านั้น</strong> (ใช้ "ลงชื่อเข้าใช้ด้วย Google" ได้ถ้าเป็นอีเมลเดียวกัน) ถ้าสมัครด้วยอีเมลอื่น ระบบจะผูกเอกสารให้ไม่ได้ ให้ผู้ส่งยกเลิกแล้วส่งคำขอใหม่ด้วยอีเมลที่ถูกต้อง
+        </div>
+
+        <!-- 26. บัญชีผู้ใช้ -->
+        <h2 id="account" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 26. บัญชีผู้ใช้ และการแก้ปัญหาเข้าสู่ระบบ</h2>
+        <ul class="list-disc list-inside space-y-2 text-slate-600 text-base sm:text-lg mb-6 pl-2">
+            <li><strong>รูปโปรไฟล์</strong> (หน้าโปรไฟล์ › รูปโปรไฟล์): <em>อัปโหลดรูป</em> (JPG/PNG/WebP ไม่เกิน 8MB — ลากเลื่อนและซูมให้ใบหน้าอยู่กลางวงกลมก่อนบันทึก ระบบลบข้อมูลแฝงในรูป เช่น ตำแหน่ง GPS ออกให้) หรือ <em>เลือกอีโมจิ</em> 18 แบบ เปลี่ยนสีหน้าและสีพื้นหลังได้ · <em>ลบรูป</em> แล้วกลับไปใช้รูปจากบัญชี Google/LINE หรือตัวอักษรแรกของชื่อ</li>
+            <li><strong>สมัครสมาชิก:</strong> หน้าเข้าสู่ระบบ › <em>สมัครสมาชิกใหม่</em> › ยืนยันอีเมลจากลิงก์ที่ได้รับ (ลิงก์มีอายุ 24 ชั่วโมง) แล้วจึงเข้าสู่ระบบได้</li>
+            <li><strong>ระบบที่ติดตั้งในองค์กร:</strong> อาจสมัครได้เฉพาะอีเมลขององค์กร (หน้าสมัครจะบอกโดเมนที่ใช้ได้ เช่น <em>@company.co.th</em>) และอาจไม่มีปุ่ม Google/LINE — ใช้อีเมล/รหัสผ่านหรือ <a class="underline" href="#passkey">Passkey</a> แทน · ถ้าไม่มีปุ่ม <em>สมัครสมาชิกใหม่</em> ให้ติดต่อผู้ดูแลระบบขององค์กร · ผู้ได้รับเชิญให้ลงนามสมัครจากลิงก์ในอีเมลเชิญได้เสมอ แม้ใช้อีเมลนอกองค์กร</li>
+            <li><strong>ไม่ได้รับอีเมลยืนยัน / ลิงก์หมดอายุ:</strong> ลองเข้าสู่ระบบ เมื่อขึ้น "กรุณายืนยันอีเมลของคุณก่อนเข้าใช้งาน" ให้กด <strong>ส่งอีเมลยืนยันตัวตนอีกครั้ง</strong></li>
+            <li><strong>ลืมรหัสผ่าน:</strong> กด <em>ลืมรหัสผ่าน?</em> กรอกอีเมล แล้วตั้งรหัสใหม่จากลิงก์ในอีเมล (มีอายุ 1 ชั่วโมง <strong>ใช้ได้ครั้งเดียว</strong>) — การตั้งรหัสผ่านใหม่สำเร็จถือว่ายืนยันอีเมลแล้วด้วย และทุกอุปกรณ์ที่เข้าสู่ระบบไว้จะต้องเข้าสู่ระบบใหม่</li>
+            <li><strong>เปลี่ยนรหัสผ่าน</strong> (หน้าโปรไฟล์): อุปกรณ์อื่นที่เข้าสู่ระบบไว้จะต้องเข้าสู่ระบบใหม่ เครื่องที่ใช้อยู่ใช้ต่อได้ · <strong>ออกจากระบบ</strong> แล้วสิทธิ์ของเครื่องนั้นถูกยกเลิกทันที</li>
+            <li><strong>บัญชี Google</strong> (เมื่อระบบเปิดใช้): กด <em>ลงชื่อเข้าใช้ด้วย Google</em> ไม่ต้องยืนยันอีเมลเพิ่ม หากต้องการเข้าด้วยรหัสผ่านให้ใช้ "ลืมรหัสผ่าน" เพื่อตั้งรหัสครั้งแรก</li>
+            <li><strong>"อีเมลหรือรหัสผ่านไม่ถูกต้อง":</strong> ตรวจตัวพิมพ์ใหญ่-เล็กของรหัสผ่าน (อีเมลพิมพ์ตัวใหญ่หรือเล็กก็ได้) และภาษาของแป้นพิมพ์ หรือใช้ลืมรหัสผ่าน</li>
+            <li><strong>"เซสชันของคุณหมดอายุ":</strong> เกิดเมื่อเข้าสู่ระบบนานเกิน 7 วัน หรือมีการเข้าสู่ระบบจากอุปกรณ์อื่นเกินจำนวนที่แพ็กเกจกำหนด ให้เข้าสู่ระบบใหม่</li>
+        </ul>
+
+        <h3 id="passkey" class="text-xl font-semibold text-slate-800 mt-10 mb-4 scroll-mt-24">26.1 เข้าสู่ระบบด้วย Passkey</h3>
+        <p class="text-slate-700 leading-relaxed mb-4">Passkey ให้คุณเข้าสู่ระบบด้วย <strong>Face ID, Touch ID, Windows Hello หรือรหัส PIN ของอุปกรณ์</strong> โดยไม่ต้องพิมพ์อีเมลและรหัสผ่าน ปลอดภัยกว่ารหัสผ่าน เพราะไม่มีอะไรให้ถูกขโมยหรือถูกหลอกให้กรอกในเว็บปลอม (passkey ใช้ได้เฉพาะกับเว็บไซต์นี้เท่านั้น)</p>
+        <h4 class="font-semibold text-slate-800 mt-6 mb-3">เพิ่ม passkey</h4>
+        <ol class="space-y-3 text-slate-700 leading-relaxed list-decimal pl-6 mb-6">
+            <li>เข้าสู่ระบบตามปกติ แล้วกดรูปโปรไฟล์มุมขวาบน › <strong>ความปลอดภัย</strong></li>
+            <li>ในส่วน <strong>Passkey</strong> กด <strong>+ เพิ่ม passkey</strong> ตั้งชื่อให้จำได้ (เช่น "MacBook ที่ทำงาน") แล้วกด <strong>สร้าง passkey</strong></li>
+            <li>อุปกรณ์จะขอสแกนหน้า/นิ้วหรือใส่ PIN — ยืนยันแล้ว passkey จะขึ้นในรายการ</li>
+        </ol>
+        <p class="text-slate-600 leading-relaxed mb-3">📸 [นำรูปส่วน Passkey มาเซฟไว้ที่: public/images/manual/passkey.png]</p>
+        <img src="/images/manual/passkey.png" alt="ส่วน Passkey ในหน้าความปลอดภัย" class="max-w-full sm:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm mb-6" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        <h4 class="font-semibold text-slate-800 mt-6 mb-3">เข้าสู่ระบบด้วย passkey</h4>
+        <ul class="list-disc pl-6 space-y-2 text-slate-700 leading-relaxed mb-6">
+            <li>ที่หน้าเข้าสู่ระบบ กด <strong>เข้าสู่ระบบด้วย Passkey</strong> แล้วยืนยันด้วยหน้า/นิ้ว — ไม่ต้องกรอกอีเมล</li>
+            <li>หรือแตะช่อง <strong>อีเมล</strong> — Safari/Chrome จะแนะนำ passkey ของบัญชีนี้ใต้ช่อง เลือกแล้วยืนยันได้เลย</li>
+            <li>passkey ที่สร้างบน iPhone/Mac ใช้ได้ทุกเครื่องที่ใช้ Apple ID เดียวกัน (iCloud Keychain) และบน Android/Chrome ซิงก์ผ่าน Google Password Manager — รายการที่ซิงก์ได้จะมีป้าย <em>ซิงก์ข้ามอุปกรณ์</em></li>
+            <li>ใช้กับคอมพิวเตอร์เครื่องอื่นได้ด้วยการสแกน QR ด้วยมือถือที่มี passkey</li>
+        </ul>
+        <h4 class="font-semibold text-slate-800 mt-6 mb-3">จัดการ passkey</h4>
+        <ul class="list-disc pl-6 space-y-2 text-slate-700 leading-relaxed mb-6">
+            <li><strong>เปลี่ยนชื่อ / ลบ</strong> ได้จากรายการในหน้าความปลอดภัย — เมื่อลบแล้ว ควรลบ passkey ในผู้จัดการรหัสผ่านของอุปกรณ์ด้วย (เช่น การตั้งค่า › รหัสผ่าน)</li>
+            <li>เพิ่มได้หลายอุปกรณ์ (สูงสุด 20) · อุปกรณ์เดียวกันสร้างซ้ำไม่ได้ ระบบจะแจ้งว่า "มี passkey ของบัญชีนี้อยู่แล้ว"</li>
+            <li>รหัสผ่าน Google และ LINE ยังใช้เข้าสู่ระบบได้ตามปกติ — ทำอุปกรณ์หายก็ยังเข้าได้ แล้วลบ passkey ของเครื่องนั้นทิ้ง</li>
+        </ul>
+        <h3 id="line-notify" class="text-xl font-semibold text-slate-800 mt-10 mb-4 scroll-mt-24">26.2 แจ้งเตือนทาง LINE</h3>
+        <p class="text-slate-700 leading-relaxed mb-4">รับแจ้งเตือนการลงนามทาง LINE แทนอีเมล (อีเมลอาจตกไปอยู่ในจดหมายขยะ) ได้แก่ <strong>ถึงคิวคุณลงนาม · ใกล้ครบกำหนด/เลยกำหนด · มีผู้ปฏิเสธ · ยกเลิกคำขอ</strong> และ <strong>ลงนามครบทุกคนแล้ว</strong> (ส่งให้ผู้ส่งเอกสาร) — แต่ละข้อความมีปุ่มเปิดเอกสารบนเว็บ ไม่มีเนื้อหาเอกสารอยู่ใน LINE</p>
+        <h4 class="font-semibold text-slate-800 mt-6 mb-3">เชื่อมต่อ LINE</h4>
+        <ol class="list-decimal pl-6 space-y-2 text-slate-700 leading-relaxed mb-4">
+            <li>ไปที่เมนูโปรไฟล์ › <strong>ความปลอดภัย</strong> › ส่วน <strong>แจ้งเตือนทาง LINE</strong> กด <strong>เชื่อมต่อ LINE</strong></li>
+            <li><strong>บนมือถือ:</strong> กด <strong>เปิด LINE แล้วส่งรหัส</strong> — LINE จะเปิดแชทของ JA PDF พร้อมพิมพ์รหัสไว้ให้ (ถ้ายังไม่เป็นเพื่อน กดเพิ่มเพื่อนก่อน) แล้วกดส่ง<br><strong>บนคอมพิวเตอร์:</strong> สแกน QR ด้วยกล้องมือถือ แล้วส่งรหัสเหมือนกัน</li>
+            <li>LINE ตอบกลับว่าเชื่อมต่อเรียบร้อย และหน้าเว็บเปลี่ยนเป็น <em>เชื่อมต่อแล้ว</em> เอง</li>
+        </ol>
+        <p class="text-slate-600 leading-relaxed mb-3">📸 [นำรูปส่วนแจ้งเตือนทาง LINE มาเซฟไว้ที่: public/images/manual/line_notify.png]</p>
+        <img src="/images/manual/line_notify.png" alt="ส่วนแจ้งเตือนทาง LINE ในหน้าความปลอดภัย" class="max-w-full sm:max-w-xl mx-auto rounded-xl border border-slate-200 shadow-sm mb-6" style="width: auto;" onerror="this.style.display='none'" onload="this.style.display='block'; this.previousElementSibling.style.display='none'">
+        <ul class="list-disc pl-6 space-y-2 text-slate-700 leading-relaxed mb-6">
+            <li>รหัสใช้ได้ <strong>ครั้งเดียว ภายใน 10 นาที</strong> — หมดอายุแล้วกดเชื่อมต่อใหม่</li>
+            <li>ปิดรับทาง LINE ชั่วคราวได้ (เอาติ๊กออก) หรือกด <strong>ยกเลิกการเชื่อมต่อ LINE</strong> — แจ้งเตือนจะกลับไปส่งทางอีเมล (ถ้าเปิดรับอีเมลไว้ในหน้าการลงนาม)</li>
+            <li>ถ้าบล็อกบัญชี LINE ของ JA PDF ระบบจะยกเลิกการเชื่อมต่อให้อัตโนมัติ</li>
+            <li>ถ้าส่ง LINE ไม่สำเร็จ หรือระบบใช้ข้อความ LINE ของเดือนนั้นครบแล้ว จะส่งเป็นอีเมลแทน · แจ้งเตือนในระบบ (🔔) ยังได้ครบทุกเรื่องเหมือนเดิม</li>
+        </ul>
+        <h3 id="delete-account" class="text-xl font-semibold text-slate-800 mt-10 mb-4 scroll-mt-24">26.3 ลบบัญชี</h3>
+        <p class="text-slate-700 leading-relaxed mb-4">ลบบัญชีพร้อมไฟล์และข้อมูลทั้งหมดได้เองที่เมนูโปรไฟล์ › <strong>โปรไฟล์ส่วนตัว</strong> › ส่วน <strong>ลบบัญชี</strong> › <strong>ลบบัญชีของฉัน...</strong> — <strong class="text-red-700">กู้คืนไม่ได้</strong> ดาวน์โหลดไฟล์ที่ต้องการเก็บไว้ก่อน</p>
+        <ol class="list-decimal pl-6 space-y-2 text-slate-700 leading-relaxed mb-4">
+            <li>อ่านรายการสิ่งที่จะถูกลบ (จำนวนไฟล์ คำขอลงนาม ฯลฯ)</li>
+            <li>ติ๊ก <em>ฉันเข้าใจว่าบัญชี ไฟล์ และข้อมูลทั้งหมดจะถูกลบถาวร</em> แล้วพิมพ์อีเมลของบัญชีให้ตรง</li>
+            <li>ใส่รหัสผ่านปัจจุบันแล้วกด <strong>ลบบัญชีถาวร</strong> หรือกด <strong>ยืนยันด้วย Passkey แล้วลบ</strong> (ถ้ามี passkey) — ระบบส่งอีเมลแจ้งว่าลบบัญชีแล้ว</li>
+        </ol>
+        <ul class="list-disc pl-6 space-y-2 text-slate-700 leading-relaxed mb-6">
+            <li><strong>ลบทั้งหมด:</strong> ไฟล์ในเอกสารของฉัน ไฟล์ Word ที่แปลง คำขอลงนามที่คุณส่ง passkey การเชื่อมต่อ LINE API key ฟอนต์ที่ติดตั้ง และการตั้งค่า</li>
+            <li>คำขอลงนามที่คุณส่งและยังไม่จบ จะถูก <strong>ยกเลิก</strong> และแจ้งผู้ลงนามก่อนลบ</li>
+            <li>เอกสารของคนอื่นที่ยังรอคุณลงนาม จะถูก <strong>ปฏิเสธอัตโนมัติ</strong> (เหตุผล: ผู้ลงนามลบบัญชีผู้ใช้แล้ว) และแจ้งเจ้าของเอกสาร</li>
+            <li>ลายเซ็นที่คุณลงไว้แล้วในเอกสารของคนอื่น <strong>ยังอยู่ในเอกสารของเจ้าของ</strong> พร้อมชื่อและอีเมลในประวัติ/หนังสือรับรองการลงนาม (เป็นหลักฐานของเจ้าของเอกสาร) แต่ไม่เชื่อมกับบัญชีแล้ว</li>
+            <li>ผู้ดูแลระบบคนสุดท้ายลบบัญชีไม่ได้ ต้องแต่งตั้งผู้ดูแลระบบคนอื่นก่อน</li>
+            <li>สมัครด้วย Google หรือ LINE และไม่เคยตั้งรหัสผ่าน: ยืนยันด้วย passkey หรือกด <em>ลืมรหัสผ่าน</em> ที่หน้าเข้าสู่ระบบเพื่อตั้งรหัสก่อน</li>
+        </ul>
+
+        <h3 id="line-login" class="text-xl font-semibold text-slate-800 mt-10 mb-4 scroll-mt-24">26.4 เข้าสู่ระบบด้วย LINE</h3>
+        <p class="text-slate-700 leading-relaxed mb-4">กดปุ่ม <strong class="text-[#06C755]">เข้าสู่ระบบด้วย LINE</strong> ที่หน้าเข้าสู่ระบบ แล้วกด <em>อนุญาต</em> ในหน้าของ LINE — ไม่ต้องพิมพ์รหัสผ่าน (บนมือถือที่มีแอป LINE จะเข้าได้ทันที)</p>
+        <ul class="list-disc pl-6 space-y-2 text-slate-700 leading-relaxed mb-4">
+            <li><strong>ครั้งแรก:</strong> ระบบใช้อีเมลที่ลงทะเบียนกับ LINE — ถ้าเคยสมัครด้วยอีเมลนี้ (รหัสผ่าน/Google) จะเข้าบัญชีเดิมและเชื่อม LINE ให้ ถ้ายังไม่มีบัญชีจะสร้างให้อัตโนมัติ</li>
+            <li><strong>บัญชี LINE ไม่มีอีเมล หรือไม่อนุญาตให้แชร์อีเมล:</strong> ระบบให้กรอกอีเมลแล้วส่งลิงก์ยืนยันไปให้ — กดลิงก์<strong>ในเบราว์เซอร์เดียวกับที่กดเข้าสู่ระบบ</strong> (ลิงก์มีอายุ 30 นาที)</li>
+            <li><strong>เพิ่มเพื่อน JA PDF:</strong> หน้าอนุญาตของ LINE มีช่องเพิ่มเพื่อนบัญชี JA PDF ให้ — ถ้าเพิ่มไว้ จะได้รับแจ้งเตือนการลงนามทาง LINE ทันทีโดยไม่ต้องส่งรหัสเชื่อมต่อ (หัวข้อ 26.2)</li>
+            <li><strong>บัญชีที่มีอยู่แล้วแต่อีเมลไม่ตรงกับ LINE:</strong> เข้าสู่ระบบด้วยวิธีเดิม แล้วไปที่เมนูโปรไฟล์ › <strong>ความปลอดภัย</strong> › ส่วน <strong>เข้าสู่ระบบด้วย LINE</strong> › <strong>เชื่อมบัญชี LINE เพื่อเข้าสู่ระบบ</strong></li>
+            <li>ยกเลิกได้ที่ส่วนเดียวกัน (<strong>ยกเลิกการเข้าสู่ระบบด้วย LINE</strong>) — ยังเข้าด้วยอีเมล/รหัสผ่าน, Google หรือ Passkey ได้ · ไม่เคยตั้งรหัสผ่าน กด <em>ลืมรหัสผ่าน</em> เพื่อตั้งรหัส</li>
+            <li>บล็อกบัญชี LINE ของ JA PDF = หยุดแจ้งเตือนทาง LINE เท่านั้น ยังเข้าสู่ระบบด้วย LINE ได้</li>
+        </ul>
+
+
+        <h2 id="open-source" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 27. ซอร์สโค้ดและสัญญาอนุญาต</h2>
+        <p class="text-slate-700 leading-relaxed mb-4">JA PDF Editor เป็น <strong>ซอฟต์แวร์เสรีภายใต้ GNU AGPL-3.0</strong> — ใช้งานได้ฟรี และทุกคนดาวน์โหลดซอร์สโค้ดไปศึกษา แก้ไข หรือติดตั้งบนเซิร์ฟเวอร์ของตัวเองได้</p>
+        <ul class="list-disc pl-6 space-y-2 text-slate-700 leading-relaxed mb-4">
+            <li><strong>ดาวน์โหลดซอร์สโค้ด:</strong> ลิงก์ <em>ซอร์สโค้ด (AGPL-3.0)</em> ใต้กล่องเข้าสู่ระบบ หรือเมนู <strong>วิธีใช้ › เกี่ยวกับ JA PDF Editor</strong> ในหน้าแก้ไข (บอกเวอร์ชันที่รันอยู่ด้วย)</li>
+            <li><strong>ติดตั้งในองค์กร:</strong> ใช้ซอร์สชุดเดียวกันนี้ได้ ข้อมูลเอกสารอยู่บนเซิร์ฟเวอร์ขององค์กรทั้งหมด — วิธีติดตั้งอยู่ในไฟล์ README ของซอร์สโค้ด</li>
+            <li><strong>ถ้าแก้โค้ดแล้วเปิดให้คนอื่นใช้ผ่านเครือข่าย</strong> ต้องเปิดซอร์สฉบับที่แก้ภายใต้ AGPL-3.0 เช่นกัน (เงื่อนไขของสัญญาอนุญาต) · ใช้ภายในโดยไม่แก้โค้ดไม่ต้องทำอะไรเพิ่ม</li>
+            <li>ไลบรารีโอเพนซอร์สที่ระบบใช้ และสัญญาอนุญาตของแต่ละตัว ดูได้ในหน้า <strong>เกี่ยวกับ</strong> และไฟล์ <code>THIRD_PARTY_LICENSES.md</code></li>
+        </ul>
+
+        <br><br>
+        <hr class="border-slate-200">
+        <p class="text-center text-sm text-slate-400 mt-5">
+            พัฒนาระบบโดย จตุรนต์ พันธะสุมา · ร่วมพัฒนากับ AI: Antigravity &amp; Claude
+        </p>
+        </div>
+    
+    </main>
+
+</body>
+</html>

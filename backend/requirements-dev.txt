@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest>=8.0
+httpx>=0.27
+fakeredis[lua]>=2.23
+zxing-cpp>=2.2  # เทสต์บาร์โค้ด: อ่านบาร์โค้ดที่สร้างกลับมาตรวจ (Apache-2.0)

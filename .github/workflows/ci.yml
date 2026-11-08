@@ -1,0 +1,194 @@
+# CI: ทุก push เข้า main และทุก PR — backend unit test, frontend lint/test/build, แล้ว E2E บน Docker จริง
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Ghostscript + Tesseract ไทย (รวมเลเยอร์ / ลดขนาดไฟล์ / PDF/A / OCR สแกนเอกสาร)
+        # mirror azure ของ runner บางครั้งดาวน์โหลดค้างกลางไฟล์ (ไม่ตัดด้วย Acquire::Timeout) จนกินเวลาทั้ง step
+        # → จำกัดเวลาต่อรอบ 3 นาที · รอบ 2 ขึ้นไปสลับไปใช้ archive.ubuntu.com · ไฟล์ที่โหลดแล้วเก็บใน cache ของ apt ใช้ต่อได้
+        timeout-minutes: 12
+        run: |
+          APT="-o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 -o Acquire::http::Pipeline-Depth=0"
+          for i in 1 2 3; do
+            if [ "$i" -ge 2 ]; then
+              sudo dpkg --configure -a || true
+              sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu#http://archive.ubuntu.com/ubuntu#g' \
+                /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+            fi
+            sudo timeout 180 apt-get $APT update -q && \
+              sudo DEBIAN_FRONTEND=noninteractive timeout 180 apt-get $APT install -y -q \
+                ghostscript tesseract-ocr tesseract-ocr-tha && break
+            [ "$i" = 3 ] && exit 1
+            echo "::warning::apt-get ล้มเหลว/ค้าง (รอบ $i) — ลองใหม่"; sleep 10
+          done
+          tesseract --list-langs | grep -qx tha
+      - name: veraPDF (ตัวตรวจ PDF/A มาตรฐานของ PDF Association — tests/test_pdfa.py)
+        working-directory: ${{ runner.temp }}
+        run: |
+          for i in 1 2 3; do curl -fsSL -o vp.zip https://software.verapdf.org/releases/verapdf-installer.zip && break; sleep 10; done
+          unzip -q vp.zip -d vp
+          cat > auto.xml <<'XML'
+          <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+          <AutomatedInstallation langpack="eng">
+            <com.izforge.izpack.panels.htmlhello.HTMLHelloPanel id="welcome"/>
+            <com.izforge.izpack.panels.target.TargetPanel id="install_dir"><installpath>/opt/verapdf</installpath></com.izforge.izpack.panels.target.TargetPanel>
+            <com.izforge.izpack.panels.packs.PacksPanel id="sdk_pack_select">
+              <pack index="0" name="veraPDF GUI" selected="true"/>
+              <pack index="1" name="veraPDF Mac and *nix Scripts" selected="true"/>
+              <pack index="2" name="veraPDF Batch files" selected="true"/>
+              <pack index="3" name="veraPDF Sample Files" selected="false"/>
+              <pack index="4" name="Documentation" selected="false"/>
+            </com.izforge.izpack.panels.packs.PacksPanel>
+            <com.izforge.izpack.panels.install.InstallPanel id="install"/>
+            <com.izforge.izpack.panels.finish.SimpleFinishPanel id="finish"/>
+          </AutomatedInstallation>
+          XML
+          sudo java -Djava.awt.headless=true -jar vp/*/verapdf-izpack-installer-*.jar auto.xml
+          /opt/verapdf/verapdf --version
+          echo "/opt/verapdf" >> "$GITHUB_PATH"
+      - run: pytest -q
+        env:
+          VERAPDF_REQUIRED: "1"
+
+  config:
+    # ตรวจไฟล์ตั้งค่าที่ไม่มี unit test — ผิดแล้วจะรู้ตอน deploy บนเซิร์ฟเวอร์จริง (เช่น compose key ผิดที่ 2026-11-07)
+    name: Config check (compose, nginx, shell)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: docker compose config (ทุกชุดที่ใช้ deploy)
+        run: |
+          # ค่าหลอกพอให้ compose แทนตัวแปรได้ — ตรวจโครงสร้าง/คีย์ ไม่ได้ใช้รันจริง
+          printf 'DB_PASSWORD=x\nSECRET_KEY=x\nJWT_SECRET=x\n' > .env.prod
+          touch backend/.env
+          fail=0
+          for combo in \
+            "docker-compose.prod.yml" \
+            "docker-compose.prod.yml docker-compose.onprem-tls.yml" \
+            "docker-compose.prod.yml docker-compose.onprem-build.yml" \
+            "docker-compose.prod.yml docker-compose.onprem-build.yml docker-compose.onprem-tls.yml" \
+            "docker-compose.dev.yml" "docker-compose.yml" "docker-compose.sonar.yml"; do
+            args=(); for f in $combo; do args+=(-f "$f"); done
+            if docker compose --env-file .env.prod "${args[@]}" config -q; then echo "✓ $combo"
+            else echo "::error::docker compose config ไม่ผ่าน: $combo"; fail=1; fi
+          done
+          exit $fail
+      - name: nginx -t (frontend/nginx.conf ใน image เดียวกับ production)
+        run: |
+          docker run --rm --add-host backend:127.0.0.1 \
+            -v "$PWD/frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
+            "$(awk '/^FROM .*nginx/ {print $2; exit}' frontend/Dockerfile)" nginx -t
+      - name: shellcheck (สคริปต์ deploy / backup / load test)
+        run: |
+          shellcheck --version | head -2
+          git ls-files '*.sh' '*.command' | xargs shellcheck -S warning
+
+  frontend:
+    name: Frontend lint, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    name: E2E (Docker + Playwright)
+    needs: [backend, frontend, config]
+    # Playwright 1.56 ยังไม่รองรับ Ubuntu 26.04 (ubuntu-latest ตั้งแต่ พ.ย. 2026) — ล็อก 24.04 ไว้จนกว่าจะอัปเกรด Playwright
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      COMPOSE: docker compose -f docker-compose.dev.yml
+      E2E_BASE_URL: http://localhost:8080
+      E2E_EMAIL: e2e@example.com
+      E2E_PASSWORD: E2e-Passw0rd!
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Start stack
+        run: $COMPOSE up -d --build
+
+      - name: Wait for backend
+        run: |
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8001/health >/dev/null && curl -fsS "$E2E_BASE_URL" >/dev/null && exit 0
+            sleep 3
+          done
+          echo "backend/frontend ไม่พร้อมภายใน 3 นาที"; exit 1
+
+      - name: Create test users
+        run: |
+          for email in "$E2E_EMAIL" e2e-signer1@example.com e2e-signer2@example.com; do
+            $COMPOSE exec -T backend python -m scripts.create_test_user "$email" "$E2E_PASSWORD"
+          done
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install Playwright
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run E2E
+        working-directory: frontend
+        run: npm run test:e2e
+
+      - name: Docker logs
+        if: failure()
+        run: $COMPOSE logs --no-color --tail=300
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          retention-days: 7
+
+      - name: Stop stack
+        if: always()
+        run: $COMPOSE down -v

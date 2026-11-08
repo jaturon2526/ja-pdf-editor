@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32">
+  <!-- มือชี้: วาดเส้นขอบดำหนา แล้วเติมขาวทับ ได้เส้นขอบรอบรูปรวมเรียบ ๆ -->
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#0F172A">
+      <path d="M13.5 5v14" stroke-width="7.2"/>
+      <path d="M17.8 13.4v6.6" stroke-width="6.8"/>
+      <path d="M21.9 14.6v6" stroke-width="6.6"/>
+      <path d="M25.7 16.2v5" stroke-width="6.2"/>
+      <path d="M7.2 17l5.8 7.5" stroke-width="6.8"/>
+      <rect x="10.6" y="17.5" width="17.7" height="12" rx="5.5" fill="#0F172A" stroke-width="2.2"/>
+    </g>
+    <g stroke="#fff">
+      <path d="M13.5 5v14" stroke-width="5"/>
+      <path d="M17.8 13.4v6.6" stroke-width="4.6"/>
+      <path d="M21.9 14.6v6" stroke-width="4.4"/>
+      <path d="M25.7 16.2v5" stroke-width="4"/>
+      <path d="M7.2 17l5.8 7.5" stroke-width="4.6"/>
+      <rect x="10.6" y="17.5" width="17.7" height="12" rx="5.5" fill="#fff" stroke="none"/>
+    </g>
+    <path d="M15.65 15.2v3.6M19.85 16.4v3.4M23.8 17.8v2.8" stroke="#0F172A" stroke-width="1" fill="none"/>
+  </g>
+</svg>

@@ -1,0 +1,113 @@
+# docker-compose.yml — รันระบบเต็มชุดในเครื่องพัฒนา (มี Redis เหมือนเซิร์ฟเวอร์จริง) เปิดที่ http://localhost:8080
+#   cp backend/.env.template backend/.env && cp frontend/.env.template frontend/.env   แล้วแก้ค่า
+#   docker compose up -d --build
+# พัฒนาประจำวัน/CI ใช้ docker-compose.dev.yml · เซิร์ฟเวอร์จริงใช้ docker-compose.prod.yml + scripts/ship.sh
+# (ดู DEPLOYMENT_ORACLE_GUIDE.md) — ไฟล์นี้ไม่เกี่ยวกับการ deploy
+
+services:
+
+  db:
+    image: postgres:15-alpine
+    container_name: pdf-editor-db
+    restart: unless-stopped
+    # ไม่ใช้ backend/.env ที่นี่ — ฐานข้อมูลไม่จำเป็นต้องเห็นความลับของ backend (SMTP, JWT, API key)
+    environment:
+      POSTGRES_USER: pdf_user
+      POSTGRES_PASSWORD: pdf_password
+      POSTGRES_DB: pdf_editor
+      TZ: Asia/Bangkok
+    volumes:
+      - pdf_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdf_user -d pdf_editor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis:7-alpine
+    container_name: pdf-editor-redis
+    restart: unless-stopped
+    # จำกัด memory (ปรับด้วย REDIS_MAXMEMORY) — ต้องใช้ volatile-lru: evict เฉพาะ key ที่มี TTL (ข้อมูล PDF
+    # session/undo history) ส่วน key ของ auth session ไม่มี TTL จะไม่ถูกลบ (allkeys-lru ทำให้ผู้ใช้หลุด login แบบสุ่ม)
+    command: redis-server --maxmemory ${REDIS_MAXMEMORY:-512mb} --maxmemory-policy volatile-lru
+    volumes:
+      - pdf_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  backend:
+    image: docker.io/jaturon2526/pdf-editor-backend:latest
+    build:
+      context: ./backend
+    container_name: pdf-editor-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://pdf_user:pdf_password@db:5432/pdf_editor
+      TZ: Asia/Bangkok
+      APP_TIMEZONE: Asia/Bangkok
+      # origin ที่อนุญาตให้เรียก API ตรงๆ ข้าม origin (CORS) — ปกติ frontend คุยผ่าน nginx reverse
+      # proxy (same-origin กับ frontend เอง ดู frontend/nginx.conf) จึงไม่ค่อยจำเป็นต้องพึ่งค่านี้ แต่
+      # เผื่อมีการเรียก backend ตรงๆ จากที่อื่น (เช่น debug ผ่าน Postman หรือ frontend คนละโดเมน) ปรับ
+      # ค่านี้ผ่าน .env หรือแก้ตรงนี้ได้เลย คั่นด้วยจุลภาคถ้ามีหลาย origin
+      PDF_ALLOWED_ORIGINS: ${PDF_ALLOWED_ORIGINS:-http://localhost:8080}
+      # เก็บ session ค้างได้กี่นาทีก่อนถูกเคลียร์อัตโนมัติ (ดีฟอลต์ 24 ชม. — ปรับได้ถ้าต้องการ)
+      PDF_SESSION_TTL_MINUTES: ${PDF_SESSION_TTL_MINUTES:-1440}
+      # ขนาดไฟล์ PDF สูงสุดที่รับ upload หน่วยเป็น byte (ดีฟอลต์ 50MB = 52428800 — ตรงกับค่า default
+      # ใน backend/app/core/config.py) ถ้าจะปรับต้องปรับ client_max_body_size ใน frontend/nginx.conf
+      # ให้ไม่ต่ำกว่าค่านี้ด้วยเสมอ ไม่งั้น nginx จะปฏิเสธไฟล์ก่อนถึง backend เสียเอง
+      PDF_MAX_UPLOAD_SIZE: ${PDF_MAX_UPLOAD_SIZE:-52428800}
+      # Redis URL สำหรับ multi-instance session — เปิด RedisSessionManager อัตโนมัติ
+      # ถ้าต้องการ single-instance (ไม่ใช้ Redis) ให้ลบบรรทัดนี้ออกหรือตั้งค่าเป็น ""
+      PDF_REDIS_URL: ${PDF_REDIS_URL:-redis://redis:6379/0}
+    volumes:
+      # เก็บไฟล์ upload/working ไว้ใน named volume แยกจากตัว container — ถ้า container ถูกลบ/สร้างใหม่
+      # (เช่น อัปเดต image เวอร์ชันใหม่) ไฟล์ที่ผู้ใช้กำลังแก้ไขค้างอยู่จะไม่หายไปด้วย
+      # (ฟอนต์ส่วนตัวของผู้ใช้ และไฟล์การลงนาม/ใบรับรองระบบ เก็บใต้ /data/uploads ด้วย)
+      - pdf_uploads:/data/uploads
+      - pdf_working:/data/working
+      # ไฟล์ลับที่ไม่ใส่ใน image/git เช่นใบรับรองระบบ .p12 (SIGNING_SEAL_P12=/run/secrets/pdf-editor/seal.p12)
+      - ./backend/secrets:/run/secrets/pdf-editor:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=3).status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  frontend:
+    image: docker.io/jaturon2526/pdf-editor-frontend:latest
+    build:
+      context: ./frontend
+    container_name: pdf-editor-frontend
+    restart: unless-stopped
+    # ค่า VITE_* (frontend/.env) ถูกฝังตอน build image แล้ว — ตอนรัน nginx ไม่ต้องใช้ env ของ backend
+    environment:
+      TZ: Asia/Bangkok
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      # nginx-unprivileged ฟังที่พอร์ต 8080 ใน container (ดู frontend/nginx.conf)
+      # พอร์ตฝั่งเครื่อง: ค่าเริ่มต้น 8080 (เปลี่ยนได้ด้วย FRONTEND_PORT ในไฟล์ .env ข้างไฟล์นี้)
+      - "${FRONTEND_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  pdf_uploads:
+  pdf_working:
+  pdf_redis:  # เก็บ Redis snapshot (RDB) ป้องกัน session หายถ้า Redis container รีสตาร์ท
+  pdf_db:
