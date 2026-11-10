@@ -859,7 +859,8 @@ select:focus-visible,
   display: block;
   width: 100%;
   height: 100%;
-  pointer-events: none;
+  cursor: move; /* ลากตัวรูปเพื่อย้ายได้ (นอกจากปุ่มลากด้านบน) */
+  touch-action: none;
   user-select: none;
 }
 .image-edit-toolbar {
@@ -1708,4 +1709,11 @@ input[type="file"]:disabled::file-selector-button {
   .canvas-area {
     padding: 8px 8px;
   }
+}
+
+/* โหมดแก้ไขรูปภาพ: กำลังลากไฟล์รูปมาวาง — บอกว่าปล่อยตรงนี้ได้ */
+.canvas-area.image-drop-target {
+  outline: 3px dashed var(--color-primary, #2563eb);
+  outline-offset: -6px;
+  background-image: linear-gradient(rgba(37, 99, 235, 0.06), rgba(37, 99, 235, 0.06));
 }

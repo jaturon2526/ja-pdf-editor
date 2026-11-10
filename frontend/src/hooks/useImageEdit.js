@@ -10,6 +10,7 @@ const IMAGE_BG_SAMPLE_MARGIN_PT = 6;
 
 /**
  * จัดการ image editing workflow:
+ * 0. แทรกรูปใหม่: เลือกไฟล์ (openImagePicker) หรือลากไฟล์มาวางในโหมดแก้ไขรูป → placeNewImage → draft
  * 1. โหลดรูปภาพของหน้าปัจจุบัน (เมื่ออยู่ editMode="image")
  * 2. เลือกรูป → สร้าง draft → ลาก/ย้าย/แทนที่
  * 3. กด "ตกลง" → ย้าย draft ไป pendingImageEdits (ยังไม่ยิง API)
@@ -23,7 +24,6 @@ export function useImageEdit({
   setStatusMessage,
 }) {
   const imageInsertInputRef = useRef(null); // hidden input[type=file] สำหรับเลือกรูปใหม่ที่จะแทรก
-  const pendingImageInsertPointRef = useRef(null); // {xPt,yPt} จุดที่คลิกไว้ รอไฟล์ถูกเลือก
 
   const [images, setImages] = useState([]);
   const [draftImageEdit, setDraftImageEdit] = useState(null);
@@ -36,6 +36,11 @@ export function useImageEdit({
   );
   const pendingImageEditsForPage = pendingImageEdits[currentPage] || {};
   const queuedDraftRef = useRef(null);
+  // ค่าล่าสุดสำหรับ placeNewImage ที่รอโหลดขนาดรูป (async) — โหมดอาจเปลี่ยนระหว่างรอ
+  const editModeRef = useRef(editMode);
+  editModeRef.current = editMode;
+  const draftRef = useRef(null);
+  draftRef.current = draftImageEdit;
 
   // โหลดรูปภาพของหน้าปัจจุบันใหม่ทุกครั้งที่เปลี่ยนโหมด/หน้า/เอกสาร
   // ล้าง draft ตอนเปลี่ยนหน้าด้วย (ป้องกัน previewUrl ของหน้าเก่าค้าง)
@@ -83,44 +88,55 @@ export function useImageEdit({
     return sampleBackgroundColor(pageImgElRef.current, w, h, rect, marginPt) || "#ffffff";
   }
 
-  // ---------- Insert Image — คลิกบน canvas ขณะใช้เครื่องมือ insert_image ----------
-  // บันทึกจุดที่คลิกไว้ก่อน แล้วเปิด file dialog (รอไฟล์ถูกเลือกใน handleImageInsertFileChosen)
-  function handleCanvasInsertClick(xPt, yPt, tool) {
-    if (!session || tool !== "insert_image" || draftImageEdit) return;
-    pendingImageInsertPointRef.current = { xPt, yPt };
+  // ---------- แทรกรูปใหม่ ----------
+  // เมนูแทรก › แทรกรูปภาพ / ปุ่ม "แทรกรูปภาพ": เปิดหน้าต่างเลือกไฟล์ทันที แล้ววางรูปกลางหน้า (ลากย้าย/ย่อขยายได้)
+  // โหมดแก้ไขรูปภาพ: ลากไฟล์รูปมาวางบนหน้า → วางตรงจุดที่ปล่อย (placeNewImage ด้วย point)
+  function openImagePicker() {
+    if (!session) return;
     imageInsertInputRef.current?.click();
   }
 
-  // รับไฟล์รูปใหม่ที่ผู้ใช้เลือกผ่าน hidden input — คำนวณขนาดกล่องเริ่มต้นตามสัดส่วนรูปจริง
-  async function handleImageInsertFileChosen(file) {
-    const point = pendingImageInsertPointRef.current;
-    if (!file || !point) return;
-    pendingImageInsertPointRef.current = null;
+  // วางรูปใหม่เป็น draft — point {xPt,yPt} = จุดกึ่งกลางรูป (ไม่ระบุ = กลางหน้า) · มี draft ค้างอยู่ → ยืนยันอันเดิมก่อน
+  // ขนาดเริ่มต้น: ด้านยาว 200pt (ไม่เกิน 60% ของหน้า) ตามสัดส่วนรูปจริง · ไม่ให้ล้นขอบหน้า
+  async function placeNewImage(file, point = null) {
+    if (!file || !session) return;
+    if (!/^image\//.test(file.type || "")) {
+      setStatusMessage("ไฟล์นี้ไม่ใช่รูปภาพ — ใช้ได้เฉพาะ JPG, PNG, WebP ฯลฯ");
+      return;
+    }
+    const [pw, ph] = session.pageSizes?.[currentPage] || [595, 842];
     const previewUrl = URL.createObjectURL(file);
-    let width = 100;
-    let height = 100;
+    const maxSide = Math.min(200, pw * 0.6, ph * 0.6);
+    let width = maxSide;
+    let height = maxSide;
     try {
       const dims = await loadImageDimensions(previewUrl);
-      const MAX_PT = 200;
-      if (dims.width > dims.height) {
-        width = MAX_PT;
-        height = Math.round((dims.height / dims.width) * MAX_PT);
-      } else {
-        height = MAX_PT;
-        width = Math.round((dims.width / dims.height) * MAX_PT);
-      }
+      if (dims.width >= dims.height) height = Math.max(8, Math.round((dims.height / dims.width) * maxSide));
+      else width = Math.max(8, Math.round((dims.width / dims.height) * maxSide));
     } catch {
-      /* ใช้ขนาด fallback 100×100 */
+      /* อ่านขนาดไม่ได้ — ใช้กล่องจัตุรัส */
     }
-    setDraftImageEdit({
+    const cx = point ? point.xPt : pw / 2;
+    const cy = point ? point.yPt : ph / 2;
+    const x0 = Math.min(Math.max(0, cx - width / 2), Math.max(0, pw - width));
+    const y0 = Math.min(Math.max(0, cy - height / 2), Math.max(0, ph - height));
+    const draft = {
       key: genLocalId("img-new"),
       kind: "insert",
       xref: null,
       serverRect: null,
-      rect: { x0: point.xPt, y0: point.yPt, x1: point.xPt + width, y1: point.yPt + height },
+      rect: { x0, y0, x1: x0 + width, y1: y0 + height },
       file,
       previewUrl,
-    });
+    };
+    const previous = draftRef.current;
+    if (previous && editModeRef.current === "image") {
+      const { key, ...rest } = previous; // ยืนยันรูปที่กำลังแก้ค้างอยู่ก่อน ไม่ให้หาย
+      setPendingImageEdits((prev) => ({ ...prev, [currentPage]: { ...(prev[currentPage] || {}), [key]: rest } }));
+    }
+    if (editModeRef.current === "image") setDraftImageEdit(draft);
+    else queuedDraftRef.current = draft; // effect ด้านบนวางให้หลังเปลี่ยนเป็นโหมดแก้ไขรูป
+    setStatusMessage('ลากรูปเพื่อย้าย ลากมุมเพื่อปรับขนาด แล้วกด "ตกลง" และ "บันทึกการแก้ไข"');
   }
 
   // แทรกบาร์โค้ด (เมนูแทรก › บาร์โค้ด): วางกล่องกลางหน้าให้ลากย้าย/ย่อขยายได้เหมือนรูป — บันทึกจริงเป็นเวกเตอร์
@@ -270,8 +286,8 @@ export function useImageEdit({
     imagePendingCount,
     pendingImageEditsForPage,
     // handlers
-    handleCanvasInsertClick,
-    handleImageInsertFileChosen,
+    openImagePicker,
+    placeNewImage,
     startBarcodeInsert,
     handleSelectImage,
     handleResumeImageEdit,

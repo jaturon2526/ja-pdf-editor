@@ -194,7 +194,8 @@ export default function ImageEditBox({
         </svg>
       </div>
 
-      {previewUrl && <img src={previewUrl} alt="พรีวิวรูปภาพที่กำลังแก้ไข" className="image-edit-preview" draggable={false} />}
+      {previewUrl && <img src={previewUrl} alt="พรีวิวรูปภาพที่กำลังแก้ไข" className="image-edit-preview" draggable={false}
+        onPointerDown={startMove} title="ลากเพื่อย้ายตำแหน่ง" />}
 
       {HANDLES.map((h) => (
         <div

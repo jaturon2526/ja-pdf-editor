@@ -28,7 +28,7 @@ const LOUPE_GAP = 36; // ระยะจากปลายนิ้วถึง�
  *
  * โหมดต่างๆ ที่ activeTool ควบคุม (ดู App.jsx ที่คำนวณ editMode จาก activeTool):
  *   - "edit_text" / "insert_text"  -> editMode === "text"  (แก้ย่อหน้าเดิม / แทรกย่อหน้าใหม่)
- *   - "edit_image" / "insert_image" -> editMode === "image" (ย้าย/ปรับขนาด/แทนที่รูปเดิม / แทรกรูปใหม่)
+ *   - "edit_image" -> editMode === "image" (ย้าย/ปรับขนาด/แทนที่รูปเดิม · ลากไฟล์รูปมาวางเพื่อแทรกรูปใหม่)
  *   - "insert_text"/"insert_image": คลิกบนพื้นที่ว่างของหน้าเอกสารจะสร้างย่อหน้า/รูปใหม่ตรงจุดที่คลิก
  *     (ผ่าน onCanvasInsertClick) ต่างจาก "edit_text"/"edit_image" ที่ต้องคลิกกล่องที่มีอยู่แล้วเท่านั้น
  *   - "highlight"/"freetext"/"rect"/"text_note": ลากเมาส์ (mousedown-move-up) กำหนดตำแหน่ง+ขนาด
@@ -44,7 +44,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   hasDocument,
   activeTool,
   onAnnotationDrag, // (tool, rectPt) — ลากเมาส์เสร็จตอนอยู่เครื่องมือ highlight/freetext/rect/text_note
-  onCanvasInsertClick, // (xPt, yPt, tool) — คลิกพื้นที่ว่างตอนอยู่โหมด insert_text/insert_image
+  onImageDrop, // (file, {xPt,yPt}) — ลากไฟล์รูปมาวางบนหน้าตอนอยู่โหมดแก้ไขรูปภาพ
   onOpenClick,
   onFileDrop,
   onSelectTool,
@@ -244,16 +244,9 @@ const PDFCanvas = forwardRef(function PDFCanvas({
     return { xPt: xRatio * pageWidthPt, yPt: yRatio * pageHeightPt };
   }
 
-  function handleClick(e) {
-    if (!imgRef.current) return;
-    if (activeTool === "insert_image") {
-      if (draftImageEdit) return;
-      const { xPt, yPt } = pagePointFromEvent(e);
-      onCanvasInsertClick?.(xPt, yPt, activeTool);
-    }
-    // เครื่องมืออื่นๆ (highlight/freetext/rect/text_note) จัดการผ่าน mousedown-drag ทั้งหมดแล้ว
-    // (ดู handlePageMouseDown) ส่วน select/edit-mode ใช้คลิกกล่องที่มีอยู่แล้วโดยตรง (มี stopPropagation
-    // ของตัวเอง) และ "hand" ใช้ลากเลื่อนหน้าจอ (ดู handlePanMouseDown) — ไม่ต้องทำอะไรเพิ่มตรงนี้
+  function handleClick() {
+    // เครื่องมือ annotation จัดการผ่าน mousedown-drag (ดู handlePageMouseDown) · select/edit-mode คลิกกล่องที่มีอยู่โดยตรง
+    // · "hand" ลากเลื่อนหน้าจอ · แทรกรูปใช้ปุ่ม/เมนู (เลือกไฟล์) หรือลากไฟล์มาวาง (handleDrop) — ไม่มีอะไรต้องทำตรงนี้
   }
 
   // ลากเมาส์วาง annotation (highlight/freetext/rect/text_note) — คลิกเฉยๆ ไม่ลาก ก็ยังนับเป็น "ลาก
@@ -620,10 +613,30 @@ const PDFCanvas = forwardRef(function PDFCanvas({
     window.addEventListener("pointercancel", onUp);
   }
 
+  // โหมดแก้ไขรูปภาพ: ลากไฟล์รูปมาวาง = แทรกรูปตรงจุดที่ปล่อย (ปล่อยนอกหน้ากระดาษ → ชิดขอบหน้าที่ใกล้สุด)
+  // โหมดอื่น/ไฟล์ที่ไม่ใช่รูป: เปิดเป็นเอกสารใหม่เหมือนเดิม
+  const [imageDragOver, setImageDragOver] = useState(false);
+  const acceptsImageDrop = hasDocument && editMode === "image" && !!onImageDrop;
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    if (acceptsImageDrop && !imageDragOver) setImageDragOver(true);
+  }
+
   function handleDrop(e) {
     e.preventDefault();
+    setImageDragOver(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) onFileDrop(file);
+    if (!file) return;
+    if (acceptsImageDrop && /^image\//.test(file.type || "") && imgRef.current) {
+      const { xPt, yPt } = pagePointFromEvent(e);
+      onImageDrop(file, {
+        xPt: Math.min(Math.max(0, xPt), pageWidthPt),
+        yPt: Math.min(Math.max(0, yPt), pageHeightPt),
+      });
+      return;
+    }
+    onFileDrop(file);
   }
 
   if (!hasDocument) {
@@ -662,8 +675,9 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   return (
     <div
       ref={canvasAreaRef}
-      className={`canvas-area ${activeTool === "hand" ? "tool-hand" : ""} ${isPanning ? "panning" : ""}`}
-      onDragOver={(e) => e.preventDefault()}
+      className={`canvas-area ${activeTool === "hand" ? "tool-hand" : ""} ${isPanning ? "panning" : ""} ${imageDragOver ? "image-drop-target" : ""}`}
+      onDragOver={handleDragOver}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setImageDragOver(false); }}
       onDrop={handleDrop}
       onPointerDown={handlePanMouseDown}
       onTouchStart={handleTouchStart}

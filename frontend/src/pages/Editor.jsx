@@ -430,13 +430,19 @@ export default function Editor() {
     setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, available / pageHeightPt)));
   }
 
-  // ======================== Canvas insert click ========================
-
-  function handleCanvasInsertClick(xPt, yPt, tool) {
-    if (tool === "insert_image") {
-      imageEditHook.handleCanvasInsertClick(xPt, yPt, tool);
+  // ======================== แทรกรูปภาพ ========================
+  // เลือกไฟล์จากเมนู/ปุ่ม "แทรกรูปภาพ" หรือลากไฟล์รูปมาวางในโหมดแก้ไขรูปภาพ → เข้าโหมดแก้ไขรูปแล้ววางรูปให้ย้าย/ปรับขนาด
+  useEffect(() => {
+    if (activeTool === "edit_image" && session) {
+      setStatusMessage("โหมดแก้ไขรูปภาพ: คลิกรูปเพื่อย้าย/ปรับขนาด/แทนที่ หรือลากไฟล์รูปภาพมาวางบนหน้าเพื่อแทรกรูปใหม่");
     }
-    // insert_text: สร้าง text block ใหม่ (ยังไม่ implement ใน API — placeholder)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTool]);
+
+  function insertImageFile(file, point = null) {
+    if (!session || !file) return;
+    setActiveTool("edit_image");
+    imageEditHook.placeNewImage(file, point);
   }
 
   // ======================== บันทึกการแก้ไข (ดู hooks/useApplyEdits.js) ========================
@@ -572,6 +578,7 @@ export default function Editor() {
     openWatermark: () => setShowWatermarkModal(true),
     openPageNumbers: () => setShowPageNumberModal(true),
     openBarcode: () => setShowBarcodeModal(true),
+    insertImage: () => imageEditHook.openImagePicker(),
     openCompress: () => setShowCompressModal(true),
     openFlatten: () => setShowFlattenModal(true),
     // แปลงจากไฟล์ที่บันทึกในเอกสารของฉัน — มีการแก้ไขที่ยังไม่บันทึก ถามก่อนว่าจะบันทึกทับไหม
@@ -733,11 +740,12 @@ export default function Editor() {
         />
         <input
           ref={imageEditHook.imageInsertInputRef}
+          data-testid="image-insert-input"
           type="file"
           accept="image/*"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) imageEditHook.handleImageInsertFileChosen(file);
+            if (file) insertImageFile(file);
             e.target.value = "";
           }}
         />
@@ -761,6 +769,7 @@ export default function Editor() {
         onZoomSet={(z) => setZoom(Math.min(5, Math.max(0.1, z)))}
         activeTool={activeTool}
         onSelectTool={setActiveTool}
+        onInsertImage={() => imageEditHook.openImagePicker()}
         editMode={editMode}
         pendingEditCount={pendingEditCount}
         onApplyEdits={applyAllEdits}
@@ -810,7 +819,7 @@ export default function Editor() {
           loading={sessionHook.pageLoading}
           activeTool={activeTool}
           onAnnotationDrag={handleCanvasDrag}
-          onCanvasInsertClick={handleCanvasInsertClick}
+          onImageDrop={insertImageFile}
           onOpenClick={() => pdfInputRef.current?.click()}
           onFileDrop={handleFileSelected}
           onNavigatePage={handleNavigatePage}
@@ -1006,7 +1015,7 @@ export default function Editor() {
           onClose={() => setShowBarcodeModal(false)}
           onSubmit={(result) => {
             setShowBarcodeModal(false);
-            setActiveTool("insert_image"); // โหมดแก้ไขรูป — กล่องบาร์โค้ดลากย้าย/ย่อขยายได้ แล้วกด "บันทึกการแก้ไข"
+            setActiveTool("edit_image"); // โหมดแก้ไขรูป — กล่องบาร์โค้ดลากย้าย/ย่อขยายได้ แล้วกด "บันทึกการแก้ไข"
             imageEditHook.startBarcodeInsert(result);
             setStatusMessage('ลากบาร์โค้ดไปวางตำแหน่งที่ต้องการ แล้วกด "ตกลง" และ "บันทึกการแก้ไข"');
           }}

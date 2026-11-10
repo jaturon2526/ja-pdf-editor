@@ -246,6 +246,7 @@ export default function Toolbar({
   onZoomSet,
   activeTool,
   onSelectTool,
+  onInsertImage,
   editMode,
   pendingEditCount = 0,
   onApplyEdits,
@@ -352,8 +353,8 @@ export default function Toolbar({
         <ToolbarButton
           icon="insertImage"
           label="แทรกรูปภาพ"
-          active={activeTool === "insert_image" || activeTool === "edit_image"}
-          onClick={() => onSelectTool(activeTool === "insert_image" || activeTool === "edit_image" ? null : "insert_image")}
+          active={activeTool === "edit_image"}
+          onClick={onInsertImage}
           disabled={!hasDocument}
         />
         <ToolbarButton

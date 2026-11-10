@@ -34,6 +34,7 @@ export function buildEditorMenus({
   openWatermark,
   openPageNumbers,
   openBarcode,
+  insertImage,
   openCompress,
   openFlatten,
   openConvertWord,
@@ -91,7 +92,7 @@ export function buildEditorMenus({
       label: "แทรก",
       items: [
         { label: "แทรกข้อความ", onClick: toggleTool("insert_text"), disabled: noDoc },
-        { label: "แทรกรูปภาพ", onClick: toggleTool("insert_image"), disabled: noDoc },
+        { label: "แทรกรูปภาพ", onClick: insertImage, disabled: noDoc },
         { label: "บาร์โค้ด / QR Code...", onClick: openBarcode, disabled: noDoc },
         { label: "เลขหน้า...", onClick: openPageNumbers, disabled: noDoc },
       ],
