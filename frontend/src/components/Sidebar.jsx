@@ -428,6 +428,7 @@ export default function Sidebar({
 
   const multiSelectActive = selectedPages.size > 1 || selectMode;
   const hasSelection = selectedPages.size > 0;
+  const countSuffix = selectedPages.size > 1 ? ` (${selectedPages.size} หน้า)` : "";
   const sortedSelected = Array.from(selectedPages).sort((a, b) => a - b);
   // เลื่อนขึ้นไม่ได้อีกแล้วก็ต่อเมื่อหน้าที่เลือกอยู่ต้นสุดของเอกสารพอดี (index 0) — เลื่อนลงไม่ได้อีกแล้ว
   // ก็ต่อเมื่อหน้าสุดท้ายที่เลือกอยู่ท้ายสุดของเอกสารพอดี (ไม่ว่ากลุ่มที่เลือกจะติดกันหรือไม่ก็ตาม)
@@ -630,7 +631,7 @@ export default function Sidebar({
 
       {contextMenu && (
         <div
-          className="fixed bg-white border border-slate-200 shadow-xl rounded-lg py-1 min-w-[180px] z-[100] text-sm overflow-hidden select-none [-webkit-touch-callout:none] [&_button]:[@media(pointer:coarse)]:py-2.5"
+          className="fixed bg-white border border-slate-200 shadow-xl rounded-lg py-1 min-w-[220px] max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)] overflow-y-auto overscroll-contain z-[100] text-sm select-none [-webkit-touch-callout:none] [&_button]:[@media(pointer:coarse)]:py-2.5"
           ref={menuRef}
           style={{ left: contextMenu.x, top: contextMenu.y }}
           role="menu"
@@ -647,39 +648,18 @@ export default function Sidebar({
               <div className="h-px bg-slate-200 my-1 mx-2" />
             </>
           )}
-          <button
-            className="w-full text-left px-4 py-1.5 text-slate-700 hover:bg-sky-50 focus:bg-sky-50 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent"
-            role="menuitem"
-            disabled={!canMoveUp}
-            onClick={() => handleMoveClick("up")}
-          >
-            เลื่อนหน้าขึ้น{selectedPages.size > 1 ? ` (${selectedPages.size} หน้า)` : ""}
-          </button>
-          <button
-            className="w-full text-left px-4 py-1.5 text-slate-700 hover:bg-sky-50 focus:bg-sky-50 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent"
-            role="menuitem"
-            disabled={!canMoveDown}
-            onClick={() => handleMoveClick("down")}
-          >
-            เลื่อนหน้าลง{selectedPages.size > 1 ? ` (${selectedPages.size} หน้า)` : ""}
-          </button>
-          <div className="h-px bg-slate-200 my-1 mx-2" />
-          <button
-            className="w-full text-left px-4 py-1.5 text-slate-700 hover:bg-sky-50 focus:bg-sky-50 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent"
-            role="menuitem"
-            disabled={!hasSelection}
-            onClick={() => { onRotatePages(Array.from(selectedPages), 90); setContextMenu(null); }}
-          >
-            หมุนขวา ↻ (90°){selectedPages.size > 1 ? ` (${selectedPages.size} หน้า)` : ""}
-          </button>
-          <button
-            className="w-full text-left px-4 py-1.5 text-slate-700 hover:bg-sky-50 focus:bg-sky-50 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent"
-            role="menuitem"
-            disabled={!hasSelection}
-            onClick={() => { onRotatePages(Array.from(selectedPages), -90); setContextMenu(null); }}
-          >
-            หมุนซ้าย ↺ (-90°){selectedPages.size > 1 ? ` (${selectedPages.size} หน้า)` : ""}
-          </button>
+          {/* จัดคำสั่งคู่กันเป็นแถว (ขึ้น/ลง · ขวา/ซ้าย · PDF/PNG/JPG) ให้เมนูสั้นพอสำหรับจอมือถือ (ผู้ใช้แจ้ง: เมนูยาวล้นจอ)
+              ชื่อเต็มของแต่ละปุ่มอยู่ใน aria-label/title */}
+          <MenuRow label={`เลื่อนหน้า${countSuffix}`}>
+            <MenuChip label={`เลื่อนหน้าขึ้น${countSuffix}`} disabled={!canMoveUp} onClick={() => handleMoveClick("up")}>↑ ขึ้น</MenuChip>
+            <MenuChip label={`เลื่อนหน้าลง${countSuffix}`} disabled={!canMoveDown} onClick={() => handleMoveClick("down")}>↓ ลง</MenuChip>
+          </MenuRow>
+          <MenuRow label={`หมุน${countSuffix}`}>
+            <MenuChip label={`หมุนขวา ↻ (90°)${countSuffix}`} disabled={!hasSelection}
+              onClick={() => { onRotatePages(Array.from(selectedPages), 90); setContextMenu(null); }}>↻ ขวา</MenuChip>
+            <MenuChip label={`หมุนซ้าย ↺ (-90°)${countSuffix}`} disabled={!hasSelection}
+              onClick={() => { onRotatePages(Array.from(selectedPages), -90); setContextMenu(null); }}>↺ ซ้าย</MenuChip>
+          </MenuRow>
           <div className="h-px bg-slate-200 my-1 mx-2" />
           <button
             className="w-full text-left px-4 py-1.5 text-slate-700 hover:bg-sky-50 focus:bg-sky-50 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent"
@@ -692,25 +672,14 @@ export default function Sidebar({
             {selectedPages.size > 1 ? "ลบหน้าที่เลือก" : "ลบหน้านี้ทิ้ง"}{selectedPages.size > 1 ? ` (${selectedPages.size} หน้า)` : ""}
           </button>
           <div className="h-px bg-slate-200 my-1 mx-2" />
-          <button
-            className="w-full text-left px-4 py-1.5 text-slate-700 hover:bg-sky-50 focus:bg-sky-50 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent"
-            role="menuitem"
-            disabled={!hasSelection}
-            onClick={handleExportClick}
-          >
-            ส่งออกหน้าที่เลือกเป็นไฟล์ใหม่{selectedPages.size > 0 ? ` (${selectedPages.size} หน้า)` : ""}
-          </button>
-          {["png", "jpg"].map((fmt) => (
-            <button
-              key={fmt}
-              className="w-full text-left px-4 py-1.5 text-slate-700 hover:bg-sky-50 focus:bg-sky-50 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent"
-              role="menuitem"
-              disabled={!hasSelection}
-              onClick={() => handleExportImageClick(fmt)}
-            >
-              ส่งออกเป็นรูปภาพ {fmt.toUpperCase()}{selectedPages.size > 1 ? ` (${selectedPages.size} หน้า .zip)` : ""}
-            </button>
-          ))}
+          <MenuRow label={`ส่งออก${selectedPages.size > 0 ? ` (${selectedPages.size} หน้า)` : ""}`}>
+            <MenuChip label={`ส่งออกหน้าที่เลือกเป็นไฟล์ใหม่${selectedPages.size > 0 ? ` (${selectedPages.size} หน้า)` : ""}`}
+              disabled={!hasSelection} onClick={handleExportClick}>PDF</MenuChip>
+            {["png", "jpg"].map((fmt) => (
+              <MenuChip key={fmt} label={`ส่งออกเป็นรูปภาพ ${fmt.toUpperCase()}${selectedPages.size > 1 ? ` (${selectedPages.size} หน้า .zip)` : ""}`}
+                disabled={!hasSelection} onClick={() => handleExportImageClick(fmt)}>{fmt.toUpperCase()}</MenuChip>
+            ))}
+          </MenuRow>
         </div>
       )}
 
@@ -746,5 +715,32 @@ export default function Sidebar({
       </div>
     </div>
     </>
+  );
+}
+
+
+// แถวเมนูที่มีปุ่มย่อยหลายปุ่ม (เช่น หมุน: ↻ ขวา | ↺ ซ้าย) — ประหยัดความสูงบนมือถือ
+function MenuRow({ label, children }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-1 [@media(pointer:coarse)]:py-1.5" role="group" aria-label={label}>
+      <span className="flex-1 min-w-0 text-slate-500 text-xs whitespace-nowrap">{label}</span>
+      <div className="flex gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+function MenuChip({ label, disabled, onClick, children }) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="min-w-[44px] px-2.5 py-1 rounded-md border border-slate-200 text-slate-700 text-[13px] font-medium whitespace-nowrap hover:bg-sky-50 hover:border-sky-300 focus:bg-sky-50 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:border-slate-200 [@media(pointer:coarse)]:!py-2"
+    >
+      {children}
+    </button>
   );
 }

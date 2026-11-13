@@ -11,7 +11,7 @@ test.describe("Editor", () => {
     const thumbs = page.locator("img[src^='data:image/']");
     await expect(thumbs).toHaveCount(4); // หน้าหลัก 1 + thumbnail 3
     await thumbs.nth(1).click({ button: "right" });
-    await page.getByText("หมุนขวา").first().click();
+    await page.getByRole("menuitem", { name: /^หมุนขวา/ }).click();
     await expect(page.getByText("หมุนหน้าสำเร็จ")).toBeVisible();
 
     await page.locator("body").click({ position: { x: 700, y: 400 } });
@@ -53,7 +53,7 @@ test.describe("Editor", () => {
   test("เอกสารที่มีหน้าแนวนอนให้เลือกพิมพ์ตามที่เห็นบนจอ", async ({ page }) => {
     const thumbs = page.locator("img[src^='data:image/']");
     await thumbs.nth(1).click({ button: "right" });
-    await page.getByText("หมุนซ้าย").first().click();
+    await page.getByRole("menuitem", { name: /^หมุนซ้าย/ }).click();
     await expect(page.getByText("หมุนหน้าสำเร็จ")).toBeVisible();
 
     await page.getByRole("button", { name: "พิมพ์เอกสาร (Ctrl+P)" }).click();

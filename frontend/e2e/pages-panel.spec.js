@@ -66,6 +66,25 @@ test.describe("แยกหน้า / แผงหน้าเอกสาร",
     expect((await download).suggestedFilename()).toBe("sample (หน้า 2).jpg");
   });
 
+  test("จอมือถือ: เมนูของหน้าสั้นพอและอยู่ในจอทั้งหมด แม้เปิดจากหน้าล่างสุด", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 660 }); // iPhone ที่มีแถบ Safari บน/ล่าง
+    await page.getByTitle("เมนูหลัก").click();
+    await page.getByText("แสดงแผงด้านข้าง (Sidebar)").click();
+    const thumb = page.locator(".thumbnail-item").last();
+    await thumb.scrollIntoViewIfNeeded();
+    const box = await thumb.boundingBox();
+    await page.mouse.click(box.x + box.width / 2, Math.min(box.y + box.height - 10, 640), { button: "right" });
+    const menu = page.getByRole("menu");
+    const m = await menu.boundingBox();
+    expect(m.y).toBeGreaterThanOrEqual(0);
+    expect(m.y + m.height).toBeLessThanOrEqual(660);
+    expect(m.x + m.width).toBeLessThanOrEqual(390);
+    expect(m.height).toBeLessThan(420); // จัดเป็นแถว: เลือกหลายหน้า · เลื่อน · หมุน · ลบ · ส่งออก
+    for (const name of ["เลื่อนหน้าลง", "หมุนซ้าย ↺ (-90°)", "ส่งออกหน้าที่เลือกเป็นไฟล์ใหม่ (1 หน้า)", "ส่งออกเป็นรูปภาพ PNG", "ส่งออกเป็นรูปภาพ JPG"]) {
+      await expect(page.getByRole("menuitem", { name, exact: true })).toBeInViewport();
+    }
+  });
+
   test("มือถือ: กดค้างที่หน้า → เมนูของแอปเมนูเดียว ไม่มีการเลือกข้อความ/เมนูของ iOS", async ({ page }) => {
     const sidebar = page.getByTestId("page-sidebar");
     // ปิดการเลือกข้อความและเมนู "คัดลอก/ค้นดู" ของ iOS ทั้งแผง (เดิมกดค้างแล้วขึ้นซ้อนกับเมนูของแอป)
@@ -93,6 +112,12 @@ test.describe("แยกหน้า / แผงหน้าเอกสาร",
     await thumb.dispatchEvent("click"); // click ที่ตามมาตอนยกนิ้ว — ต้องไม่ปิดเมนู/ไม่กระโดดหน้า
     await expect(menu).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "ลบหน้านี้ทิ้ง" })).toBeEnabled();
+    // เมนูต้องอยู่ในจอทั้งหมด ไม่ล้นขอบล่าง/ขวา (ผู้ใช้แจ้ง: บนมือถือรายการท้าย ๆ ตกจอ)
+    const vp = page.viewportSize();
+    const full = await menu.boundingBox();
+    expect(full.y + full.height).toBeLessThanOrEqual(vp.height);
+    expect(full.x + full.width).toBeLessThanOrEqual(vp.width);
+    await expect(page.getByRole("menuitem", { name: "ส่งออกเป็นรูปภาพ JPG" })).toBeInViewport();
     await page.getByRole("menuitem", { name: "หมุนขวา ↻ (90°)" }).click();
     await expect(menu).toHaveCount(0);
   });

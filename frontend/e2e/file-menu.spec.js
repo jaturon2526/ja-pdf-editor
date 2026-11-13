@@ -11,7 +11,7 @@ test.describe("เมนูไฟล์", () => {
 
   async function rotateFirstPage(page) {
     await page.locator(".thumbnail-item").first().click({ button: "right" });
-    await page.getByText("หมุนขวา").first().click();
+    await page.getByRole("menuitem", { name: /^หมุนขวา/ }).click();
     await expect(page.getByText("หมุนหน้าสำเร็จ")).toBeVisible();
   }
 
