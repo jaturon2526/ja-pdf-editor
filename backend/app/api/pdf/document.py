@@ -34,6 +34,8 @@ router = APIRouter()
 class ExtractRequest(BaseModel):
     page_range: str
     mode: str = "single"
+    format: str = "pdf"   # pdf | png | jpg
+    dpi: int = 150        # เฉพาะรูปภาพ: 100 / 150 / 300
 
 
 @router.post("/{session_id}/unlock", response_model=UnlockResponse)
@@ -245,10 +247,11 @@ def export_pages(session_id: str, pages: str, session: PDFSession = Depends(get_
 
 @router.post("/{session_id}/extract")
 def extract_pages(session_id: str, payload: ExtractRequest, current_user: User = Depends(get_current_active_user), session: PDFSession = Depends(get_owned_session)):
-    """ดึงหน้า PDF ออกมาเป็นไฟล์ใหม่ หรือแยกไฟล์ (ZIP)"""
+    """ดึงหน้า PDF ออกมาเป็นไฟล์ใหม่ แยกไฟล์ (ZIP) หรือส่งออกเป็นรูปภาพ PNG/JPG"""
     try:
         with session.lock:
-            file_bytes, filename, mime_type = pdf_service.extract_pages(session, payload.page_range, payload.mode)
+            file_bytes, filename, mime_type = pdf_service.extract_pages(
+                session, payload.page_range, payload.mode, payload.format, payload.dpi)
             
         # ชื่อไฟล์ภาษาไทยต้องเข้ารหัสแบบ RFC 5987 — เดิมใส่ตรงๆ ใน header (latin-1) ไฟล์ชื่อไทยแยกหน้าไม่ได้ (500)
         from urllib.parse import quote

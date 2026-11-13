@@ -1,4 +1,5 @@
-// แยกหน้าเอกสาร (เมนู หน้า > แยกหน้าเอกสาร) — ระบุหน้า เช่น "1-3, 5" แล้วดาวน์โหลดเป็นไฟล์เดียว หรือไฟล์ละหน้า (.zip)
+// แยกหน้าเอกสาร (เมนู หน้า > แยกหน้าเอกสาร) — ระบุหน้า เช่น "1-3, 5" แล้วดาวน์โหลดเป็น PDF (ไฟล์เดียว/ไฟล์ละหน้า .zip)
+// หรือรูปภาพ PNG/JPG หน้าละรูป (หน้าเดียว = ไฟล์รูปตรง ๆ ใช้บนมือถือสะดวก · หลายหน้า = .zip)
 // - ลำดับตามที่พิมพ์ ("5, 1-3" → หน้า 5,1,2,3) · ช่วงถอยหลังได้ ("6-4") · "-3" = หน้า 1-3 · "8-" = หน้า 8 ถึงหน้าสุดท้าย
 // - ตรวจเลขหน้ากับจำนวนหน้าจริงก่อนส่ง และแสดงสรุปว่าจะได้หน้าไหนบ้าง (กฎเดียวกับ backend parse_page_range)
 // - ไฟล์ที่ได้มีการแก้ไขล่าสุด (ยังไม่บันทึกก็ได้) ช่องกรอกฟอร์ม/ลิงก์/บุ๊กมาร์กยังอยู่ และใส่รหัสผ่านเดียวกับเอกสาร ถ้าตั้งไว้
@@ -64,9 +65,23 @@ const MODES = [
   { value: "split", label: "แยกไฟล์ละหน้า", hint: "PDF หน้าละ 1 ไฟล์ ดาวน์โหลดรวมเป็นไฟล์ .zip" },
 ];
 
-function ExtractPagesForm({ onClose, onExtract, totalPages }) {
+const FORMATS = [
+  { value: "pdf", label: "PDF" },
+  { value: "png", label: "รูป PNG" },
+  { value: "jpg", label: "รูป JPG" },
+];
+const QUALITIES = [
+  { value: 100, label: "เล็ก (100 dpi) — ส่งแชต/ดูบนจอ" },
+  { value: 150, label: "ปกติ (150 dpi)" },
+  { value: 300, label: "คมชัดสูง (300 dpi) — พิมพ์/ซูมดูรายละเอียด" },
+];
+
+function ExtractPagesForm({ onClose, onExtract, totalPages, currentPage }) {
   const [pageRange, setPageRange] = useState("");
   const [mode, setMode] = useState("single");
+  const [format, setFormat] = useState("pdf");
+  const [dpi, setDpi] = useState(150);
+  const isImage = format !== "pdf";
   const [touched, setTouched] = useState(false);
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -81,7 +96,7 @@ function ExtractPagesForm({ onClose, onExtract, totalPages }) {
     setSubmitting(true);
     setServerError("");
     try {
-      await onExtract(pageRange, mode);
+      await onExtract(pageRange, mode, format, dpi);
     } catch (err) {
       setServerError(err.message || "แยกหน้าเอกสารไม่สำเร็จ");
       setSubmitting(false);
@@ -97,8 +112,8 @@ function ExtractPagesForm({ onClose, onExtract, totalPages }) {
       <form role="dialog" aria-modal="true" aria-labelledby="extract-title" onSubmit={handleSubmit}
         className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-xl shadow-xl flex flex-col max-h-[92dvh]">
         <div className="p-4 border-b border-gray-100">
-          <h2 id="extract-title" className="text-lg font-bold text-gray-900">แยกหน้าเอกสาร</h2>
-          <p className="mt-1 text-sm text-gray-500">ดาวน์โหลดเฉพาะหน้าที่ต้องการเป็นไฟล์ใหม่ — เอกสารที่เปิดอยู่ไม่ถูกแก้</p>
+          <h2 id="extract-title" className="text-lg font-bold text-gray-900">แยกหน้า / ส่งออกเป็นรูปภาพ</h2>
+          <p className="mt-1 text-sm text-gray-500">ดาวน์โหลดเฉพาะหน้าที่ต้องการเป็นไฟล์ PDF ใหม่ หรือรูปภาพ PNG/JPG — เอกสารที่เปิดอยู่ไม่ถูกแก้</p>
         </div>
 
         <div className="p-4 space-y-4 overflow-y-auto">
@@ -113,6 +128,9 @@ function ExtractPagesForm({ onClose, onExtract, totalPages }) {
               onChange={(e) => { setPageRange(e.target.value); setServerError(""); }}
               className={`mt-1 block w-full px-3 py-2 border rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-1 ${showError ? "border-red-400 focus:ring-red-500 focus:border-red-500" : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"}`} />
             <div className="mt-2 flex flex-wrap gap-1.5">
+              {currentPage >= 1 && totalPages > 1 && (
+                <button type="button" className={chip} onClick={() => setPageRange(String(currentPage))}>หน้านี้ (หน้า {currentPage})</button>
+              )}
               <button type="button" className={chip} onClick={() => setPageRange(`1-${totalPages}`)}>ทุกหน้า</button>
               {totalPages > 1 && <button type="button" className={chip} onClick={() => setPageRange(`${totalPages}-1`)}>ทุกหน้า (กลับลำดับ)</button>}
             </div>
@@ -128,20 +146,47 @@ function ExtractPagesForm({ onClose, onExtract, totalPages }) {
             ) : null}
           </div>
 
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium text-gray-800 mb-1">รูปแบบไฟล์</legend>
-            {MODES.map((m) => (
-              <label key={m.value}
-                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${mode === m.value ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
-                <input type="radio" name="extract-mode" className="mt-1" value={m.value} checked={mode === m.value}
-                  onChange={() => setMode(m.value)} />
-                <span>
-                  <span className="block text-sm font-medium text-gray-900">{m.label}</span>
-                  <span className="block text-xs text-gray-500">{m.hint}</span>
-                </span>
-              </label>
-            ))}
+          <fieldset>
+            <legend className="text-sm font-medium text-gray-800 mb-1.5">ชนิดไฟล์</legend>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="ชนิดไฟล์">
+              {FORMATS.map((f) => (
+                <button key={f.value} type="button" role="radio" aria-checked={format === f.value}
+                  onClick={() => { setFormat(f.value); setServerError(""); }}
+                  className={`min-h-[40px] rounded-lg border text-sm font-medium ${format === f.value ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </fieldset>
+
+          {isImage ? (
+            <div data-testid="extract-image-options">
+              <label htmlFor="extract-dpi" className="block text-sm font-medium text-gray-800">ความละเอียด</label>
+              <select id="extract-dpi" value={dpi} onChange={(e) => setDpi(Number(e.target.value))}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white">
+                {QUALITIES.map((q) => <option key={q.value} value={q.value}>{q.label}</option>)}
+              </select>
+              <p className="mt-2 text-xs text-gray-500">
+                ได้รูปหน้าละ 1 ไฟล์ — เลือกหน้าเดียวได้ไฟล์รูปทันที เลือกหลายหน้ารวมเป็นไฟล์ .zip
+                {format === "jpg" ? " · JPG ไฟล์เล็ก เหมาะกับเอกสารสแกน/รูปถ่าย" : " · PNG ตัวหนังสือคมที่สุด"}
+              </p>
+            </div>
+          ) : (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-gray-800 mb-1">รูปแบบไฟล์</legend>
+              {MODES.map((m) => (
+                <label key={m.value}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${mode === m.value ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
+                  <input type="radio" name="extract-mode" className="mt-1" value={m.value} checked={mode === m.value}
+                    onChange={() => setMode(m.value)} />
+                  <span>
+                    <span className="block text-sm font-medium text-gray-900">{m.label}</span>
+                    <span className="block text-xs text-gray-500">{m.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          )}
           {serverError && <p className="text-sm text-red-600" role="alert">{serverError}</p>}
         </div>
 
@@ -150,7 +195,9 @@ function ExtractPagesForm({ onClose, onExtract, totalPages }) {
             className="px-4 py-2 min-h-[40px] text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">ยกเลิก</button>
           <button type="submit" disabled={submitting || (touched && !!parsed.error)}
             className="px-4 py-2 min-h-[40px] text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-40">
-            {submitting ? "กำลังแยกหน้า…" : mode === "split" && count > 1 ? `ดาวน์โหลด ${count} ไฟล์ (.zip)` : "ดาวน์โหลด"}
+            {submitting ? (isImage ? "กำลังสร้างรูป…" : "กำลังแยกหน้า…")
+              : isImage ? (count > 1 ? `ดาวน์โหลด ${count} รูป (.zip)` : "ดาวน์โหลดรูป")
+              : mode === "split" && count > 1 ? `ดาวน์โหลด ${count} ไฟล์ (.zip)` : "ดาวน์โหลด"}
           </button>
         </div>
       </form>

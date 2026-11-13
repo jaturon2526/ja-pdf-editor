@@ -54,7 +54,7 @@ export function buildEditorMenus({
         { label: "เปิดไฟล์...", shortcut: "Ctrl+O", onClick: openFileDialog },
         { divider: true },
         { label: "บันทึก (ทับไฟล์เดิม)", shortcut: "Ctrl+S", onClick: saveToServer, disabled: noDoc },
-        { label: "แยกหน้า (Extract Pages)...", onClick: openExtract, disabled: noDoc },
+        { label: "แยกหน้า / ส่งออกเป็นรูปภาพ...", onClick: openExtract, disabled: noDoc },
         { label: "บันทึกเป็นไฟล์ใหม่...", onClick: openSaveCopy, disabled: noDoc },
         { label: "ดาวน์โหลด", onClick: download, disabled: noDoc },
         { label: "พิมพ์เอกสาร...", shortcut: "Ctrl+P", onClick: print, disabled: noDoc },

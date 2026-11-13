@@ -66,6 +66,7 @@ export default function Sidebar({
   onRemoveBookmark,
   onRenameBookmark,
   onExportPages,
+  onExportPagesAsImage,
   onReorderPages,
   onMovePages,
   onDeletePages,
@@ -405,6 +406,12 @@ export default function Sidebar({
     setContextMenu({ x: e.clientX, y: e.clientY });
   }
 
+  function handleExportImageClick(format) {
+    const pages = Array.from(selectedPages).sort((a, b) => a - b);
+    setContextMenu(null);
+    if (pages.length > 0) onExportPagesAsImage?.(pages, format);
+  }
+
   function handleExportClick() {
     const pages = Array.from(selectedPages).sort((a, b) => a - b);
     setContextMenu(null);
@@ -693,6 +700,17 @@ export default function Sidebar({
           >
             ส่งออกหน้าที่เลือกเป็นไฟล์ใหม่{selectedPages.size > 0 ? ` (${selectedPages.size} หน้า)` : ""}
           </button>
+          {["png", "jpg"].map((fmt) => (
+            <button
+              key={fmt}
+              className="w-full text-left px-4 py-1.5 text-slate-700 hover:bg-sky-50 focus:bg-sky-50 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent"
+              role="menuitem"
+              disabled={!hasSelection}
+              onClick={() => handleExportImageClick(fmt)}
+            >
+              ส่งออกเป็นรูปภาพ {fmt.toUpperCase()}{selectedPages.size > 1 ? ` (${selectedPages.size} หน้า .zip)` : ""}
+            </button>
+          ))}
         </div>
       )}
 

@@ -231,18 +231,19 @@ export async function redactAllPagesBatch(sessionId, rects) {
 }
 
 // แยกหน้าเอกสาร — คืน { blob, filename } ชื่อไฟล์จาก server เช่น "สัญญา (หน้า 1-3).pdf" / "สัญญา (แยก 3 หน้า).zip"
-export async function extractPages(sessionId, pageRange, mode) {
+// format: "pdf" | "png" | "jpg" (รูปหน้าละไฟล์ — หน้าเดียวได้ไฟล์รูป หลายหน้าได้ .zip) · dpi 100/150/300 เฉพาะรูป
+export async function extractPages(sessionId, pageRange, mode, format = "pdf", dpi = 150) {
   const res = await fetchWithAuth(`${BASE}/pdf/${sessionId}/extract`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ page_range: pageRange, mode }),
+    body: JSON.stringify({ page_range: pageRange, mode, format, dpi }),
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.detail || "แยกหน้าเอกสารไม่สำเร็จ");
   }
   const blob = await res.blob();
-  const fallback = mode === "split" ? "pages.zip" : "pages.pdf";
+  const fallback = format !== "pdf" ? `page.${format}` : mode === "split" ? "pages.zip" : "pages.pdf";
   return { blob, filename: filenameFromDisposition(res.headers.get("Content-Disposition"), fallback) };
 }
 

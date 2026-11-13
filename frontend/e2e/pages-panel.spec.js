@@ -11,7 +11,7 @@ test.describe("แยกหน้า / แผงหน้าเอกสาร",
 
   test("แยกหน้า: ตรวจเลขหน้าก่อนส่ง แสดงสรุป และได้ชื่อไฟล์จากเอกสาร", async ({ page }) => {
     await page.getByRole("button", { name: "ไฟล์", exact: true }).click();
-    await page.getByText("แยกหน้า (Extract Pages)...").click();
+    await page.getByText("แยกหน้า / ส่งออกเป็นรูปภาพ...").click();
     const input = page.getByLabel(/หน้าที่ต้องการ/);
     await input.fill("1, 9");
     await expect(page.getByRole("alert")).toHaveText("ไม่มีหน้า 9 (เอกสารมี 3 หน้า)");
@@ -25,10 +25,45 @@ test.describe("แยกหน้า / แผงหน้าเอกสาร",
     await expect(page.getByRole("dialog")).toHaveCount(0);
 
     await page.getByRole("button", { name: "ไฟล์", exact: true }).click();
-    await page.getByText("แยกหน้า (Extract Pages)...").click();
+    await page.getByText("แยกหน้า / ส่งออกเป็นรูปภาพ...").click();
     await expect(page.getByLabel(/หน้าที่ต้องการ/)).toHaveValue(""); // เปิดใหม่ไม่ค้างค่าเดิม
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+
+  test("ส่งออกหน้าเป็นรูปภาพ: หน้าเดียวได้ไฟล์ PNG/JPG หลายหน้าได้ .zip", async ({ page }) => {
+    await page.getByRole("button", { name: "ไฟล์", exact: true }).click();
+    await page.getByText("แยกหน้า / ส่งออกเป็นรูปภาพ...").click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText("รวมเป็นไฟล์เดียว")).toBeVisible();
+    await dialog.getByRole("radio", { name: "รูป PNG" }).click();
+    await expect(dialog.getByText("รวมเป็นไฟล์เดียว")).toHaveCount(0); // โหมด PDF ไม่เกี่ยวกับรูป
+    await expect(dialog.getByTestId("extract-image-options")).toBeVisible();
+    await dialog.getByRole("button", { name: "หน้านี้ (หน้า 1)" }).click();
+    let download = page.waitForEvent("download");
+    await dialog.getByRole("button", { name: "ดาวน์โหลดรูป", exact: true }).click();
+    let file = await download;
+    expect(file.suggestedFilename()).toBe("sample (หน้า 1).png");
+    const head = (await (await import("node:fs/promises")).readFile(await file.path())).subarray(0, 4);
+    expect([...head]).toEqual([0x89, 0x50, 0x4e, 0x47]); // ไฟล์ PNG จริง
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "ไฟล์", exact: true }).click();
+    await page.getByText("แยกหน้า / ส่งออกเป็นรูปภาพ...").click();
+    await page.getByRole("radio", { name: "รูป JPG" }).click();
+    await page.getByLabel("ความละเอียด").selectOption("100");
+    await page.getByRole("button", { name: "ทุกหน้า", exact: true }).click();
+    download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "ดาวน์โหลด 3 รูป (.zip)" }).click();
+    file = await download;
+    expect(file.suggestedFilename()).toBe("sample (รูปภาพ 3 หน้า).zip");
+  });
+
+  test("แผงหน้าเอกสาร: คลิกขวา › ส่งออกเป็นรูปภาพ JPG", async ({ page }) => {
+    await page.locator(".thumbnail-item").nth(1).click({ button: "right" });
+    const download = page.waitForEvent("download");
+    await page.getByRole("menuitem", { name: "ส่งออกเป็นรูปภาพ JPG" }).click();
+    expect((await download).suggestedFilename()).toBe("sample (หน้า 2).jpg");
   });
 
   test("มือถือ: กดค้างที่หน้า → เมนูของแอปเมนูเดียว ไม่มีการเลือกข้อความ/เมนูของ iOS", async ({ page }) => {

@@ -357,16 +357,59 @@ def parse_page_range(range_str: str, max_pages: int) -> list[int]:
 ZIP_MAX_PAGES = 500
 
 
-def extract_pages(session: PDFSession, page_range: str, mode: str) -> tuple[bytes, str, str]:
+IMAGE_FORMATS = {"png": ("png", "image/png"), "jpg": ("jpg", "image/jpeg")}
+IMAGE_MAX_PAGES = 200       # ส่งออกเป็นรูปครั้งละไม่เกินนี้ (ไฟล์ zip ใหญ่ + ใช้เวลาเรนเดอร์)
+IMAGE_MAX_SIDE_PX = 5000    # หน้าขนาดใหญ่มาก (A0, แบบแปลน) ลดความละเอียดลงให้ด้านยาวไม่เกินนี้
+IMAGE_DPI_CHOICES = (100, 150, 300)
+
+
+def page_image(doc, pno: int, fmt: str, dpi: int) -> bytes:
+    """เรนเดอร์หน้า pno เป็นรูป PNG/JPG (พื้นขาว ไม่โปร่งใส รวม annotation/ช่องกรอกฟอร์มตามที่เห็นในหน้าจอ)"""
+    page = doc[pno]
+    long_side_pt = max(page.rect.width, page.rect.height) or 1
+    scale = min(dpi / 72, IMAGE_MAX_SIDE_PX / long_side_pt)
+    pix = page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
+    if fmt == "png":
+        return pix.tobytes("png")
+    import io
+
+    from PIL import Image
+
+    out = io.BytesIO()
+    Image.frombytes("RGB", (pix.width, pix.height), pix.samples).save(
+        out, "JPEG", quality=90, optimize=True, dpi=(round(scale * 72), round(scale * 72)))
+    return out.getvalue()
+
+
+def extract_pages(session: PDFSession, page_range: str, mode: str, fmt: str = "pdf", dpi: int = 150) -> tuple[bytes, str, str]:
     """ดึงหน้า PDF ตามช่วงที่ระบุ คืน (file_bytes, filename, mime_type)
-    single = ไฟล์เดียวตามลำดับที่พิมพ์ · split = ไฟล์ละหน้าใน .zip (ชื่อไฟล์เติมเลขศูนย์ให้เรียงถูก)"""
+    fmt pdf: single = ไฟล์เดียวตามลำดับที่พิมพ์ · split = ไฟล์ละหน้าใน .zip (ชื่อไฟล์เติมเลขศูนย์ให้เรียงถูก)
+    fmt png/jpg: รูปหน้าละ 1 ไฟล์ — หน้าเดียวได้ไฟล์รูปตรง ๆ (เปิด/แชร์จากมือถือได้เลย) หลายหน้ารวมเป็น .zip (ไม่ใช้ mode)"""
     doc = require_unlocked(session)
+    if fmt not in ("pdf", *IMAGE_FORMATS):
+        raise PDFError(f"ไม่รองรับรูปแบบไฟล์: {fmt}")
     if mode not in ("single", "split"):
         raise PDFError(f"ไม่รองรับโหมด: {mode}")
     pages = parse_page_range(page_range, doc.page_count)
     if not pages:
         raise PDFError("ไม่ได้ระบุหน้าที่ต้องการดึง")
     base = Path(session.original_filename or "document.pdf").stem or "document"
+    width = len(str(doc.page_count))
+    import io
+
+    if fmt in IMAGE_FORMATS:
+        ext, mime = IMAGE_FORMATS[fmt]
+        if dpi not in IMAGE_DPI_CHOICES:
+            raise PDFError(f"ความละเอียดต้องเป็น {', '.join(map(str, IMAGE_DPI_CHOICES))} dpi")
+        if len(pages) > IMAGE_MAX_PAGES:
+            raise PDFError(f"ส่งออกเป็นรูปภาพได้ครั้งละไม่เกิน {IMAGE_MAX_PAGES} หน้า")
+        if len(pages) == 1:
+            return page_image(doc, pages[0], fmt, dpi), f"{base} (หน้า {pages[0] + 1}).{ext}", mime
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as zf:  # PNG/JPG บีบอัดอยู่แล้ว
+            for pno in pages:
+                zf.writestr(f"{base}_หน้า_{pno + 1:0{width}d}.{ext}", page_image(doc, pno, fmt, dpi))
+        return buf.getvalue(), f"{base} (รูปภาพ {len(pages)} หน้า).zip", "application/zip"
 
     if mode == "single":
         label = _range_label(pages)
@@ -374,9 +417,6 @@ def extract_pages(session: PDFSession, page_range: str, mode: str) -> tuple[byte
 
     if len(pages) > ZIP_MAX_PAGES:
         raise PDFError(f"แยกเป็นไฟล์ละหน้าได้ครั้งละไม่เกิน {ZIP_MAX_PAGES} หน้า")
-    import io
-
-    width = len(str(doc.page_count))
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for pno in pages:

@@ -112,3 +112,68 @@ def test_extract_errors(client, make_user, upload):
         assert r.status_code == 400, (bad, r.text)
     r = client.post(f"/pdf/{sid}/extract", headers=h, json={"page_range": "1", "mode": "zip"})
     assert r.status_code == 400
+
+
+# ---------- ส่งออกเป็นรูปภาพ PNG / JPG ----------
+def test_extract_one_page_as_image_is_a_plain_image_file(client, make_user, upload):
+    from PIL import Image
+
+    _, h = make_user("free")
+    sid = upload(h, _doc(12), name="สัญญา.pdf")
+    r = client.post(f"/pdf/{sid}/extract", headers=h, json={"page_range": "3", "format": "png"})
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+    assert _filename(r) == "สัญญา (หน้า 3).png"
+    png = Image.open(io.BytesIO(r.content))
+    assert png.format == "PNG" and png.mode == "RGB"                       # พื้นขาว ไม่โปร่งใส
+    assert abs(png.width - round(595 * 150 / 72)) <= 2                      # 150 dpi เป็นค่าเริ่มต้น
+    assert png.getpixel((5, 5)) == (255, 255, 255) and png.getextrema() != ((255, 255), (255, 255), (255, 255))
+
+    r = client.post(f"/pdf/{sid}/extract", headers=h, json={"page_range": "3", "format": "jpg", "dpi": 300})
+    assert r.headers["content-type"] == "image/jpeg" and _filename(r).endswith(".jpg")
+    jpg = Image.open(io.BytesIO(r.content))
+    assert jpg.format == "JPEG" and abs(jpg.width - round(595 * 300 / 72)) <= 2
+
+
+def test_extract_many_pages_as_images_is_a_zip_in_typed_order(client, make_user, upload):
+    from PIL import Image
+
+    _, h = make_user("free")
+    sid = upload(h, _doc(12), name="report.pdf")
+    r = client.post(f"/pdf/{sid}/extract", headers=h, json={"page_range": "10, 2-3", "format": "jpg", "dpi": 100, "mode": "single"})
+    assert r.status_code == 200 and r.headers["content-type"] == "application/zip"
+    assert _filename(r) == "report (รูปภาพ 3 หน้า).zip"
+    with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+        assert zf.namelist() == ["report_หน้า_10.jpg", "report_หน้า_02.jpg", "report_หน้า_03.jpg"]
+        assert Image.open(io.BytesIO(zf.read("report_หน้า_02.jpg"))).format == "JPEG"
+
+
+def test_extract_image_shows_unsaved_annotations_and_validates(client, make_user, upload):
+    from PIL import Image
+
+    _, h = make_user("free")
+    sid = upload(h, _doc(3), name="a.pdf")
+    before = client.post(f"/pdf/{sid}/extract", headers=h, json={"page_range": "1", "format": "png", "dpi": 100}).content
+    r = client.post(f"/annotation/{sid}", headers=h, json={
+        "page_number": 0, "type": "highlight", "rect": {"x0": 300, "y0": 300, "x1": 400, "y1": 380}, "color": [1, 0, 0]})
+    assert r.status_code == 200, r.text
+    after = Image.open(io.BytesIO(client.post(
+        f"/pdf/{sid}/extract", headers=h, json={"page_range": "1", "format": "png", "dpi": 100}).content))
+    spot = (round(350 * 100 / 72), round(340 * 100 / 72))
+    assert Image.open(io.BytesIO(before)).getpixel(spot) == (255, 255, 255)
+    px = after.getpixel(spot)
+    assert px[0] > 150 and px[1] < 200 and px != (255, 255, 255)  # ไฮไลต์ที่ยังไม่บันทึกติดมาในรูป
+
+    assert client.post(f"/pdf/{sid}/extract", headers=h, json={"page_range": "1", "format": "gif"}).status_code == 400
+    assert client.post(f"/pdf/{sid}/extract", headers=h, json={"page_range": "1", "format": "png", "dpi": 1200}).status_code == 400
+    assert client.post(f"/pdf/{sid}/extract", headers=h, json={"page_range": "9", "format": "png"}).status_code == 400
+
+
+def test_huge_page_image_is_capped():
+    from PIL import Image
+
+    from app.services.pdf_service.pages import IMAGE_MAX_SIDE_PX, page_image
+
+    d = fitz.open()
+    d.new_page(width=3370, height=2384)  # A0 แนวนอน
+    im = Image.open(io.BytesIO(page_image(d, 0, "png", 300)))
+    assert max(im.size) <= IMAGE_MAX_SIDE_PX + 1 and abs(im.width / im.height - 3370 / 2384) < 0.01

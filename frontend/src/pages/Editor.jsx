@@ -626,12 +626,25 @@ export default function Editor() {
   }
 
   // ดาวน์โหลดเสร็จแล้วค่อยปิดหน้าต่าง — ถ้าผิดพลาด (เช่น ไม่มีหน้านั้น) แสดงในหน้าต่างให้แก้ต่อได้ ไม่ต้องพิมพ์ใหม่
-  const handleExtractPages = async (pageRange, mode) => {
-    setStatusMessage("กำลังแยกหน้าเอกสาร...");
-    const { blob, filename } = await api.extractPages(session.sessionId, pageRange, mode);
+  const handleExtractPages = async (pageRange, mode, format = "pdf", dpi = 150) => {
+    setStatusMessage(format === "pdf" ? "กำลังแยกหน้าเอกสาร..." : "กำลังสร้างรูปภาพ...");
+    const { blob, filename } = await api.extractPages(session.sessionId, pageRange, mode, format, dpi);
     saveBlob(blob, filename);
     setIsExtractModalOpen(false);
     setStatusMessage(`ดาวน์โหลด "${filename}" แล้ว`);
+  };
+
+  // แผงหน้าเอกสาร › คลิกขวา › ส่งออกหน้าที่เลือกเป็นรูปภาพ (pages = เลขหน้า 0-based เรียงแล้ว)
+  const handleExportPagesAsImage = async (pages, format) => {
+    if (!session || !pages?.length) return;
+    try {
+      setStatusMessage("กำลังสร้างรูปภาพ...");
+      const { blob, filename } = await api.extractPages(session.sessionId, pages.map((p) => p + 1).join(","), "single", format, 150);
+      saveBlob(blob, filename);
+      setStatusMessage(`ดาวน์โหลด "${filename}" แล้ว`);
+    } catch (err) {
+      setStatusMessage(`ส่งออกรูปภาพไม่สำเร็จ: ${err.message}`);
+    }
   };
 
   const handleSaveCopy = async () => {
@@ -794,6 +807,7 @@ export default function Editor() {
           onRemoveBookmark={sessionHook.removeBookmark}
           onRenameBookmark={sessionHook.renameBookmark}
           onExportPages={sessionHook.handleExportPages}
+          onExportPagesAsImage={handleExportPagesAsImage}
           onReorderPages={pageOps.reorder}
           onDeletePages={pageOps.remove}
           onRotatePages={pageOps.rotate}
@@ -1075,6 +1089,7 @@ export default function Editor() {
         onClose={() => setIsExtractModalOpen(false)}
         onExtract={handleExtractPages}
         totalPages={session?.pageCount || 1}
+        currentPage={currentPage + 1}
       />
       {showPiiPanel && session && (
         <PiiPanel

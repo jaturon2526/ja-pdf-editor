@@ -116,6 +116,7 @@
         <div class="my-8 bg-emerald-50 border border-emerald-200 p-5 sm:p-6 rounded-2xl text-emerald-900 shadow-sm leading-relaxed">
             <strong>✨ มีอะไรใหม่</strong>
             <ul class="list-disc list-inside mt-2 space-y-1">
+                <li><strong>ใหม่:</strong> <a class="underline" href="#extract-pages">ส่งออกหน้าเป็นรูปภาพ PNG / JPG</a> — เมนูไฟล์ › แยกหน้า / ส่งออกเป็นรูปภาพ หรือคลิกขวาที่หน้าในแผงด้านซ้าย · หน้าเดียวได้ไฟล์รูปทันที ใช้บนมือถือสะดวก</li>
                 <li><strong>ปรับปรุง:</strong> <strong>แทรกรูปภาพ</strong> — กดเมนูแทรก › แทรกรูปภาพ แล้วเลือกไฟล์ได้ทันที (ไม่ต้องคลิกบนหน้าก่อน) ลากตัวรูปเพื่อย้ายและปรับขนาดได้ · โหมด <strong>แก้ไขรูปภาพ</strong> ลากไฟล์รูปมาวางบนหน้าเพื่อแทรกได้</li>
                 <li><strong>ใหม่:</strong> <a class="underline" href="#support">ตรวจสลิปอัตโนมัติ</a> — ระบบอ่าน QR ในสลิปกันสลิปซ้ำ และถ้าผู้ดูแลต่อบริการตรวจสลิป จะยืนยันยอดกับธนาคารแล้วให้สิทธิ์ทันทีที่แจ้งโอน</li>
                 <li><strong>ใหม่:</strong> <a class="underline" href="#support">☕ สนับสนุนผู้พัฒนา</a> — สแกน QR พร้อมเพย์ตามยอดที่เลือก แจ้งโอนแล้วรับสิทธิ์พื้นที่เก็บไฟล์และจำนวนอุปกรณ์เพิ่ม (แทนแพ็กเกจเสียเงินเดิม) · มีหน้ารายชื่อผู้สนับสนุน เลือกแสดงชื่อหรือไม่ออกนามได้</li>
@@ -775,10 +776,10 @@
         
         <!-- 15. แยกหน้าเอกสาร -->
         <h2 id="extract-pages" class="text-2xl font-bold text-slate-900 mt-16 mb-6 scroll-mt-24 pb-2 border-b border-slate-200 flex items-center gap-3"><span class="text-sky-500">#</span> 15. แยกหน้าเอกสาร (Extract Pages)</h2>
-        <p class="text-slate-700 leading-relaxed mb-4">ฟีเจอร์นี้ช่วยให้คุณดึงเฉพาะหน้าที่ต้องการออกมาเป็นไฟล์ PDF ใหม่ได้</p>
+        <p class="text-slate-700 leading-relaxed mb-4">ฟีเจอร์นี้ช่วยให้คุณดึงเฉพาะหน้าที่ต้องการออกมาเป็นไฟล์ PDF ใหม่ หรือ<strong>ส่งออกเป็นรูปภาพ PNG / JPG</strong> (สะดวกเวลาใช้บนมือถือ — ส่งต่อในแชตหรือเก็บลงอัลบั้มรูปได้เลย)</p>
         <ol class="space-y-3 text-slate-700 leading-relaxed list-decimal pl-6 mb-6">
             <li>เปิดไฟล์ PDF ที่ต้องการแยกหน้า</li>
-            <li>ไปที่เมนู <strong>ไฟล์ → แยกหน้า (Extract Pages)...</strong></li>
+            <li>ไปที่เมนู <strong>ไฟล์ → แยกหน้า / ส่งออกเป็นรูปภาพ...</strong></li>
             <li>ในช่อง <strong>หน้าที่ต้องการ</strong> พิมพ์เลขหน้า (หรือกด <strong>ทุกหน้า</strong>) เช่น:
                 <ul class="list-disc pl-6 mt-2 space-y-1 text-sm text-slate-600">
                     <li><code class="bg-slate-100 px-2 py-0.5 rounded text-xs font-mono">1, 3, 5</code> — เฉพาะหน้า 1, 3 และ 5</li>
@@ -787,7 +788,13 @@
                 </ul>
                 ใต้ช่องจะบอกว่า "จะได้กี่หน้า หน้าไหนบ้าง" — ถ้าพิมพ์เลขหน้าที่ไม่มีในเอกสาร จะแจ้งทันทีก่อนกด
             </li>
-            <li>เลือก <strong>รูปแบบไฟล์</strong>:
+            <li>เลือก <strong>ชนิดไฟล์</strong>: <strong>PDF</strong>, <strong>รูป PNG</strong> (ตัวหนังสือคมที่สุด) หรือ <strong>รูป JPG</strong> (ไฟล์เล็ก เหมาะกับเอกสารสแกน)
+                <ul class="list-disc pl-6 mt-2 space-y-1 text-sm text-slate-600">
+                    <li><strong>รูปภาพ:</strong> ได้รูปหน้าละ 1 ไฟล์ — เลือก<strong>หน้าเดียว</strong> (กดปุ่ม <em>หน้านี้</em> ได้) ได้ไฟล์รูปทันที เช่น <em>"สัญญา (หน้า 3).png"</em> · เลือกหลายหน้าได้ไฟล์ .zip (ครั้งละไม่เกิน 200 หน้า)</li>
+                    <li>เลือก <strong>ความละเอียด</strong>ได้: เล็ก 100 dpi (ส่งแชต) · ปกติ 150 dpi · คมชัดสูง 300 dpi (พิมพ์/ซูม) — รูปมีการแก้ไข ไฮไลต์ และโน้ตตามที่เห็นบนหน้าจอ</li>
+                </ul>
+            </li>
+            <li>ถ้าเลือก PDF เลือก <strong>รูปแบบไฟล์</strong>:
                 <ul class="list-disc pl-6 mt-2 space-y-1 text-sm text-slate-600">
                     <li><strong>รวมเป็นไฟล์เดียว</strong> — ได้ไฟล์ชื่อ <em>"&lt;ชื่อเอกสาร&gt; (หน้า 1-3).pdf"</em></li>
                     <li><strong>แยกไฟล์ละหน้า</strong> — ได้ไฟล์ .zip ข้างในเป็น PDF หน้าละไฟล์ ชื่อเรียงถูก เช่น <em>"สัญญา_หน้า_01.pdf"</em> (ครั้งละไม่เกิน 500 หน้า)</li>
@@ -795,10 +802,11 @@
             </li>
             <li>กดปุ่ม <strong>ดาวน์โหลด</strong> เพื่อรับไฟล์</li>
         </ol>
+        <p class="text-slate-700 leading-relaxed mb-4"><strong>ทางลัด:</strong> ที่แผงหน้าเอกสารด้านซ้าย เลือกหน้า (หลายหน้าได้) แล้วคลิกขวา/กดค้าง › <strong>ส่งออกเป็นรูปภาพ PNG</strong> หรือ <strong>JPG</strong></p>
         <p class="text-slate-700 leading-relaxed mb-4">ไฟล์ที่ได้มีการแก้ไขล่าสุดแล้ว (ไม่ต้องกดบันทึกก่อน) · ช่องกรอกฟอร์ม ลิงก์ไปหน้าอื่น และบุ๊กมาร์กของหน้าที่เลือกยังใช้ได้ · ถ้าตั้งรหัสผ่านเอกสารไว้ (ไฟล์ → เข้ารหัส PDF) ไฟล์ที่แยกออกมาต้องใช้รหัสผ่านเดียวกันเปิด · เอกสารที่เปิดอยู่ไม่เปลี่ยน</p>
         <figure class="my-6">
             <img src="/images/manual/extract_pages.png" alt="หน้าต่างแยกหน้าเอกสาร" width="460" loading="lazy" class="max-w-full h-auto mx-auto rounded-xl border border-slate-200 shadow-sm">
-            <figcaption class="text-center text-sm text-slate-500 mt-2">ไฟล์ → แยกหน้า (Extract Pages)...</figcaption>
+            <figcaption class="text-center text-sm text-slate-500 mt-2">ไฟล์ → แยกหน้า / ส่งออกเป็นรูปภาพ... (ชนิดไฟล์ PDF)</figcaption>
         </figure>
 
         <!-- 16. เซ็นเซอร์ด้วยคำค้นหา -->
