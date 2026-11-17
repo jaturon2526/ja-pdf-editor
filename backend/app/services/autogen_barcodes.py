@@ -33,7 +33,7 @@ KIND_ALIASES = {"qr": "qrcode", "qrcode": "qrcode", "datamatrix": "datamatrix", 
                 "aztec": "azteccode", "azteccode": "azteccode", "code128": "code128", "code39": "code39",
                 "ean13": "ean13", "ean8": "ean8", "upca": "upca", "itf": "itf", "codabar": "codabar"}
 _STORY_PART = re.compile(r"^word/(document|header\d*|footer\d*)\.xml$")
-_DESCR = re.compile(r'(<wp:docPr\b[^>]*?\sdescr=")([^"]*\{\{[^"]*\}\}[^"]*)(")')
+_DESCR = re.compile(r'(<wp:docPr\b[^>]*?\sdescr=")([^"]*)(")')  # ตรวจว่ามี {{ }} ใน repl (กัน regex backtrack)
 _FRAME_MARK = "JABCFRAME{}X"
 _INLINE_MARK = "@@JABC{}@@"
 _INLINE_RE = re.compile(r"@@JABC(\d+)@@")
@@ -59,10 +59,12 @@ def prepare(template_bytes: bytes) -> tuple[bytes, list[str]]:
 
     def repl(m: re.Match) -> str:
         raw = html.unescape(m.group(2)).strip()
-        inner = re.fullmatch(r"\{\{-?\s*(.+?)\s*-?\}\}", raw, flags=re.S)
-        if not inner or not re.match(r"(qr|barcode)\s*\(", inner.group(1)):
+        if len(raw) < 5 or not (raw.startswith("{{") and raw.endswith("}}")):
+            return m.group(0)
+        inner = raw[2:-2].removeprefix("-").removesuffix("-").strip()  # {{- x -}} แบบ Jinja
+        if not inner or not re.match(r"(qr|barcode)\s*\(", inner):
             return m.group(0)  # Alt Text อื่นที่มี {{ }} — ปล่อยให้ docxtpl จัดการเหมือนเดิม
-        exprs.append(inner.group(1))
+        exprs.append(inner)
         return f"{m.group(1)}{_FRAME_MARK.format(len(exprs) - 1)}{m.group(3)}"
 
     src = zipfile.ZipFile(io.BytesIO(template_bytes))

@@ -17,7 +17,7 @@ let nextKey = 1;
 const newSigner = () => ({
   key: nextKey++, email: "", user: null, lookupError: "", signType: "either", page: null, rect: null, parallel: false, requirePasskey: false,
 });
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const EMAIL_RE = /^[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+$/;
 const MAX_SIGNERS = 20; // ตรงกับ backend signing_service.MAX_SIGNERS
 
 // ค่า min ของ datetime-local = ตอนนี้ (เวลาเครื่องผู้ใช้)

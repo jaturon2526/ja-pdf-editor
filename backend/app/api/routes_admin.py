@@ -14,12 +14,12 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 class AdminUserObj(BaseModel):
     id: int
     email: str
-    display_name: Optional[str]
+    display_name: Optional[str] = None
     is_active: bool
     is_admin: bool
     is_verified: bool
     plan_type: str
-    expire_date: Optional[datetime]
+    expire_date: Optional[datetime] = None
     total_files: int
     total_storage: int
     ai_requests_today: int = 0

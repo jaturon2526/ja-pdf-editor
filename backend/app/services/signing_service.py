@@ -50,7 +50,7 @@ class StepInput:
     require_passkey: bool = False  # ผู้ลงนามต้องยืนยันตัวตนด้วย passkey ก่อนลงนาม
 
 
-_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+$")  # โดเมนแยกเป็นช่วงด้วยจุด — ไม่ backtrack
 
 
 @dataclass

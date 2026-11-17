@@ -7,7 +7,7 @@ function formatShortcut(sc) {
   if (!sc) return sc;
   
   // Clean up any explicit Mac overrides we previously added (e.g., "(Mac: ⌥Q)")
-  let cleanSc = sc.replace(/\s*\(Mac:.*\)/i, "");
+  let cleanSc = sc.replace(/ ?\(Mac:[^)]*\)/i, "").trimEnd();
   
   if (!isMac) return cleanSc;
   

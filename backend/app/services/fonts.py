@@ -84,7 +84,7 @@ _CANDIDATE_UAS = [
 ]
 
 _FONT_FACE_BLOCK_RE = re.compile(r"@font-face\s*\{([^}]*)\}", re.IGNORECASE | re.DOTALL)
-_URL_IN_BLOCK_RE = re.compile(r"url\((https://fonts\.gstatic\.com/[^)]+?\.(?:ttf|otf))\)")
+_URL_IN_BLOCK_RE = re.compile(r"url\((https://fonts\.gstatic\.com/[^)\s]*\.(?:ttf|otf))\)")
 _UNICODE_RANGE_RE = re.compile(r"unicode-range:\s*([^;]+);", re.IGNORECASE)
 
 

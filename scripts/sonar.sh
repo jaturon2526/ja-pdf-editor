@@ -70,7 +70,10 @@ case "$cmd" in
     [ -f frontend/coverage/lcov.info ] || echo "ℹ ไม่มี frontend/coverage/lcov.info — Coverage ฝั่ง JS จะเป็น 0% (สร้างด้วย npx vitest run --coverage)"
     compose up -d sonarqube db
     wait_ready
-    compose --profile scan run --rm scanner
+    if ! compose --profile scan run --rm scanner 2>&1 | tee sonar-scan.log; then
+      echo "✗ สแกนไม่ผ่าน — ดูรายละเอียดใน sonar-scan.log (ค้นคำว่า ERROR)" >&2
+      exit 1
+    fi
     echo "✓ สแกนเสร็จ — ดูผลที่ $URL/dashboard?id=pdf_editor_fullstack"
     if command -v open >/dev/null 2>&1; then open "$URL/dashboard?id=pdf_editor_fullstack" || true; fi
     ;;

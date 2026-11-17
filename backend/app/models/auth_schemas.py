@@ -31,7 +31,7 @@ class UserResponse(BaseModel):
     avatar_url: Optional[str] = None
     avatar_emoji: Optional[str] = None
     plan_type: str
-    expire_date: Optional[datetime]
+    expire_date: Optional[datetime] = None
     max_sessions: int
     is_active: bool
     is_verified: bool

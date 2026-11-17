@@ -65,6 +65,9 @@ services:
     environment:
       SONAR_HOST_URL: http://sonarqube:9000
       SONAR_TOKEN: ${SONAR_TOKEN:-}
+      # ปิด SCM (git blame) เป็นค่าเริ่มต้น: JGit ใน scanner อ่าน .git ที่ bind mount จาก Mac ไม่ครบ
+      # → "MissingObjectException: Missing blob" ทั้งที่ git ปกติอ่านได้ · เปิดคืนด้วย SONAR_SCANNER_OPTS= (ว่าง) ใน .env.sonar
+      SONAR_SCANNER_OPTS: ${SONAR_SCANNER_OPTS--Dsonar.scm.disabled=true}
     volumes:
       - ./:/usr/src
       - sonar_scanner_cache:/opt/sonar-scanner/.sonar/cache

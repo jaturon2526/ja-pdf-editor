@@ -35,15 +35,21 @@ from __future__ import annotations
 import copy
 import logging
 import threading
+import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Optional
 
 import fitz  # PyMuPDF
 
 from app.core.config import settings
+
+
+def _utcnow() -> datetime:
+    """เวลา UTC แบบ naive (เหมือน datetime.utcnow() เดิม ซึ่งเลิกแนะนำตั้งแต่ Python 3.12)"""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 logger = logging.getLogger("session")
 
@@ -158,8 +164,8 @@ class PDFSession:
     is_unlocked: bool = False
     original_filename: str = ""
     user_id: Optional[int] = field(default=None, compare=False, repr=False)
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    last_accessed_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=_utcnow)
+    last_accessed_at: datetime = field(default_factory=_utcnow)
     # ล็อกเฉพาะของ session นี้ — กัน request พร้อมกัน (เช่น render หน้า/ขนาดจริง กับ render thumbnail
     # ที่ frontend ยิงเกือบพร้อมกันหลัง unlock) เข้าถึง fitz.Document ตัวเดียวกันจากคนละ thread
     # พร้อมกัน ซึ่ง PyMuPDF/MuPDF ไม่ thread-safe (ตัว lib เองแนะนำให้ใช้ multiprocessing หรือ lock
@@ -236,7 +242,7 @@ class PDFSession:
         )
 
     def touch(self) -> None:
-        self.last_accessed_at = datetime.utcnow()
+        self.last_accessed_at = _utcnow()
 
     # ---------- กันบั๊ก "saveIncr() ซ้อนกันโดยไม่มีการแก้ไขคั่น" (ดูหมายเหตุ _doc_dirty ด้านบน) ----------
 
@@ -426,7 +432,7 @@ class InMemorySessionManager:
     def cleanup_expired(self) -> int:
         """เคลียร์ session ที่ไม่ได้ใช้งานเกิน TTL (ดีฟอลต์ 24 ชม. — settings.SESSION_TTL_MINUTES)
         พร้อมไฟล์บนดิสก์คู่กัน (ดู close()) — เรียกเป็นระยะจาก background task ใน main.py"""
-        cutoff = datetime.utcnow() - timedelta(minutes=settings.SESSION_TTL_MINUTES)
+        cutoff = _utcnow() - timedelta(minutes=settings.SESSION_TTL_MINUTES)
         expired_ids = []
         with self._lock:
             for sid, s in self._sessions.items():
@@ -442,7 +448,7 @@ class InMemorySessionManager:
         cleanup_expired() ด้านบนเคลียร์ไม่ถึงเพราะเช็คจาก session ในหน่วยความจำเท่านั้น) และเก่ากว่า
         max_age_hours ชั่วโมง — ข้ามไฟล์ที่ session ที่ยังทำงานอยู่ตอนนี้อ้างอิงอยู่เสมอ กันลบไฟล์ที่
         กำลังใช้งานจริงโดยไม่ตั้งใจ"""
-        cutoff_ts = (datetime.utcnow() - timedelta(hours=max_age_hours)).timestamp()
+        cutoff_ts = time.time() - max_age_hours * 3600
         with self._lock:
             active_paths = set()
             for s in self._sessions.values():
@@ -845,7 +851,7 @@ class RedisSessionManager:
     def cleanup_orphan_files(self, max_age_hours: float = 24.0) -> int:
         """เก็บกวาดไฟล์ค้างใน WORKING_DIR ที่ไม่มี session ใน Redis อ้างอิงอยู่แล้ว และเก่ากว่า max_age_hours
         (ตรวจกับ Redis ด้วย ไม่ใช่แค่ local cache — กันลบไฟล์ที่ pod อื่นกำลังใช้อยู่บน shared storage)"""
-        cutoff_ts = (datetime.utcnow() - timedelta(hours=max_age_hours)).timestamp()
+        cutoff_ts = time.time() - max_age_hours * 3600
         active_paths = set()
         try:
             for key in self._redis.scan_iter(match="session:*:meta", count=500):

@@ -144,7 +144,7 @@ def _split_wide(b: np.ndarray, boxes: list[tuple[int, int, int, int]]) -> list[t
         for a, c in zip(cuts, cuts[1:]):
             if c - a < 2:
                 continue
-            ys = np.where((b[y:y + h, x + a:x + c] > 0).any(axis=1))[0]
+            ys = np.nonzero((b[y:y + h, x + a:x + c] > 0).any(axis=1))[0]
             if len(ys):
                 out.append((x + a, y + int(ys[0]), c - a, int(ys[-1] - ys[0] + 1)))
     return out

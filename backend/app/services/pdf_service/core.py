@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Optional
 from app.core.config import settings
 import base64
+import math
 import uuid
 from pathlib import Path
 import fitz
@@ -411,7 +412,7 @@ def _safe_render_zoom(page, zoom: float) -> float:
         zoom = float(zoom)
     except (TypeError, ValueError):
         zoom = 1.5
-    if not zoom or zoom != zoom:  # 0 / NaN
+    if not zoom or math.isnan(zoom):  # 0 / NaN
         zoom = 1.5
     zoom = min(MAX_RENDER_ZOOM, max(0.05, zoom))
     area = max(1.0, page.rect.width * page.rect.height)

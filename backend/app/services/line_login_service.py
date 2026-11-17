@@ -40,7 +40,7 @@ STATE_TTL = 600
 PENDING_TTL = 15 * 60
 CONFIRM_TTL = 30 * 60
 MAX_CONFIRM_EMAILS = 3
-_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+$")  # โดเมนแยกเป็นช่วงด้วยจุด — ไม่ backtrack
 
 
 def _grants_initial_admin(db, email):

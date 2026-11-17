@@ -145,7 +145,7 @@ export function buildEditorMenus({
       label: "วิธีใช้",
       items: [
         { label: "คู่มือการใช้งาน...", onClick: () => window.open("/manual.html", "_blank") },
-        { label: "ข้อเสนอแนะ / แจ้งปัญหา...", onClick: () => window.open(FEEDBACK_FORM_URL, "_blank") },
+        { label: "ข้อเสนอแนะ / แจ้งปัญหา...", onClick: () => window.open(FEEDBACK_FORM_URL, "_blank", "noopener,noreferrer") },
         { divider: true },
         { label: "เกี่ยวกับ JA PDF Editor", onClick: openAbout },
       ],

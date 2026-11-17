@@ -412,7 +412,21 @@ _KNOWN_FONTS = {
     "leelawadee": "Leelawadee",
     "leelawadeeui": "Leelawadee UI",
 }
-_STYLE_SUFFIX = re.compile(r"[-,](bold|italic|regular|medium|semibold|light|black|thin|extrabold|bolditalic|mt|psmt)+$", re.I)
+_STYLE_WORDS = ("bolditalic", "extrabold", "semibold", "regular", "italic", "medium", "light", "black", "bold", "thin", "psmt", "mt")
+_STYLE_SUFFIX = re.compile(r"[-,][a-z]+$", re.I)  # ท้ายชื่อหลัง - หรือ , (ตัดเมื่อประกอบจากคำสไตล์ล้วน — ไม่ใช้ (a|b)+$ ที่ backtrack หนัก)
+
+
+def _strip_style_suffix(name: str) -> str:
+    m = _STYLE_SUFFIX.search(name)
+    if not m:
+        return name
+    rest = m.group(0)[1:].lower()
+    while rest:
+        word = next((w for w in _STYLE_WORDS if rest.startswith(w)), None)
+        if word is None:
+            return name
+        rest = rest[len(word):]
+    return name[:m.start()]
 
 
 def normalize_font_name(name: str) -> tuple[str, str]:
@@ -420,7 +434,7 @@ def normalize_font_name(name: str) -> tuple[str, str]:
     if not name:
         return name, name
     base = name.split("+", 1)[1] if re.match(r"^[A-Z]{6}\+", name) else name
-    base = _STYLE_SUFFIX.sub("", base)
+    base = _strip_style_suffix(base)
     key = re.sub(r"[\s_-]", "", base).lower()
     if key in _THAI_ONLY_FONTS:
         return _THAI_ONLY_FONTS[key]
