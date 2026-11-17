@@ -142,6 +142,19 @@ docker compose -f docker-compose.dev.yml up -d --build
 
 สคริปต์ `scripts.*` รันจาก `backend/` · `test_pdf_files/` เป็นไฟล์จริงที่อาจมีข้อมูลส่วนบุคคล — อยู่ใน `.gitignore` ห้าม commit
 
+### สแกนคุณภาพโค้ดด้วย SonarQube (เครื่องพัฒนา)
+
+`docker-compose.sonar.yml` = SonarQube Community Build + **PostgreSQL 17** (project `sonar` แยกจากแอป · เปิดที่ `127.0.0.1:9000` เท่านั้น) · ต้องให้ Docker ใช้ RAM ได้ ≥ 4 GB
+
+```bash
+scripts/sonar.sh up       # ครั้งแรกสร้าง .env.sonar (รหัสผ่าน DB สุ่ม, ไม่เข้า git) แล้วรอจนพร้อม → http://localhost:9000 (admin/admin แล้วตั้งรหัสใหม่)
+#   สร้าง token: รูปบัญชี › My Account › Security › Generate Tokens (Global Analysis) → ใส่ SONAR_TOKEN=... ใน .env.sonar
+scripts/sonar.sh scan     # สแกนด้วย sonar-scanner-cli ใน Docker ตาม sonar-project.properties (รอผล Quality Gate)
+scripts/sonar.sh down     # ปิด (ข้อมูลอยู่ต่อ) · down --purge ลบข้อมูลทั้งหมด
+```
+
+Coverage: สร้าง `backend/coverage.xml` (`pytest --cov=app --cov-report=xml`) และ `frontend/coverage/lcov.info` (`npx vitest run --coverage`) ก่อน `scan` · ล็อกรุ่น image ได้ด้วย `SONARQUBE_IMAGE` / `SONAR_SCANNER_IMAGE` ใน `.env.sonar`
+
 ---
 
 ## Deploy ขึ้นเซิร์ฟเวอร์

@@ -87,7 +87,7 @@ jobs:
       - name: docker compose config (ทุกชุดที่ใช้ deploy)
         run: |
           # ค่าหลอกพอให้ compose แทนตัวแปรได้ — ตรวจโครงสร้าง/คีย์ ไม่ได้ใช้รันจริง
-          printf 'DB_PASSWORD=x\nSECRET_KEY=x\nJWT_SECRET=x\n' > .env.prod
+          printf 'DB_PASSWORD=x\nSECRET_KEY=x\nJWT_SECRET=x\nSONAR_DB_PASSWORD=x\n' > .env.prod
           touch backend/.env
           fail=0
           for combo in \
