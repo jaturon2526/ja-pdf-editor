@@ -105,6 +105,7 @@ jobs:
         run: |
           docker run --rm --add-host backend:127.0.0.1 \
             -v "$PWD/frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
+            -v "$PWD/frontend/security-headers.conf:/etc/nginx/snippets/security-headers.conf:ro" \
             "$(awk '/^FROM .*nginx/ {print $2; exit}' frontend/Dockerfile)" nginx -t
       - name: shellcheck (สคริปต์ deploy / backup / load test)
         run: |
