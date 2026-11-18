@@ -286,10 +286,28 @@ show_profile() {
   $DOCKER logs pdf_backend_prod 2>&1 | grep -E "รูปแบบการติดตั้ง|ใบรับรองระบบ" | tail -2 || true
 }
 
+# กันรัน deploy.sh ผิดโฟลเดอร์: container ชื่อ pdf_*_prod ที่รันอยู่แล้วมาจากโฟลเดอร์อื่น (เช่น คัดลอก deploy.sh ไปไว้ใน
+# git clone ของซอร์สโค้ดบนเครื่องที่เป็นทั้งเครื่อง build และเซิร์ฟเวอร์) → compose จะสร้างโปรเจกต์ใหม่ volume เปล่า
+# แล้วชนชื่อ container กับระบบจริง — หยุดก่อนแตะอะไร และบอกโฟลเดอร์ที่ถูก
+guard_install_dir() {
+  local name dir
+  for name in pdf_backend_prod pdf_db_prod pdf_redis_prod pdf_frontend_prod; do
+    dir="$($DOCKER inspect "$name" --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}' 2>/dev/null || true)"
+    [ -n "$dir" ] || continue
+    if [ "$dir" != "$DIR" ] && [ "${ALLOW_OTHER_INSTALL:-0}" != "1" ]; then
+      die "ระบบที่รันอยู่ติดตั้งจากโฟลเดอร์ $dir (container $name) แต่ deploy.sh นี้อยู่ที่ $DIR
+  ใช้โฟลเดอร์ของระบบจริง:  cd $dir && ./deploy.sh ${CMD_NAME:-deploy} ...
+  (ตั้งใจย้ายโฟลเดอร์ติดตั้งจริง ๆ: ย้าย .env.prod + secrets ไปด้วย แล้วรันซ้ำด้วย ALLOW_OTHER_INSTALL=1)"
+    fi
+    return 0
+  done
+}
+
 do_deploy() {
   local tag="$1" prev
   prev="$(current_tag)"
   check_tag "$tag"
+  guard_install_dir
   echo "deploy แท็ก: $tag  (เดิม: $prev)"
   echo "  $(env_get BACKEND_IMAGE):$tag"
   echo "  $(env_get FRONTEND_IMAGE):$tag"
@@ -414,8 +432,8 @@ case "${1:-help}" in
   backup) shift; cmd_backup "$@" ;;
   backup-schedule) shift; cmd_backup_schedule "$@" ;;
   make-admin) shift; cmd_make_admin "$@" ;;
-  stop) need_docker; require_env; compose stop ;;
-  start) need_docker; require_env; compose up -d && wait_healthy ;;
+  stop) need_docker; require_env; CMD_NAME=stop guard_install_dir; compose stop ;;
+  start) need_docker; require_env; CMD_NAME=start guard_install_dir; compose up -d && wait_healthy ;;
   -h|--help|help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//' ;;
   *) die "ไม่รู้จักคำสั่ง '$1' — ./deploy.sh help" ;;
 esac
