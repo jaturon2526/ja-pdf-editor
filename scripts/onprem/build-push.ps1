@@ -106,7 +106,9 @@ function Image-Of([string]$svc) { if ($svc -eq "backend") { $BackendImage } else
 
 function App-Version {
   $about = Join-Path $Root "frontend/src/components/AboutModal.jsx"
-  $m = Select-String -Path $about -Pattern '>v(\d+\.\d+\.\d+)<' -Encoding UTF8 | Select-Object -First 1
+  # APP_VERSION = "v1.2.3" (since v1.31.0); older files wrote >v1.2.3< directly in JSX
+  $m = Select-String -Path $about -Pattern 'APP_VERSION = "v(\d+\.\d+\.\d+)"' -Encoding UTF8 | Select-Object -First 1
+  if (-not $m) { $m = Select-String -Path $about -Pattern '>v(\d+\.\d+\.\d+)<' -Encoding UTF8 | Select-Object -First 1 }
   if ($m) { return "v" + $m.Matches[0].Groups[1].Value }
   return "v0.0.0"
 }

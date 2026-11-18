@@ -53,7 +53,10 @@ img_of() { [ "$1" = backend ] && echo "$BACKEND_IMAGE" || echo "$FRONTEND_IMAGE"
 
 app_version() {
   # เวอร์ชันที่แสดงในหน้า "เกี่ยวกับ" (frontend/src/components/AboutModal.jsx)
-  grep -oE '>v[0-9]+\.[0-9]+\.[0-9]+<' frontend/src/components/AboutModal.jsx | head -1 | tr -d '<>' || true
+  # ค่าคงที่ APP_VERSION = "v1.2.3" (ตั้งแต่ v1.31.0) — รุ่นเก่าเขียนตรงใน JSX เป็น >v1.2.3<
+  { grep -oE 'APP_VERSION = "v[0-9]+\.[0-9]+\.[0-9]+"' frontend/src/components/AboutModal.jsx \
+      || grep -oE '>v[0-9]+\.[0-9]+\.[0-9]+<' frontend/src/components/AboutModal.jsx; } \
+    | head -1 | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || true
 }
 
 check_tag() {
