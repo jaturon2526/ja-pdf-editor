@@ -697,9 +697,12 @@ const PDFCanvas = forwardRef(function PDFCanvas({
         }
         left = Math.min(vw - LOUPE - 8, Math.max(8, left));
         return (
-          <canvas ref={loupeCanvasRef} data-testid="text-loupe" role="presentation"
-            className="fixed z-[150] rounded-full border-2 border-white shadow-xl pointer-events-none"
-            style={{ width: LOUPE, height: LOUPE, left, top }} />
+          // แว่นขยายเป็นภาพประกอบล้วน (โปรแกรมอ่านหน้าจอไม่ต้องอ่าน) — aria-hidden ที่ตัวห่อ ไม่ใส่ role ให้ canvas
+          <div aria-hidden="true" className="fixed z-[150] pointer-events-none" style={{ left, top }}>
+            <canvas ref={loupeCanvasRef} data-testid="text-loupe"
+              className="block rounded-full border-2 border-white shadow-xl"
+              style={{ width: LOUPE, height: LOUPE }} />
+          </div>
         );
       })()}
       {contextMenu && (

@@ -316,6 +316,7 @@ docker compose --env-file .env.prod \
 - ใช้ `-f docker-compose.onprem-tls.yml` เอง: ใส่ `FRONTEND_BIND=127.0.0.1:8081` ใน `.env.prod` ด้วย (ย้ายหน้าเว็บออกจากพอร์ต 80 ให้ nginx tls — `deploy.sh` ตั้งให้เอง)
 - องค์กรมี reverse proxy / load balancer ที่ทำ HTTPS อยู่แล้ว: ไม่ต้องใช้ `-f docker-compose.onprem-tls.yml` และไม่ต้องวาง `secrets/tls` — ให้ proxy ส่งต่อมาที่ `http://<เซิร์ฟเวอร์>:80` (ตั้ง `client_max_body_size` ≥ 60M และ timeout ≥ 120 วินาที)
 - Security headers (HSTS 1 ปี, `nosniff`, `Referrer-Policy`, `X-Frame-Options SAMEORIGIN`) ส่งจาก nginx ของ frontend (`frontend/security-headers.conf`) — proxy ชั้นนอกไม่ต้องใส่ HSTS ซ้ำ (ถ้าใส่ ให้ `proxy_hide_header Strict-Transport-Security`) · **SSL Labs A+** ต้องปิด TLS 1.0/1.1 ที่จุดที่ทำ HTTPS (on-prem TLS ปิดแล้ว · Cloudflare: SSL/TLS › Edge Certificates › Minimum TLS Version = TLS 1.2)
+- อยู่หลัง Cloudflare: nginx ใช้ `CF-Connecting-IP` เป็น IP ผู้ใช้ (rate limit + `X-Real-IP` ให้ backend) เฉพาะคำขอที่มาจากช่วง IP ของ Cloudflare (`frontend/cloudflare-ips.conf` — อัปเดตจาก https://www.cloudflare.com/ips/ เมื่อ Cloudflare เพิ่มช่วงใหม่) · Content-Security-Policy อยู่ใน `frontend/security-headers.conf` — เพิ่มบริการภายนอกฝั่งหน้าเว็บต้องเพิ่มโดเมนที่นั่น
 - `docker-compose.onprem-build.yml` จำเป็นเพราะ image บน Docker Hub เป็น ARM64 เท่านั้น — build บนเครื่องจะได้ image ตามสถาปัตยกรรมของเซิร์ฟเวอร์
 
 ### ตรวจหลังติดตั้ง

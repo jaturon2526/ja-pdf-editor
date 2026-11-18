@@ -155,10 +155,12 @@ export default function Editor() {
   // Refresh ฟอนต์ทุกครั้งที่เปิดโหมดแก้ไขข้อความ เพื่อให้เห็นฟอนต์ที่ติดตั้งใหม่ทันที
   useEffect(() => {
     if (editMode === "text") {
-      fontsHook.setFontFamilies && import("../api.js").then(api => {
-        api.getFontFamilies().then(fontsHook.setFontFamilies).catch(() => {});
-        api.getFonts().then(fontsHook.setFonts).catch(() => {});
-      });
+      if (fontsHook.setFontFamilies) {
+        import("../api.js").then(api => {
+          api.getFontFamilies().then(fontsHook.setFontFamilies).catch(() => {});
+          api.getFonts().then(fontsHook.setFonts).catch(() => {});
+        }).catch(() => { /* โหลดโมดูลไม่ได้ (ออฟไลน์) — ใช้รายการฟอนต์เดิม */ });
+      }
     }
   }, [editMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
