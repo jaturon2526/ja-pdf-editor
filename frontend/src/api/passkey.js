@@ -1,6 +1,6 @@
 // Passkey (WebAuthn): ลงทะเบียน / เข้าสู่ระบบ / จัดการ — ส่วนเข้ารหัสทำโดยเบราว์เซอร์ผ่าน @simplewebauthn/browser
 import { browserSupportsWebAuthn, browserSupportsWebAuthnAutofill, startAuthentication, startRegistration } from "@simplewebauthn/browser";
-import { BASE, fetchWithAuth, handle, handlePublic } from "./client.js";
+import { BASE, COOKIE_AUTH_HEADERS, fetchWithAuth, handle, handlePublic } from "./client.js";
 
 export { browserSupportsWebAuthn, browserSupportsWebAuthnAutofill };
 
@@ -59,7 +59,7 @@ export async function loginWithPasskey({ autofill = false, prepared = null } = {
   const credential = await startAuthentication({ optionsJSON: options, useBrowserAutofill: autofill });
   const verify = await fetch(`${BASE}/auth/passkeys/login/verify`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...COOKIE_AUTH_HEADERS },
     body: JSON.stringify({ flow_id, credential }),
   });
   return handlePublic(verify);

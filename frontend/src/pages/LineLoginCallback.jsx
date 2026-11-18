@@ -12,9 +12,8 @@ import {
 } from "../api";
 import LineIcon from "../components/LineIcon.jsx";
 
-function finishLogin(data) {
-  localStorage.setItem("token", data.access_token);
-  window.location.href = "/dashboard";
+function finishLogin() {
+  window.location.href = "/dashboard"; // token อยู่ใน HttpOnly cookie แล้ว
 }
 
 function Card({ children }) {
@@ -62,8 +61,8 @@ export default function LineLoginCallback() {
     }
     completeLineLogin(code, params.get("state"))
       .then((r) => {
-        if (r.status === "login") finishLogin(r);
-        else if (r.status === "linked") navigate("/security?line_login=linked", { replace: true });
+        if (r.status === "login") finishLogin();
+        else if (r.status === "linked") void navigate("/security?line_login=linked", { replace: true });
         else setView({ kind: "email", name: r.name });
       })
       .catch((e) => fail(e, back));

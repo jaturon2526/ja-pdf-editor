@@ -22,8 +22,8 @@ export function SaveCopyModal({ filename, onFilenameChange, pdfVersion = "", onP
       <div className="modal-card">
         <h2 className="modal-title">บันทึกเป็นไฟล์ใหม่</h2>
         <div style={{ marginTop: 16 }}>
-          <label style={{ fontSize: 14, color: "#475569", marginBottom: 8, display: "block" }}>ตั้งชื่อไฟล์ใหม่:</label>
-          <input 
+          <label htmlFor="editordialogs-f25" style={{ fontSize: 14, color: "#475569", marginBottom: 8, display: "block" }}>ตั้งชื่อไฟล์ใหม่:</label>
+          <input id="editordialogs-f25" 
             type="text" 
             value={filename} 
             onChange={(e) => onFilenameChange(e.target.value)} 

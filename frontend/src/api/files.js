@@ -1,5 +1,5 @@
 // ไฟล์ของผู้ใช้ (Dashboard): upload/merge/convert, เปิด/บันทึก/คัดลอก/ลบ/เปลี่ยนชื่อ, PDF→Word, Auto-Gen
-import { BASE, fetchBlob, fetchWithAuth, getToken, handle } from "./client.js";
+import { BASE, authHeaders, csrfToken, fetchBlob, fetchWithAuth, handle } from "./client.js";
 
 export async function getMyFiles() {
   const res = await fetchWithAuth(`${BASE}/pdf/files`);
@@ -73,10 +73,7 @@ function conversionTarget(target) {
 }
 
 function jsonAuthHeaders() {
-  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-  const headers = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  return headers;
+  return authHeaders({ "Content-Type": "application/json" });
 }
 
 // target: { fileId } ไฟล์ในเอกสารของฉัน หรือ { sessionId } เอกสารที่เปิดใน Editor (ต้องบันทึกก่อน)
@@ -107,21 +104,13 @@ export async function inspectConversion(target) {
 }
 
 export async function checkConversionStatus(taskId) {
-  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-  const headers = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  
-  const res = await fetch(`${BASE}/convert/pdf-to-word/status/${taskId}`, { headers });
+  const res = await fetch(`${BASE}/convert/pdf-to-word/status/${taskId}`, { headers: authHeaders() });
   if (!res.ok) throw new Error("ไม่สามารถอ่านสถานะได้");
   return res.json();
 }
 
 export async function downloadConversionResult(taskId) {
-  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-  const headers = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  
-  const res = await fetch(`${BASE}/convert/pdf-to-word/download/${taskId}`, { headers });
+  const res = await fetch(`${BASE}/convert/pdf-to-word/download/${taskId}`, { headers: authHeaders() });
   if (!res.ok) throw new Error("ดาวน์โหลดไฟล์ไม่สำเร็จ");
   return res.blob();
 }
@@ -221,11 +210,11 @@ export async function createScan(filename, blobs, onUploadProgress, ocrBlobs = [
     return handle(res);
   }
   // XHR เพื่อแสดงความคืบหน้าการอัปโหลด (fetch ยังไม่มี upload progress)
-  const token = getToken();
+  const csrf = csrfToken();
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${BASE}/pdf/scan`);
-    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    if (csrf) xhr.setRequestHeader("X-CSRF-Token", csrf); // cookie ja_session แนบไปเอง (same-origin)
     xhr.upload.onprogress = (e) => { if (e.lengthComputable) onUploadProgress(e.loaded / e.total); };
     xhr.onload = () => {
       let body = null;

@@ -12,7 +12,7 @@ export default function ChooseFileModal({ title, subtitle = "", emptyText = "ย
   }, [onCancel]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm" onClick={onCancel}>
+    <div role="presentation" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm" onClick={onCancel}>
       <div
         role="dialog"
         aria-modal="true"

@@ -29,7 +29,18 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: backend/requirements*.txt
-      - run: pip install -r requirements-dev.txt
+      - run: pip install --require-hashes -r requirements-dev.txt
+      - name: ตรวจช่องโหว่ของ dependency (pip-audit)
+        run: |
+          pip install pip-audit==2.10.1
+          pip-audit -r requirements.txt --require-hashes --disable-pip
+      - name: lock ตรงกับ requirements.in
+        run: |
+          pip install uv==0.11.32
+          # คอมไพล์ทับสำเนาของ lock เดิม (uv คงเวอร์ชันที่ล็อกไว้) — ต่างกันแปลว่าแก้ .in แล้วลืมล็อกใหม่
+          cp requirements.txt /tmp/req.lock && cp requirements.txt /tmp/req.check
+          uv pip compile --python-version 3.11 --universal --generate-hashes --quiet requirements.in -o /tmp/req.check
+          diff <(grep -v '^#' /tmp/req.lock) <(grep -v '^#' /tmp/req.check) || { echo "::error::requirements.txt ไม่ตรงกับ requirements.in — รัน scripts/lock-backend-deps.sh"; exit 1; }
       - name: Ghostscript + Tesseract ไทย (รวมเลเยอร์ / ลดขนาดไฟล์ / PDF/A / OCR สแกนเอกสาร)
         # mirror azure ของ runner บางครั้งดาวน์โหลดค้างกลางไฟล์ (ไม่ตัดด้วย Acquire::Timeout) จนกินเวลาทั้ง step
         # → จำกัดเวลาต่อรอบ 3 นาที · รอบ 2 ขึ้นไปสลับไปใช้ archive.ubuntu.com · ไฟล์ที่โหลดแล้วเก็บใน cache ของ apt ใช้ต่อได้
@@ -106,6 +117,7 @@ jobs:
           docker run --rm --add-host backend:127.0.0.1 \
             -v "$PWD/frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
             -v "$PWD/frontend/security-headers.conf:/etc/nginx/snippets/security-headers.conf:ro" \
+            -v "$PWD/frontend/security-headers-base.conf:/etc/nginx/snippets/security-headers-base.conf:ro" \
             "$(awk '/^FROM .*nginx/ {print $2; exit}' frontend/Dockerfile)" nginx -t
       - name: shellcheck (สคริปต์ deploy / backup / load test)
         run: |

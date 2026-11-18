@@ -210,8 +210,10 @@ def _login_user(db: Session, info: dict, email: str) -> User:
         else:
             if not user.is_active:
                 raise LineLoginError("บัญชีนี้ถูกระงับโดยผู้ดูแลระบบ", 403)
+            from app.services.account_service import claim_unverified_account
+
             user.line_login_id = info["sub"]
-            user.is_verified = True
+            claim_unverified_account(user)  # ยังไม่ยืนยันอีเมล → ล้างรหัสผ่านที่ตั้งไว้ก่อน (กันยึดบัญชีล่วงหน้า)
             if not user.profile_picture and info.get("picture"):
                 user.profile_picture = info["picture"]
             db.commit()

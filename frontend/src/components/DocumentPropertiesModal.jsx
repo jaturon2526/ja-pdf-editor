@@ -66,8 +66,8 @@ function PropRow({ label, value }) {
  */
 export default function DocumentPropertiesModal({ fileName, properties, loading, errorMessage, onClose }) {
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card docprops-modal-card" onClick={(e) => e.stopPropagation()}>
+    <div role="presentation" className="modal-overlay" onClick={onClose}>
+      <div role="presentation" className="modal-card docprops-modal-card" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title">คุณสมบัติเอกสาร</h2>
         <p className="modal-subtitle">{fileName || ""}</p>
 

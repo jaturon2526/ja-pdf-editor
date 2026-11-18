@@ -1,21 +1,29 @@
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
+import jwt
+from jwt import PyJWTError as JWTError
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
+from app.core.auth_cookies import request_token
 from app.core.security import SECRET_KEY, ALGORITHM
 from app.models.domain import User
 from app.core.auth_session import auth_session_manager
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+# auto_error=False: token มาจาก cookie ก็ได้ (ดู app/core/auth_cookies.py) — ยังประกาศไว้ให้ Swagger มีปุ่ม Authorize
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login", auto_error=False)
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    credentials_exception = HTTPException(
+
+def _credentials_exception() -> HTTPException:
+    return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+
+def user_from_token(token: str, db: Session) -> User:
+    """ตรวจ access token (ลายเซ็น, sub เป็นเลขผู้ใช้, มี jti, session ยังไม่ถูกตัด) แล้วคืน User — ไม่ผ่าน = 401"""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
@@ -23,10 +31,10 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         # token ยืนยันอีเมล/รีเซ็ตรหัสผ่านใช้ sub แบบ "verify:..."/"reset:..." — ห้ามใช้แทน access token
         # และ access token ทุกตัวต้องมี jti (ใช้ตรวจจำนวนอุปกรณ์ที่ login พร้อมกันตาม plan)
         if user_id is None or not str(user_id).isdigit() or not jti:
-            raise credentials_exception
+            raise _credentials_exception()
     except JWTError:
-        raise credentials_exception
-        
+        raise _credentials_exception()
+
     if not auth_session_manager.is_session_valid(int(user_id), jti):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -36,16 +44,26 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
     user = db.query(User).filter(User.id == int(user_id)).first()
     if user is None:
-        raise credentials_exception
+        raise _credentials_exception()
     return user
 
-def get_optional_user(authorization: str | None = Header(None), db: Session = Depends(get_db)):
-    """คืน User ถ้าแนบ Bearer token ที่ถูกต้องมา ไม่งั้นคืน None (สำหรับ endpoint ที่ใช้ได้ทั้งแบบ login
+
+def get_current_user(request: Request, _bearer: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """ผู้ใช้จาก Authorization: Bearer หรือ cookie ja_session (cookie + คำขอที่แก้ข้อมูล ต้องมี X-CSRF-Token)"""
+    token = request_token(request)
+    if not token:
+        raise _credentials_exception()
+    return user_from_token(token, db)
+
+
+def get_optional_user(request: Request, db: Session = Depends(get_db)):
+    """คืน User ถ้ายืนยันตัวตนได้ (Bearer หรือ cookie) ไม่งั้นคืน None (สำหรับ endpoint ที่ใช้ได้ทั้งแบบ login
     และไม่ login) — ตรวจ token ด้วยกฎเดียวกับ get_current_user ทุกอย่าง รวมถึง jti"""
-    if not authorization or not authorization.startswith("Bearer "):
+    token = request_token(request, enforce_csrf=False)
+    if not token:
         return None
     try:
-        user = get_current_user(authorization.split(" ", 1)[1], db)
+        user = user_from_token(token, db)
     except HTTPException:
         return None
     return user if user.is_active else None

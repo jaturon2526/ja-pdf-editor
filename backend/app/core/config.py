@@ -46,6 +46,11 @@ class Settings:
     HEAVY_JOBS_PER_WORKER: int = max(1, int(os.getenv("HEAVY_JOBS_PER_WORKER", "1") or 1))
     HEAVY_QUEUE_MAX: int = max(0, int(os.getenv("HEAVY_QUEUE_MAX", "8") or 8))
     HEAVY_QUEUE_TIMEOUT: float = float(os.getenv("HEAVY_QUEUE_TIMEOUT", "120") or 120)
+    # เวลาสูงสุดของ LibreOffice (ต่อครั้ง + ต่อไฟล์ที่เพิ่มในชุด) และ Ghostscript — ไฟล์ที่ทำให้โปรแกรมค้างจะถูกฆ่าทั้ง
+    # process group เมื่อหมดเวลา ไม่ถือคิวงานหนักไว้ไม่จำกัด (SEC-03)
+    LIBREOFFICE_TIMEOUT_S: float = float(os.getenv("LIBREOFFICE_TIMEOUT_S", "180") or 180)
+    LIBREOFFICE_TIMEOUT_PER_FILE_S: float = float(os.getenv("LIBREOFFICE_TIMEOUT_PER_FILE_S", "15") or 15)
+    GHOSTSCRIPT_TIMEOUT_S: float = float(os.getenv("GHOSTSCRIPT_TIMEOUT_S", "300") or 300)
 
     # ขนาดไฟล์สูงสุดที่รับ upload (bytes) — ค่า default 50 MB
     MAX_UPLOAD_SIZE: int = int(os.getenv("PDF_MAX_UPLOAD_SIZE", str(50 * 1024 * 1024)))
@@ -130,6 +135,8 @@ class Settings:
     APP_TIMEZONE: str = os.getenv("APP_TIMEZONE", "Asia/Bangkok")
 
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    # cookie ของ access token (ja_session/ja_csrf) ตั้ง Secure ไหม — auto = ตาม FRONTEND_URL (https → Secure)
+    AUTH_COOKIE_SECURE: str = os.getenv("AUTH_COOKIE_SECURE", "auto")
 
     # Passkey (WebAuthn) — ปกติไม่ต้องตั้ง: RP ID = โดเมนของ FRONTEND_URL, origin ที่ยอมรับ = FRONTEND_URL + PDF_ALLOWED_ORIGINS
     # passkey ผูกกับ RP ID — ถ้าเปลี่ยนโดเมนภายหลัง passkey เดิมจะใช้ไม่ได้ (ผู้ใช้ยังเข้าด้วยรหัสผ่าน/Google ได้)

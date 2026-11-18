@@ -67,10 +67,10 @@ export default function ResetPassword() {
             {error && <div className="text-red-500 text-sm bg-red-50 p-2 rounded">{error}</div>}
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="resetpassword-f70" className="block text-sm font-medium text-gray-700 mb-1">
                 รหัสผ่านใหม่
               </label>
-              <input
+              <input id="resetpassword-f70"
                 type="password"
                 required
                 value={newPassword}
@@ -80,10 +80,10 @@ export default function ResetPassword() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="resetpassword-f83" className="block text-sm font-medium text-gray-700 mb-1">
                 ยืนยันรหัสผ่านใหม่
               </label>
-              <input
+              <input id="resetpassword-f83"
                 type="password"
                 required
                 value={confirmPassword}

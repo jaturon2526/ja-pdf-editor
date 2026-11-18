@@ -67,7 +67,7 @@ export default function SignaturePagePreview({
   }
 
   return (
-    <div
+    <div role="presentation"
       ref={sheetRef}
       data-testid="signing-page"
       className={`relative bg-white shadow-md mx-auto ${placing ? "cursor-crosshair" : ""}`}
@@ -100,7 +100,7 @@ export default function SignaturePagePreview({
         );
       })()}
       {boxes.map((box) => (
-        <div
+        <div role="presentation"
           key={box.id}
           data-testid="signature-box"
           className={`absolute border-2 rounded-sm text-[11px] leading-tight px-1 overflow-hidden ${box.className || "border-blue-500 bg-blue-100/60 text-blue-900"} ${box.editable ? "cursor-move" : ""}`}

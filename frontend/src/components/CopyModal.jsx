@@ -78,8 +78,8 @@ export default function CopyModal({ session, currentPage, rectPt, textNormal, on
   }
 
   return (
-    <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: "500px", maxWidth: "90vw" }}>
+    <div role="presentation" className="modal-overlay" onClick={onCancel}>
+      <div role="presentation" className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: "500px", maxWidth: "90vw" }}>
         <h2 className="modal-title">คัดลอกข้อความ</h2>
         <p className="modal-subtitle">
           ตรวจสอบและแก้ไขข้อความก่อนคัดลอก 

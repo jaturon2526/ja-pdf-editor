@@ -10,6 +10,7 @@ import re
 from pdf2docx import Converter
 from docx import Document
 from app.core.heavy import heavy_slot
+from app.core.proc import run_killable
 from app.services import thai_text
 from app.services import ai_client, ai_usage, gemini_client
 from app.services.pdf2docx_fixes import (
@@ -74,8 +75,9 @@ def _libreoffice_to_pdf(inputs: list[tuple[str, bytes]], user_id: int | None) ->
                 cmd[0] = "/Applications/LibreOffice.app/Contents/MacOS/soffice"
             env = os.environ.copy()
             env["FONTCONFIG_FILE"] = fonts_conf_path
+            timeout = settings.LIBREOFFICE_TIMEOUT_S + settings.LIBREOFFICE_TIMEOUT_PER_FILE_S * (len(paths) - 1)
             with heavy_slot("libreoffice"):
-                subprocess.run(cmd, capture_output=True, text=True, check=True, env=env)
+                run_killable(cmd, text=True, check=True, env=env, timeout=timeout)
             out = []
             for path in paths:
                 pdf_path = os.path.join(outdir, os.path.splitext(os.path.basename(path))[0] + ".pdf")
@@ -84,6 +86,9 @@ def _libreoffice_to_pdf(inputs: list[tuple[str, bytes]], user_id: int | None) ->
                 with open(pdf_path, "rb") as f:
                     out.append(f.read())
             return out
+        except subprocess.TimeoutExpired:
+            logger.warning("LibreOffice timeout (%s files, %.0fs)", len(paths), timeout)
+            raise RuntimeError("การแปลงไฟล์ใช้เวลานานเกินกำหนด — ไฟล์อาจซับซ้อนหรือเสียหาย ลองแยกไฟล์หรือบันทึกใหม่จากโปรแกรมต้นทาง")
         except Exception as e:
             logger.error(f"LibreOffice error: {e}")
             raise RuntimeError("การแปลงไฟล์ล้มเหลว โครงสร้างไฟล์อาจไม่สมบูรณ์")

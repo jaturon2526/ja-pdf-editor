@@ -70,8 +70,8 @@ export default function InstallFontModal({
   const customFamilies = useMemo(() => fontFamilies.filter((f) => f.removable), [fontFamilies]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 sm:p-6" onClick={onClose}>
-      <div 
+    <div role="presentation" className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 sm:p-6" onClick={onClose}>
+      <div role="presentation" 
         className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-up" 
         onClick={(e) => e.stopPropagation()}
       >
@@ -105,8 +105,8 @@ export default function InstallFontModal({
           <form onSubmit={handleSubmitNew} className="space-y-6">
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อฟอนต์ที่จะแสดง <span className="text-gray-400 font-normal">(ไม่บังคับ — ไม่ใส่จะใช้ชื่อจากไฟล์)</span></label>
-              <input
+              <label htmlFor="installfontmodal-f108" className="block text-sm font-medium text-gray-700 mb-1">ชื่อฟอนต์ที่จะแสดง <span className="text-gray-400 font-normal">(ไม่บังคับ — ไม่ใส่จะใช้ชื่อจากไฟล์)</span></label>
+              <input id="installfontmodal-f108"
                 type="text"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="เช่น TH Sarabun New"

@@ -31,7 +31,7 @@ const HANDLES = [
 const MIN_SIZE_PT = 8;
 
 function hexToRgba(hex, alpha) {
-  const n = parseInt((hex || "ffe04d").replace("#", ""), 16) || 0xffe04d;
+  const n = Number.parseInt((hex || "ffe04d").replace("#", ""), 16) || 0xffe04d;
   const r = (n >> 16) & 255;
   const g = (n >> 8) & 255;
   const b = n & 255;
@@ -181,7 +181,7 @@ export default function AnnotationBox({
     }
 
     return (
-      <div
+      <div role="presentation"
         className={`annot-note-marker ${editing ? "selected" : ""}`}
         style={{
           left: rect.x0 * zoom,
@@ -197,7 +197,7 @@ export default function AnnotationBox({
       >
         {hover && !editing && annot.content && <div className="annot-note-balloon">{annot.content}</div>}
         {editing && (
-          <div className="annot-note-editor" onClick={(e) => e.stopPropagation()}>
+          <div role="presentation" className="annot-note-editor" onClick={(e) => e.stopPropagation()}>
             <textarea
               ref={(el) => {
                 if (el && editing) {
@@ -261,7 +261,7 @@ export default function AnnotationBox({
   }
 
   return (
-    <div
+    <div role="presentation"
       className={`annot-box annot-box-${annot.type} ${editing ? "editing" : ""}`}
       style={boxStyle}
       onClick={(e) => {
@@ -275,6 +275,10 @@ export default function AnnotationBox({
         <div
           ref={textRef}
           className="annot-box-text"
+          role="textbox"
+          aria-multiline="true"
+          aria-label="ข้อความในกล่อง"
+          tabIndex={0}
           contentEditable
           suppressContentEditableWarning
           onInput={() => onDraftContentChange(textRef.current.innerText)}
@@ -306,7 +310,7 @@ export default function AnnotationBox({
                 onPointerDown={(e) => startResize(e, h.dir)}
               />
             ))}
-          <div className="annot-toolbar" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+          <div role="presentation" className="annot-toolbar" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
             {isFreetext && (
               <div className="annot-toolbar-row">
                 <select
@@ -327,7 +331,7 @@ export default function AnnotationBox({
                   min={6}
                   max={96}
                   value={draftFontSize ?? 12}
-                  onChange={(e) => onDraftFontSizeChange(parseFloat(e.target.value) || 12)}
+                  onChange={(e) => onDraftFontSizeChange(Number.parseFloat(e.target.value) || 12)}
                   title="ขนาดตัวอักษร"
                 />
               </div>

@@ -107,7 +107,7 @@ function ExtractPagesForm({ onClose, onExtract, totalPages, currentPage }) {
   const count = parsed.pages?.length || 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
+    <div role="presentation" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
       onMouseDown={(e) => e.target === e.currentTarget && !submitting && onClose()}>
       <form role="dialog" aria-modal="true" aria-labelledby="extract-title" onSubmit={handleSubmit}
         className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-xl shadow-xl flex flex-col max-h-[92dvh]">
@@ -176,13 +176,11 @@ function ExtractPagesForm({ onClose, onExtract, totalPages, currentPage }) {
               <legend className="text-sm font-medium text-gray-800 mb-1">รูปแบบไฟล์</legend>
               {MODES.map((m) => (
                 <label key={m.value}
-                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${mode === m.value ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
-                  <input type="radio" name="extract-mode" className="mt-1" value={m.value} checked={mode === m.value}
+                  className={`grid grid-cols-[auto_1fr] gap-x-3 items-start p-3 rounded-lg border cursor-pointer ${mode === m.value ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
+                  <input type="radio" name="extract-mode" className="mt-1 row-span-2" value={m.value} checked={mode === m.value}
                     onChange={() => setMode(m.value)} />
-                  <span>
-                    <span className="block text-sm font-medium text-gray-900">{m.label}</span>
-                    <span className="block text-xs text-gray-500">{m.hint}</span>
-                  </span>
+                  <span className="block text-sm font-medium text-gray-900">{m.label}</span>
+                  <span className="block text-xs text-gray-500">{m.hint}</span>
                 </label>
               ))}
             </fieldset>

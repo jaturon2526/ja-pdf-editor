@@ -165,7 +165,7 @@ export default function SigningCreate() {
           require_passkey: s.requirePasskey, ...s.rect,
         })),
       });
-      navigate(`/signing/${created.id}`);
+      void navigate(`/signing/${created.id}`);
     } catch (err) {
       setError(err.message);
       setSubmitting(false);

@@ -79,7 +79,7 @@ export default function MergeModal({ onClose, onMerged, documents = [] }) {
   const shown = pdfDocs.filter((d) => d.filename.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
+    <div role="presentation" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
       onMouseDown={(e) => e.target === e.currentTarget && !loading && onClose()}>
       <div role="dialog" aria-modal="true" aria-labelledby="merge-title" data-testid="merge-modal"
         className={`bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-xl shadow-xl flex flex-col max-h-[90vh] ${dragOver ? "ring-4 ring-blue-300" : ""}`}

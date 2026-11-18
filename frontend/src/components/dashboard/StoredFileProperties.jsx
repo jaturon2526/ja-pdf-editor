@@ -31,7 +31,7 @@ export default function StoredFileProperties({ file, onClose }) {
   }
 
   useEffect(() => {
-    load();
+    void load();
     // โหลดครั้งเดียวต่อไฟล์
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file.id]);

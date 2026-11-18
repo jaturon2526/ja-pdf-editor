@@ -1,5 +1,5 @@
 // LINE: แจ้งเตือน (สถานะ / ขอรหัสผูก / เปิด-ปิด / ยกเลิก — backend: /line/*) + เข้าสู่ระบบด้วย LINE (/auth/line/*)
-import { BASE, fetchWithAuth, handle, handlePublic } from "./client.js";
+import { BASE, COOKIE_AUTH_HEADERS, fetchWithAuth, handle, handlePublic } from "./client.js";
 
 export async function getLineStatus() {
   return handle(await fetchWithAuth(`${BASE}/line/status`));
@@ -31,7 +31,7 @@ const LINE_PENDING_KEY = "line_login_pending";
 async function postPublic(path, body) {
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...COOKIE_AUTH_HEADERS }, // ผล login → token อยู่ใน cookie
     body: body ? JSON.stringify(body) : undefined,
   });
   return handlePublic(res);

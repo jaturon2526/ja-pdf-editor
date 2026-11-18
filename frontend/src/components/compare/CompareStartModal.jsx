@@ -92,7 +92,7 @@ export default function CompareStartModal({ files = [], presetsA = [], presetsB 
     setError("");
     try {
       const res = await startCompare(a.side, b.side, options);
-      navigate(`/compare/${res.task_id}`);
+      void navigate(`/compare/${res.task_id}`);
     } catch (err) {
       setError(err.message || "เริ่มเปรียบเทียบไม่สำเร็จ");
       setBusy(false);
@@ -100,7 +100,7 @@ export default function CompareStartModal({ files = [], presetsA = [], presetsB 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm" onClick={() => !busy && onClose()}>
+    <div role="presentation" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm" onClick={() => !busy && onClose()}>
       <form role="dialog" aria-modal="true" aria-labelledby="compare-start-title" onSubmit={submit}
         className="bg-white w-full sm:max-w-2xl rounded-t-2xl sm:rounded-xl shadow-xl flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()} data-testid="compare-start">

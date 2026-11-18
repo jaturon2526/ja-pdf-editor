@@ -189,7 +189,7 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
   }
 
   function handleUnlockCancel() {
-    if (passwordState) api.closeSession(passwordState.sessionId);
+    if (passwordState) api.closeSession(passwordState.sessionId).catch(() => {});
     setPasswordState(null);
   }
 
@@ -336,15 +336,15 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
     const item = { id: `${Date.now()}`, page: currentPage, label: `หน้า ${currentPage + 1}`, level: 1 };
     const next = [...bookmarks];
     next.splice(at === -1 ? next.length : at, 0, item);
-    commitBookmarks(next);
+    void commitBookmarks(next);
   }
 
   function removeBookmark(id) {
-    commitBookmarks(bookmarks.filter((b) => b.id !== id));
+    void commitBookmarks(bookmarks.filter((b) => b.id !== id));
   }
 
   function renameBookmark(id, label) {
-    commitBookmarks(bookmarks.map((b) => (b.id === id ? { ...b, label } : b)));
+    void commitBookmarks(bookmarks.map((b) => (b.id === id ? { ...b, label } : b)));
   }
 
   return {

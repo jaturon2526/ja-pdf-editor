@@ -1,6 +1,6 @@
 // Passkey — เพิ่มในหน้าความปลอดภัย แล้วเข้าสู่ระบบด้วย passkey (ใช้ Virtual Authenticator ของ Chromium แทน Face ID/Touch ID)
 import { expect, test } from "@playwright/test";
-import { login } from "./helpers.js";
+import { login, forgetLogin } from "./helpers.js";
 
 async function addVirtualAuthenticator(page) {
   const cdp = await page.context().newCDPSession(page);
@@ -50,7 +50,7 @@ test("เพิ่ม passkey ในหน้าความปลอดภั�
   expect(credentials[0].isResidentCredential).toBe(true);
 
   // ออกจากระบบ แล้วเข้าใหม่ด้วย passkey (ไม่กรอกอีเมล/รหัสผ่าน)
-  await page.evaluate(() => localStorage.removeItem("token"));
+  await forgetLogin(page);
   await page.goto("/login");
   await page.getByRole("button", { name: "เข้าสู่ระบบด้วย Passkey" }).click();
   await page.waitForURL("**/dashboard");
@@ -71,7 +71,7 @@ test("เพิ่ม passkey ในหน้าความปลอดภั�
   await expect(page.getByTestId("passkey-section")).toContainText("ยังไม่มี passkey");
 
   // passkey ยังอยู่ในอุปกรณ์ แต่ระบบลบแล้ว → เข้าสู่ระบบไม่ได้ และบอกเหตุผล
-  await page.evaluate(() => localStorage.removeItem("token"));
+  await forgetLogin(page);
   await page.goto("/login");
   await page.getByRole("button", { name: "เข้าสู่ระบบด้วย Passkey" }).click();
   await expect(page.getByText(/ไม่พบ passkey นี้ในระบบ/)).toBeVisible();
@@ -81,7 +81,7 @@ test("ช่องอีเมลในหน้าเข้าสู่ระ�
   await addVirtualAuthenticator(page);
   await login(page);
   await freshPasskey(page, "autofill");
-  await page.evaluate(() => localStorage.removeItem("token"));
+  await forgetLogin(page);
   await page.goto("/login");
   await expect(page.locator("input[type=email]")).toHaveAttribute("autocomplete", "username webauthn");
   // autofill เริ่มเมื่อแตะช่องอีเมล — เบราว์เซอร์จริงแสดงรายการ passkey ใต้ช่อง ส่วน authenticator จำลองเลือกให้อัตโนมัติ
@@ -94,7 +94,7 @@ test("แตะช่องอีเมล (autofill รออยู่) แล�
   await login(page);
   await freshPasskey(page, "ปุ่มหลัง autofill");
   const { credentials } = await cdp.send("WebAuthn.getCredentials", { authenticatorId });
-  await page.evaluate(() => localStorage.removeItem("token"));
+  await forgetLogin(page);
   // ถอด authenticator ออกชั่วคราว → คำขอ autofill ค้างรอเหมือนผู้ใช้จริงที่ยังไม่เลือก passkey
   await cdp.send("WebAuthn.removeVirtualAuthenticator", { authenticatorId });
   await page.goto("/login");
@@ -113,7 +113,7 @@ test("แตะช่องอีเมลแล้วกดปุ่ม Passkey
   await login(page);
   await freshPasskey(page, "ปุ่มระหว่างโหลด");
   const { credentials } = await cdp.send("WebAuthn.getCredentials", { authenticatorId });
-  await page.evaluate(() => localStorage.removeItem("token"));
+  await forgetLogin(page);
   await cdp.send("WebAuthn.removeVirtualAuthenticator", { authenticatorId });   // คำขอของปุ่มรอผู้ใช้อยู่
   let slow = false;
   await page.route("**/auth/passkeys/login/options", async (route) => {
@@ -151,7 +151,7 @@ test("เบราว์เซอร์โฟกัสช่องอีเม�
   const { cdp, authenticatorId } = await addVirtualAuthenticator(page);
   await login(page);
   await freshPasskey(page, "โฟกัสเอง");
-  await page.evaluate(() => localStorage.removeItem("token"));
+  await forgetLogin(page);
   let optionCalls = 0;
   await page.route("**/auth/passkeys/login/options", async (route) => { optionCalls += 1; await route.continue(); });
   await page.goto("/login");

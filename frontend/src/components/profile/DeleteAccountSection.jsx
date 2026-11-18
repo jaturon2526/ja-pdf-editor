@@ -2,6 +2,7 @@
 // backend: GET /auth/account/deletion-summary · POST /auth/account/delete (ดู services/account_service.py)
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { clearLocalSession } from "../../api/client.js";
 import {
   assertPasskey,
   browserSupportsWebAuthn,
@@ -58,8 +59,8 @@ function DeleteDialog({ email, onClose }) {
     setError("");
     try {
       await deleteAccount({ confirmEmail: typed.trim(), ...auth });
-      localStorage.removeItem("token");
-      navigate("/login?deleted=1", { replace: true });
+      clearLocalSession();
+      void navigate("/login?deleted=1", { replace: true });
     } catch (e) {
       setError(e.message || "ลบบัญชีไม่สำเร็จ");
       setBusy(false);
@@ -85,7 +86,7 @@ function DeleteDialog({ email, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 sm:p-6" onClick={() => !busy && onClose()}>
+    <div role="presentation" className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 sm:p-6" onClick={() => !busy && onClose()}>
       <div
         role="dialog"
         aria-modal="true"

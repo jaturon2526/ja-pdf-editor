@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta, timezone
-from passlib.context import CryptContext
-from jose import jwt
+import bcrypt
+import jwt  # PyJWT (แทน python-jose ที่ขาดการดูแล — SEC-05)
 
 import logging
 import secrets
@@ -43,13 +43,26 @@ def validate_secret_config() -> None:
         raise RuntimeError(f"{problem} — สร้างค่าใหม่ด้วย: python -c 'import secrets; print(secrets.token_urlsafe(48))'")
     logger.warning("%s — ใช้ค่าสุ่มชั่วคราวแทน (dev เท่านั้น, token จะหมดอายุเมื่อรีสตาร์ท)", problem)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt ตรง ๆ (แทน passlib ที่ขาดการดูแล) — hash เดิมจาก passlib เป็นรูปแบบ $2b$ มาตรฐาน ตรวจได้เหมือนเดิม
+# bcrypt ใช้แค่ 72 ไบต์แรก: passlib ตัดให้เงียบ ๆ ส่วน bcrypt>=5 raise — ตัดเองที่นี่ให้ผลเหมือนเดิมทุกรุ่น
+_BCRYPT_MAX_BYTES = 72
+
+
+def _pw_bytes(password: str) -> bytes:
+    return (password or "").encode("utf-8")[:_BCRYPT_MAX_BYTES]
+
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    if not plain_password or not hashed_password:
+        return False
+    try:
+        return bcrypt.checkpw(_pw_bytes(plain_password), hashed_password.encode("utf-8"))
+    except ValueError:  # hash เสีย/ไม่ใช่ bcrypt
+        return False
+
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(_pw_bytes(password), bcrypt.gensalt(rounds=12)).decode("ascii")
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()

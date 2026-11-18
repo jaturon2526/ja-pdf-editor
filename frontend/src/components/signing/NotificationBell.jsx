@@ -28,9 +28,9 @@ export default function NotificationBell() {
       await markNotificationsRead([item.id]).catch(() => {});
       refresh();
     }
-    if (item.request_id) navigate(`/signing/${item.request_id}`);
-    else if (item.kind === "donation_new") navigate("/admin");
-    else if (item.kind?.startsWith("donation_") || item.kind === "plan_expired") navigate("/support");
+    if (item.request_id) void navigate(`/signing/${item.request_id}`);
+    else if (item.kind === "donation_new") void navigate("/admin");
+    else if (item.kind?.startsWith("donation_") || item.kind === "plan_expired") void navigate("/support");
   }
 
   return (

@@ -100,7 +100,7 @@ export default function PageNumberModal({ onClose, onSubmit, pageCount = null, f
   const previewItems = plan.slice(0, 2);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
+    <div role="presentation" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
       onMouseDown={(e) => e.target === e.currentTarget && !submitting && onClose()}>
       <form role="dialog" aria-modal="true" aria-labelledby="pn-title" onSubmit={handleSubmit}
         className="bg-white w-full sm:max-w-2xl rounded-t-2xl sm:rounded-xl shadow-xl flex flex-col max-h-[92dvh]">

@@ -191,7 +191,7 @@ export default function QuotaPanel() {
   }
 
   useEffect(() => {
-    load(false);
+    void load(false);
   }, []);
 
   const warnings = useMemo(

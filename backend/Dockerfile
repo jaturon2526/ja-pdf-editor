@@ -1,10 +1,11 @@
 # ---------- stage 1: build ----------
 FROM docker.io/library/python:3.11.10-slim-bookworm AS build
 WORKDIR /app
+# requirements.txt = lock เวอร์ชันตายตัว + hash (สร้างจาก requirements.in ด้วย scripts/lock-backend-deps.sh)
 COPY requirements.txt .
 RUN apt-get update && apt-get install -y --no-install-recommends gcc g++ python3-dev && \
     python -m venv /opt/venv && \
-    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+    /opt/venv/bin/pip install --no-cache-dir --require-hashes -r requirements.txt
 
 # ---------- stage 1b: Ghostscript ----------
 # Debian bookworm มี Ghostscript 10.0.0 (2022) — คอมไพล์รุ่นใหม่เอง: แก้ช่องโหว่หลายตัว (Ghostscript อ่าน PDF ที่ผู้ใช้

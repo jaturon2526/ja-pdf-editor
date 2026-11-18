@@ -11,11 +11,8 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&family=Sarabun:ital,wght@0,400;0,700;1,400&family=Kanit:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <script>
-      document.addEventListener("touchmove", function (e) {
-        if (e.touches.length > 1) { e.preventDefault(); }
-      }, { passive: false });
-    </script>
+    <!-- ไฟล์แยก (ไม่ใช่ inline script) เพราะ Content-Security-Policy อนุญาตเฉพาะสคริปต์จาก origin เดียวกัน -->
+    <script src="/touch-guard.js"></script>
   </head>
   <body>
     <div id="root"></div>

@@ -100,3 +100,11 @@ def _reset_rate_limits():
 
     ratelimit._mem.clear()
     yield
+
+
+@pytest.fixture(autouse=True)
+def _clear_client_cookies(request):
+    """client ใช้ร่วมทั้ง session — cookie login (ja_session/ja_csrf) ต้องไม่ติดข้ามเทสต์"""
+    yield
+    if "client" in request.fixturenames:
+        request.getfixturevalue("client").cookies.clear()

@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppBrand from "../components/AppBrand.jsx";
-import { getToken } from "../api/client.js";
+import { isLoggedIn } from "../api/client.js";
 import { donationQrUrl, getDonationInfo, getMyDonations, reportDonation } from "../api/donations.js";
 
 const PRESETS = [49, 99, 299, 499];
@@ -32,7 +32,7 @@ function localNow() {
 
 export default function SupportPage() {
   const navigate = useNavigate();
-  const loggedIn = Boolean(getToken());
+  const loggedIn = isLoggedIn();
   const [info, setInfo] = useState(null);
   const [mine, setMine] = useState(null);
   const [amount, setAmount] = useState(99);

@@ -467,6 +467,8 @@ pdf_editor_fullstack/
 | `PDF_MAX_UPLOAD_SIZE`, `PDF_SESSION_TTL_MINUTES`, `REDIS_MAXMEMORY` | ขนาดไฟล์สูงสุด (ดีฟอลต์ 50MB), ปิดเอกสารที่ไม่ได้ใช้หลังกี่นาที (ดีฟอลต์ 120 — ออกจากหน้าแก้ไข/ปิดแท็บก็ปิดทันที เปิดลิงก์เดิมได้ ระบบเปิดใหม่จากไฟล์ที่บันทึก), หน่วยความจำ Redis (prod ดีฟอลต์ 1536mb) |
 | `BACKEND_WORKERS`, `DB_POOL_SIZE`, `DB_MAX_OVERFLOW` | จำนวน process ของ backend (prod ดีฟอลต์ 3 — ใช้ CPU หลาย core, ต้องมี Redis) · pool ฐานข้อมูลต่อ process · ผล load test: `claude/phase-scalability-plan.md` |
 | `HEAVY_JOBS_PER_WORKER`, `HEAVY_QUEUE_MAX`, `HEAVY_QUEUE_TIMEOUT` | คิวงานหนัก (Ghostscript / LibreOffice / Tesseract — `app/core/heavy.py`): ทำพร้อมกันได้ workers × `HEAVY_JOBS_PER_WORKER` (ดีฟอลต์ 1) ที่เหลือรอคิว · คิวต่อ process เกิน `HEAVY_QUEUE_MAX` (8) หรือรอเกิน `HEAVY_QUEUE_TIMEOUT` (120 วินาที) ตอบ 503 + `Retry-After` |
+| `LIBREOFFICE_TIMEOUT_S`, `LIBREOFFICE_TIMEOUT_PER_FILE_S`, `GHOSTSCRIPT_TIMEOUT_S` | เวลาสูงสุดของ LibreOffice (180 วินาที + 15 ต่อไฟล์ที่เพิ่มในชุด) และ Ghostscript (300) — ครบแล้วฆ่าทั้ง process group (`app/core/proc.py`) ไม่ถือคิวงานหนักค้าง |
+| `AUTH_COOKIE_SECURE` | access token เก็บใน HttpOnly cookie (`ja_session`) + CSRF token (`ja_csrf`) — `auto` (ดีฟอลต์) = Secure เมื่อ `FRONTEND_URL` เป็น https · ใช้ผ่าน http ล้วนต้องตั้ง `FRONTEND_URL` เป็น `http://` · API/สคริปต์ยังส่ง `Authorization: Bearer` ได้ |
 
 > ภาพหน้าเอกสาร (`GET /api/pdf/{sid}/page/{n}`) ส่งเป็น JPEG q85 ดีฟอลต์ (`?fmt=png` ได้ PNG แบบเดิม · response มี `image_mime`) และเก็บแคชตามเวอร์ชันเอกสาร — ใน Redis (`render:{sid}:{ver}:…` อายุ 10 นาที ใช้ร่วมกันทุก worker) หรือในหน่วยความจำ 96MB ถ้าไม่มี Redis · แก้ไข/เลิกทำแล้วเวอร์ชันเปลี่ยน แคชเก่าไม่ถูกใช้
 
@@ -484,7 +486,7 @@ pdf_editor_fullstack/
 | **สแกนเอกสาร (เบราว์เซอร์)** | getUserMedia / ImageCapture, OpenCV.js 4.10 (`@techstark/opencv-js`, โหลดเฉพาะหน้าสแกน), IndexedDB |
 | **AI** | Gemini (google-genai), Anthropic Claude และ OpenAI-compatible (HTTP) — ไม่บังคับ (`app/services/ai_client.py`) |
 | **Database / Cache** | PostgreSQL 15, Redis 7 |
-| **Auth** | JWT (python-jose), bcrypt, Google OAuth, LINE Login, WebAuthn (Passkey) |
+| **Auth** | JWT (PyJWT) ใน HttpOnly cookie + CSRF token, bcrypt, Google OAuth, LINE Login, WebAuthn (Passkey) |
 | **ทดสอบ** | pytest, Vitest, Playwright, GitHub Actions |
 | **Deploy** | Docker, Docker Compose, Nginx, Oracle Cloud (ARM64), Docker Hub |
 

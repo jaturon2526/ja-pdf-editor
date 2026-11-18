@@ -30,6 +30,7 @@ from app.api import (
 from app.api.pdf import router as pdf_router
 from app.core.config import settings
 from app.core.security import validate_secret_config
+from app.core.auth_cookies import AuthCookieMiddleware
 from app.core.heavy import ServerBusyError
 from app.core.session import SessionBusyError, session_manager
 from app.services import fonts
@@ -295,6 +296,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# login จากหน้าเว็บ (X-Auth-Mode: cookie) → access token ไปอยู่ใน HttpOnly cookie แทน body (app/core/auth_cookies.py)
+app.add_middleware(AuthCookieMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,

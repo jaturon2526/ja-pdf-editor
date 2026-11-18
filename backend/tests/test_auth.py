@@ -30,7 +30,7 @@ def test_token_without_jti_is_rejected(client, make_user):
 
 
 def test_token_signed_with_legacy_default_secret_is_rejected(client, make_user):
-    from jose import jwt
+    import jwt
 
     from app.core.security import LEGACY_DEFAULT_SECRET
 

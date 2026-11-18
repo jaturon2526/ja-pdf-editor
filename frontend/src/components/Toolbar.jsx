@@ -172,7 +172,7 @@ function ZoomPercentInput({ zoom, onCommit, disabled }) {
   }, [zoom]);
 
   function commit() {
-    const n = parseInt(text, 10);
+    const n = Number.parseInt(text, 10);
     if (!Number.isNaN(n)) {
       const clamped = Math.min(ZOOM_MAX_PCT, Math.max(ZOOM_MIN_PCT, n));
       onCommit(clamped / 100);

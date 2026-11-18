@@ -159,7 +159,7 @@ export default function ImageEditBox({
   }, [onCancel, onDelete]);
 
   return (
-    <div
+    <div role="presentation"
       className="image-edit-box"
       style={{
         left: rect.x0 * zoom,
@@ -206,7 +206,7 @@ export default function ImageEditBox({
         />
       ))}
 
-      <div className="image-edit-toolbar" onClick={(e) => e.stopPropagation()}>
+      <div role="presentation" className="image-edit-toolbar" onClick={(e) => e.stopPropagation()}>
         {canReplace && (
           <>
             <input

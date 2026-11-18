@@ -58,8 +58,8 @@ export default function ProfilePage() {
           {success && <div className="p-3 bg-green-100 text-green-700 rounded text-sm">{success}</div>}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">อีเมล</label>
-            <input
+            <label htmlFor="profilepage-f61" className="block text-sm font-medium text-gray-700 mb-1">อีเมล</label>
+            <input id="profilepage-f61"
               type="text"
               value={user?.email || ""}
               disabled
@@ -69,8 +69,8 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อที่แสดง</label>
-            <input
+            <label htmlFor="profilepage-f72" className="block text-sm font-medium text-gray-700 mb-1">ชื่อที่แสดง</label>
+            <input id="profilepage-f72"
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
@@ -80,7 +80,7 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">แพ็กเกจปัจจุบัน</label>
+            <span className="block text-sm font-medium text-gray-700 mb-1">แพ็กเกจปัจจุบัน</span>
             <div className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold capitalize">
               {user?.plan_type || "free"} Plan
             </div>

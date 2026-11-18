@@ -15,7 +15,7 @@ export default function StatusBar({
   }, [currentPage]);
 
   function commitPageInput() {
-    const n = parseInt(pageInput, 10);
+    const n = Number.parseInt(pageInput, 10);
     if (!Number.isNaN(n) && n >= 1 && n <= pageCount) {
       onGoToPage(n - 1);
     } else {

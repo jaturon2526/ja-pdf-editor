@@ -56,7 +56,7 @@ export default function AIConfigPage() {
   }
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, []);
 
   const help = PROVIDER_HELP[form.provider] || PROVIDER_HELP.gemini;
@@ -80,7 +80,7 @@ export default function AIConfigPage() {
       const res = await saveApiKey({ ...form, apiKey: form.apiKey.trim(), model: form.model.trim(), baseUrl: form.baseUrl.trim() });
       setSuccess(`ทดสอบผ่านและบันทึกแล้ว — ใช้ ${providerLabel(res.provider)}${res.model ? ` (${res.model})` : ""} เมื่อโควต้า AI ของระบบหมด`);
       setForm((f) => ({ ...f, apiKey: "" }));
-      fetchData();
+      void fetchData();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -94,7 +94,7 @@ export default function AIConfigPage() {
       await removeApiKey();
       setSuccess("ลบ API Key แล้ว — กลับไปใช้ AI ของระบบ");
       setForm({ provider: "gemini", apiKey: "", model: "", baseUrl: "" });
-      fetchData();
+      void fetchData();
     } catch (err) {
       setError(err.message);
     }

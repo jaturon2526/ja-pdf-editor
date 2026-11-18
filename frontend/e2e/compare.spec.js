@@ -3,14 +3,13 @@ import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { login } from "./helpers.js";
+import { csrfHeaders, login } from "./helpers.js";
 
 const FIX = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
 
 async function uploadViaApi(page, file, name) {
-  const token = await page.evaluate(() => localStorage.getItem("token"));
   const res = await page.request.post("/api/pdf/upload", {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: await csrfHeaders(page),
     multipart: { file: { name, mimeType: "application/pdf", buffer: fs.readFileSync(path.join(FIX, file)) } },
   });
   expect(res.ok()).toBeTruthy();

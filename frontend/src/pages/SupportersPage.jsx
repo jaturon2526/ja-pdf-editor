@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AppBrand from "../components/AppBrand.jsx";
-import { getToken } from "../api/client.js";
+import { isLoggedIn } from "../api/client.js";
 import { getSupporters } from "../api/donations.js";
 
 export default function SupportersPage() {
@@ -15,7 +15,7 @@ export default function SupportersPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-white">
       <header className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
-        <Link to={getToken() ? "/dashboard" : "/login"} className="min-w-0"><AppBrand /></Link>
+        <Link to={isLoggedIn() ? "/dashboard" : "/login"} className="min-w-0"><AppBrand /></Link>
         <Link to="/support" className="text-sm font-semibold text-amber-700 hover:underline">☕ ร่วมสนับสนุน</Link>
       </header>
       <main className="max-w-4xl mx-auto px-4 pb-16">

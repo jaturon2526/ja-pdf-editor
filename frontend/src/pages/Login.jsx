@@ -43,9 +43,8 @@ export default function Login() {
     preparePasskeyLogin().then((p) => { preparedLogin.current = p; }).catch(() => {});
   }, []);
 
-  function finishPasskeyLogin(data) {
-    localStorage.setItem("token", data.access_token);
-    window.location.href = "/dashboard";
+  function finishPasskeyLogin() {
+    window.location.href = "/dashboard"; // token อยู่ใน HttpOnly cookie แล้ว
   }
 
   useEffect(() => {
@@ -100,8 +99,8 @@ export default function Login() {
       // (ปุ่มขึ้น "รอยืนยันที่อุปกรณ์..." โดยไม่มีหน้าต่างสแกนนิ้ว) — เดิมยกเลิกได้เฉพาะตอนคำขอเริ่มแล้ว
       const prepared = await preparePasskeyLogin();
       if (autofillCancelled.current || buttonActive.current) return;
-      const data = await loginWithPasskey({ autofill: true, prepared });
-      finishPasskeyLogin(data);
+      await loginWithPasskey({ autofill: true, prepared });
+      finishPasskeyLogin();
     } catch (err) {
       // ถูกยกเลิกเพราะกดปุ่ม Passkey / เปลี่ยนหน้า → ไม่ต้องแสดง
       const msg = passkeyErrorMessage(err);
@@ -138,7 +137,8 @@ export default function Login() {
       WebAuthnAbortService.cancelCeremony();
     }, limit);
     try {
-      finishPasskeyLogin(await loginWithPasskey({ prepared }));
+      await loginWithPasskey({ prepared });
+      finishPasskeyLogin();
     } catch (err) {
       const msg = buttonTimedOut.current
         ? "ไม่ได้รับการยืนยันจากอุปกรณ์ — กด \"เข้าสู่ระบบด้วย Passkey\" อีกครั้ง"
@@ -239,9 +239,8 @@ export default function Login() {
         );
         setIsRegister(false);
       } else {
-        const data = await authLogin(email, password);
-        localStorage.setItem("token", data.access_token);
-        navigate("/dashboard");
+        await authLogin(email, password); // token อยู่ใน HttpOnly cookie
+        void navigate("/dashboard");
       }
     } catch (err) {
       setErrorMsg(err.message || "เกิดข้อผิดพลาด");
@@ -301,9 +300,9 @@ export default function Login() {
             )}
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">อีเมล</label>
+              <label htmlFor="login-f304" className="block text-sm font-medium text-gray-700">อีเมล</label>
               <div className="mt-1">
-                <input 
+                <input id="login-f304" 
                   type="email" 
                   autoComplete={isRegister ? "email" : "username webauthn"}
                   // เริ่มเมื่อผู้ใช้แตะ/พิมพ์ในช่องเอง — ไม่ใช้ onFocus: Safari บน Mac โฟกัสช่องอีเมลให้เองตอนเปิดหน้า
@@ -326,15 +325,15 @@ export default function Login() {
 
             <div>
               <div className="flex justify-between items-center">
-                <label className="block text-sm font-medium text-gray-700">รหัสผ่าน</label>
+                <label htmlFor="login-f329" className="block text-sm font-medium text-gray-700">รหัสผ่าน</label>
                 {!isRegister && (
-                  <a href="#" onClick={(e) => { e.preventDefault(); navigate("/forgot-password"); }} className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors">
+                  <a href="#" onClick={(e) => { e.preventDefault(); void navigate("/forgot-password"); }} className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors">
                     ลืมรหัสผ่าน?
                   </a>
                 )}
               </div>
               <div className="mt-1">
-                <input 
+                <input id="login-f329" 
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -347,9 +346,9 @@ export default function Login() {
 
             {isRegister && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">ยืนยันรหัสผ่าน</label>
+                <label htmlFor="login-f350" className="block text-sm font-medium text-gray-700">ยืนยันรหัสผ่าน</label>
                 <div className="mt-1">
-                  <input 
+                  <input id="login-f350" 
                     type="password"
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
@@ -425,8 +424,7 @@ export default function Login() {
                 shape="rectangular"
                 onSuccess={async (credentialResponse) => {
                   try {
-                    const data = await authGoogleLogin(credentialResponse.credential);
-                    localStorage.setItem("token", data.access_token);
+                    await authGoogleLogin(credentialResponse.credential); // token อยู่ใน HttpOnly cookie
                     window.location.href = "/dashboard";
                   } catch (err) {
                     setErrorMsg("เข้าสู่ระบบด้วย Google ไม่สำเร็จ: " + err.message);

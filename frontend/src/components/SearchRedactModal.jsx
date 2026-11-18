@@ -82,7 +82,7 @@ export default function SearchRedactModal({ open, onClose, session, onComplete }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={handleClose}></div>
+      <div role="presentation" className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={handleClose}></div>
       <div className="relative mx-auto max-w-sm w-full rounded-xl bg-white p-6 shadow-2xl">
         <h3 className="text-lg font-medium text-slate-900 mb-4 flex items-center gap-2">
           <svg className="w-5 h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -107,8 +107,8 @@ export default function SearchRedactModal({ open, onClose, session, onComplete }
           )}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">คำที่ต้องการเซ็นเซอร์ (ค้นหาทั้งเอกสาร)</label>
-            <input
+            <label htmlFor="searchredactmodal-f110" className="block text-sm font-medium text-slate-700 mb-1">คำที่ต้องการเซ็นเซอร์ (ค้นหาทั้งเอกสาร)</label>
+            <input id="searchredactmodal-f110"
               type="text"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}

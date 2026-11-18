@@ -8,7 +8,7 @@ async function api(page, method, url, body) {
   return page.evaluate(async ([m, u, b]) => {
     const res = await fetch(`/api${u}`, {
       method: m,
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}`, "Content-Type": "application/json" },
+      headers: { "X-CSRF-Token": (document.cookie.match(/(?:^|; )ja_csrf=([^;]*)/) || [])[1] || "", "Content-Type": "application/json" },
       body: b ? JSON.stringify(b) : undefined,
     });
     return { status: res.status, body: await res.json().catch(() => null) };

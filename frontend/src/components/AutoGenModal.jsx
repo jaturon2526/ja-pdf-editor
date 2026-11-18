@@ -52,7 +52,7 @@ export default function AutoGenModal({ onClose }) {
   useEffect(() => {
     if (!dataFile) { setPreview(null); return undefined; }
     let cancelled = false;
-    (async () => {
+    void (async () => {
       setPreviewLoading(true);
       setError("");
       const fd = new FormData();
@@ -125,7 +125,7 @@ export default function AutoGenModal({ onClose }) {
   const headers = preview?.headers || [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
+    <div role="presentation" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
       onMouseDown={(e) => e.target === e.currentTarget && !submitting && !dirty && onClose()}>
       <div role="dialog" aria-modal="true" aria-labelledby="autogen-title" data-testid="autogen-modal"
         className="bg-white w-full sm:max-w-3xl rounded-t-2xl sm:rounded-xl shadow-xl flex flex-col max-h-[92vh]">
@@ -163,8 +163,8 @@ export default function AutoGenModal({ onClose }) {
           {isText(dataFile) && (
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className={label}>ตัวคั่นคอลัมน์</label>
-                <select className={input} value={csvDelimiter} onChange={(e) => setCsvDelimiter(e.target.value)}>
+                <label htmlFor="autogenmodal-f166" className={label}>ตัวคั่นคอลัมน์</label>
+                <select id="autogenmodal-f166" className={input} value={csvDelimiter} onChange={(e) => setCsvDelimiter(e.target.value)}>
                   <option value="auto">อัตโนมัติ{preview?.delimiter ? ` (พบ ${preview.delimiter === "\t" ? "Tab" : `"${preview.delimiter}"`})` : ""}</option>
                   <option value=",">จุลภาค ( , )</option>
                   <option value=";">อัฒภาค ( ; )</option>
@@ -173,8 +173,8 @@ export default function AutoGenModal({ onClose }) {
                 </select>
               </div>
               <div>
-                <label className={label}>การเข้ารหัสภาษา</label>
-                <select className={input} value={csvEncoding} onChange={(e) => setCsvEncoding(e.target.value)}>
+                <label htmlFor="autogenmodal-f176" className={label}>การเข้ารหัสภาษา</label>
+                <select id="autogenmodal-f176" className={input} value={csvEncoding} onChange={(e) => setCsvEncoding(e.target.value)}>
                   <option value="auto">อัตโนมัติ{preview?.encoding ? ` (${preview.encoding === "cp874" ? "Windows-874" : "UTF-8"})` : ""}</option>
                   <option value="utf-8-sig">UTF-8</option>
                   <option value="cp874">Windows-874 / TIS-620 (Excel ไทยรุ่นเก่า)</option>
@@ -220,15 +220,15 @@ export default function AutoGenModal({ onClose }) {
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className={label}>รูปแบบผลลัพธ์</label>
-              <select className={input} value={outputFormat} onChange={(e) => setOutputFormat(e.target.value)} data-testid="autogen-format">
+              <label htmlFor="autogenmodal-f223" className={label}>รูปแบบผลลัพธ์</label>
+              <select id="autogenmodal-f223" className={input} value={outputFormat} onChange={(e) => setOutputFormat(e.target.value)} data-testid="autogen-format">
                 <option value="docx">Word (.docx)</option>
                 <option value="pdf">PDF (.pdf)</option>
               </select>
             </div>
             <div>
-              <label className={label}>การจัดการไฟล์</label>
-              <select className={input} value={String(splitFiles)} onChange={(e) => setSplitFiles(e.target.value === "true")} data-testid="autogen-split">
+              <label htmlFor="autogenmodal-f230" className={label}>การจัดการไฟล์</label>
+              <select id="autogenmodal-f230" className={input} value={String(splitFiles)} onChange={(e) => setSplitFiles(e.target.value === "true")} data-testid="autogen-split">
                 <option value="true">แยกไฟล์ละ 1 แถว (ดาวน์โหลดเป็น .zip)</option>
                 <option value="false">รวมทุกแถวเป็นไฟล์เดียว (ขึ้นหน้าใหม่ทุกแถว)</option>
               </select>

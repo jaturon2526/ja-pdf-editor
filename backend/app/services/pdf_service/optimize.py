@@ -9,7 +9,9 @@ import tempfile
 import fitz
 import pikepdf
 
+from app.core.config import settings
 from app.core.heavy import heavy_slot
+from app.core.proc import run_killable
 from app.core.session import PDFSession
 from app.services.pdf_service.core import PDFError, require_unlocked
 
@@ -331,7 +333,10 @@ def _run_ghostscript(cmd: list[str]) -> None:
         cmd = [cmd[0], "-dPreserveMarkedContent=true", *cmd[1:]]
     try:
         with heavy_slot("ghostscript"):
-            subprocess.run(cmd, check=True, capture_output=True)
+            run_killable(cmd, check=True, timeout=settings.GHOSTSCRIPT_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        logger.warning("Ghostscript timeout (%.0fs)", settings.GHOSTSCRIPT_TIMEOUT_S)
+        raise PDFError("Ghostscript ใช้เวลานานเกินกำหนด — ไฟล์อาจซับซ้อนหรือเสียหาย")
     except FileNotFoundError:
         raise PDFError("ไม่พบโปรแกรม Ghostscript บนเซิร์ฟเวอร์ — ติดต่อผู้ดูแลระบบ")
     except subprocess.CalledProcessError as e:

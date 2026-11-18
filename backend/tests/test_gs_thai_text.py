@@ -19,7 +19,7 @@ def test_run_ghostscript_preserves_marked_content(monkeypatch):
     from app.services.pdf_service import optimize
 
     seen = []
-    monkeypatch.setattr(optimize.subprocess, "run", lambda cmd, **kw: seen.append(cmd))
+    monkeypatch.setattr(optimize, "run_killable", lambda cmd, **kw: seen.append(cmd))
     optimize._run_ghostscript(["gs", "-sDEVICE=pdfwrite", "-sOutputFile=x.pdf", "in.pdf"])
     assert "-dPreserveMarkedContent=true" in seen[0]
 

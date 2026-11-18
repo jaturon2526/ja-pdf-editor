@@ -66,8 +66,8 @@ export default function SecurityPage() {
           {success && <div className="p-3 bg-green-100 text-green-700 rounded text-sm">{success}</div>}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">รหัสผ่านเดิม</label>
-            <input
+            <label htmlFor="securitypage-f69" className="block text-sm font-medium text-gray-700 mb-1">รหัสผ่านเดิม</label>
+            <input id="securitypage-f69"
               type="password"
               required
               value={oldPassword}
@@ -77,8 +77,8 @@ export default function SecurityPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">รหัสผ่านใหม่</label>
-            <input
+            <label htmlFor="securitypage-f80" className="block text-sm font-medium text-gray-700 mb-1">รหัสผ่านใหม่</label>
+            <input id="securitypage-f80"
               type="password"
               required
               value={newPassword}
@@ -88,8 +88,8 @@ export default function SecurityPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ยืนยันรหัสผ่านใหม่</label>
-            <input
+            <label htmlFor="securitypage-f91" className="block text-sm font-medium text-gray-700 mb-1">ยืนยันรหัสผ่านใหม่</label>
+            <input id="securitypage-f91"
               type="password"
               required
               value={confirmPassword}

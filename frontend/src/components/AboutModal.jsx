@@ -1,7 +1,7 @@
 import React from "react";
 import SourceCodeLink from "./SourceCodeLink.jsx";
 
-export const APP_VERSION = "v1.35.3";
+export const APP_VERSION = "v1.35.5";
 
 const OSS_CREDITS = [
   // ---- Backend (Python) ----
@@ -37,9 +37,8 @@ const OSS_CREDITS = [
   { name: "Alembic", role: "อัปเกรดโครงสร้างฐานข้อมูล (Migrations)", license: "MIT License" },
   { name: "psycopg 3", role: "เชื่อมต่อฐานข้อมูล PostgreSQL", license: "LGPL-3.0" },
   { name: "redis-py", role: "เชื่อมต่อ Redis (เซสชันแบบหลายเครื่อง)", license: "MIT License" },
-  { name: "passlib", role: "จัดการการเข้ารหัสรหัสผ่าน", license: "BSD License" },
   { name: "bcrypt", role: "อัลกอริทึมเข้ารหัสรหัสผ่านผู้ใช้", license: "Apache License 2.0" },
-  { name: "python-jose", role: "สร้างและตรวจสอบ JWT Token", license: "MIT License" },
+  { name: "PyJWT", role: "สร้างและตรวจสอบ JWT Token", license: "MIT License" },
   { name: "email-validator", role: "ตรวจสอบความถูกต้องของอีเมล", license: "Unlicense" },
   { name: "google-auth", role: "ตรวจสอบการเข้าสู่ระบบด้วย Google", license: "Apache License 2.0" },
   { name: "tzdata", role: "ฐานข้อมูลเขตเวลา (เวลาในอีเมลและหนังสือรับรอง)", license: "Apache License 2.0" },
@@ -67,8 +66,8 @@ const OSS_CREDITS = [
 
 export default function AboutModal({ onClose }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 sm:p-6" onClick={onClose}>
-      <div 
+    <div role="presentation" className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 sm:p-6" onClick={onClose}>
+      <div role="presentation" 
         className="bg-white w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-up" 
         onClick={(e) => e.stopPropagation()}
       >

@@ -205,10 +205,12 @@ def compare_page(task_id: str, side: Literal["a", "b"], page_number: int, zoom: 
                  db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     """ภาพหน้าของฝั่ง A/B (JPEG) — cache ในเบราว์เซอร์ได้ เพราะไฟล์ของงานเทียบไม่เปลี่ยน"""
     _, folder, _ = _owned_task(task_id, db, current_user)
-    zoom = max(0.25, min(zoom, 4.0))
+    # ปัดเป็นขั้นละ 0.25 ในช่วง 0.5–3.0 (ตรงกับที่หน้าเว็บขอ) — สูงสุด 11 ไฟล์ cache ต่อหน้า ไม่ให้ค่า zoom แปลก ๆ
+    # สร้างไฟล์ใหม่ได้ไม่จำกัด (SEC-06) · เรนเดอร์ใน heavy_slot เหมือนงานหนักอื่น
+    zoom = min(3.0, max(0.5, round(zoom * 4) / 4)) if zoom == zoom else 1.5
     cache = folder / f"{side}-{page_number}-{zoom:.2f}.jpg"
     if not cache.exists():
-        with fitz.open(folder / f"{side}.pdf") as doc:
+        with heavy_slot("compare-page"), fitz.open(folder / f"{side}.pdf") as doc:
             if not 0 <= page_number < doc.page_count:
                 raise HTTPException(status_code=404, detail="ไม่พบหน้านี้")
             pix = doc[page_number].get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)

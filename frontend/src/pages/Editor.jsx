@@ -116,11 +116,11 @@ export default function Editor() {
         const res = await api.openFile(id);
         if (res.status === "ok") {
           if (res.session_id === id) await sessionHook._activateSession(id, null, null, resetTransientEditState);
-          else navigate(`/editor/${res.session_id}`, { replace: true });
+          else void navigate(`/editor/${res.session_id}`, { replace: true });
           setStatusMessage("เปิดเอกสารจากไฟล์ที่บันทึกล่าสุดแล้ว");
           return;
         }
-        navigate("/dashboard", { replace: true }); // มีรหัสผ่าน — เปิดจากหน้าเอกสารของฉัน (ถามรหัสที่นั่น)
+        void navigate("/dashboard", { replace: true }); // มีรหัสผ่าน — เปิดจากหน้าเอกสารของฉัน (ถามรหัสที่นั่น)
       } catch {
         setStatusMessage(`โหลดไฟล์ไม่สำเร็จ: ${err.message}`);
       }
@@ -336,24 +336,24 @@ export default function Editor() {
 
   function handleFileSelected(file) {
     if (!confirmDiscard("เปิดไฟล์อื่น")) return;
-    if (session) api.closeSession(session.sessionId); // เดิมเอกสารเก่าค้างอยู่บนเซิร์ฟเวอร์จนหมดอายุ
+    if (session) api.closeSession(session.sessionId).catch(() => {}); // เดิมเอกสารเก่าค้างอยู่บนเซิร์ฟเวอร์จนหมดอายุ
     sessionHook.handleFileSelected(file, resetTransientEditState);
   }
 
   function goToDashboard() {
     if (!confirmDiscard("กลับหน้าเอกสารของฉัน")) return;
     setUnsaved(false);
-    navigate("/dashboard");
+    void navigate("/dashboard");
   }
 
   function handleUnlockSubmit(password) {
-    sessionHook.handleUnlockSubmit(password, resetTransientEditState);
+    void sessionHook.handleUnlockSubmit(password, resetTransientEditState);
   }
 
   function closeDocument() {
     if (!confirmDiscard("ปิดไฟล์")) return;
     revokeAllPendingImageBlobUrls(imageEditHook.pendingImageEdits, imageEditHook.draftImageEdit);
-    if (session) api.closeSession(session.sessionId);
+    if (session) api.closeSession(session.sessionId).catch(() => {});
     setSession(null);
     sessionHook.setPageImage(null);
     setCurrentPage(0);
@@ -442,7 +442,7 @@ export default function Editor() {
   function insertImageFile(file, point = null) {
     if (!session || !file) return;
     setActiveTool("edit_image");
-    imageEditHook.placeNewImage(file, point);
+    void imageEditHook.placeNewImage(file, point);
   }
 
   // ======================== บันทึกการแก้ไข (ดู hooks/useApplyEdits.js) ========================
@@ -561,8 +561,8 @@ export default function Editor() {
           setStatusMessage("ไม่พบข้อความในรูปภาพที่ยังค้นหาไม่ได้ (หรือรูปไม่ชัดพอ)");
           return;
         }
-        sessionHook.refreshCurrentPage();
-        refreshAfterHistoryChange();
+        sessionHook.refreshCurrentPage().catch((e) => console.warn("refresh page failed", e));
+        void refreshAfterHistoryChange();
         setCanUndo(true);
         setCanRedo(false);
         setStatusMessage(`อ่านข้อความในรูปแล้ว ${r.words} คำ ในหน้า ${r.pages.join(", ")} — ค้นหา/เซ็นเซอร์/คัดลอกได้แล้ว` +
@@ -717,7 +717,7 @@ export default function Editor() {
       textEditHook.handleInsertTextDrag(rectPt);
       setActiveTool("edit_text");
     } else {
-      annotationHook.handleAnnotationDrag(tool, rectPt);
+      void annotationHook.handleAnnotationDrag(tool, rectPt);
     }
   }
 
@@ -1112,8 +1112,8 @@ export default function Editor() {
         onClose={() => setShowRedactSearchModal(false)}
         session={session?.sessionId}
         onComplete={() => {
-          sessionHook.refreshCurrentPage();
-          refreshAfterHistoryChange();
+          sessionHook.refreshCurrentPage().catch((e) => console.warn("refresh page failed", e));
+          void refreshAfterHistoryChange();
           setCanUndo(true);
           setCanRedo(false);
         }}

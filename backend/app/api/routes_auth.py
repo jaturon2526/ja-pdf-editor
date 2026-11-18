@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import timedelta
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile, status
 from typing import Optional
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -11,12 +11,14 @@ from app.core.config import settings
 from app.db.database import get_db
 from app.models.domain import User
 from app.models.auth_schemas import UserCreate, UserResponse, Token, UpdateProfileRequest, PasswordChangeRequest, ForgotPasswordRequest, ResetPasswordRequest
-from jose import jwt, JWTError
+import jwt
+from jwt import PyJWTError as JWTError
 import logging
 import secrets
 import uuid
 from app.core import ratelimit
 from app.core.auth_session import auth_session_manager
+from app.core.auth_cookies import bearer_token, clear_auth_cookies, request_token, set_auth_cookies
 from app.core.security import verify_password, get_password_hash, create_access_token, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.services.email_service import send_verification_email, send_reset_password_email
 from app.services.donation_service import effective_plan
@@ -44,11 +46,11 @@ def _password_version(user: User) -> str:
 
 
 def _token_jti(request: Request) -> str | None:
-    auth = request.headers.get("authorization", "")
-    if not auth.lower().startswith("bearer "):
+    token = request_token(request, enforce_csrf=False)
+    if not token:
         return None
     try:
-        return jwt.decode(auth.split(" ", 1)[1], SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
     except JWTError:
         return None
 
@@ -174,11 +176,32 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
 
 
 @router.post("/logout")
-def logout(request: Request, current_user: User = Depends(get_current_active_user)):
-    """ออกจากระบบ — เดิมแค่ลบ token ในเบราว์เซอร์ token เดิมยังใช้ได้จนหมดอายุ (และนับเป็นอุปกรณ์ที่ login อยู่)"""
-    jti = _token_jti(request)
-    if jti:
-        auth_session_manager.revoke_session(current_user.id, jti)
+def logout(request: Request, response: Response, db: Session = Depends(get_db)):
+    """ออกจากระบบ — ตัด session ของ token นี้ (token เดิมใช้ต่อไม่ได้ และไม่นับเป็นอุปกรณ์ที่ login อยู่) + ลบ cookie
+    token หมดอายุ/ถูกตัดไปแล้วก็ตอบ ok และลบ cookie ให้ (ไม่ต้อง 401)"""
+    from app.api.deps import user_from_token
+
+    token = request_token(request, enforce_csrf=False)  # cookie ที่ไม่ผ่าน CSRF = None (เว็บอื่นสั่ง logout เราไม่ได้)
+    if token:
+        try:
+            user = user_from_token(token, db)
+        except HTTPException:
+            user = None
+        jti = _token_jti(request)
+        if user and jti:
+            auth_session_manager.revoke_session(user.id, jti)
+    clear_auth_cookies(response)
+    return {"status": "ok"}
+
+
+@router.post("/session/cookie")
+def bearer_to_cookie(request: Request, response: Response, current_user: User = Depends(get_current_active_user)):
+    """ย้าย token เดิมที่หน้าเว็บรุ่นก่อนเก็บใน localStorage มาเป็น HttpOnly cookie (token/jti เดิม — ไม่นับอุปกรณ์เพิ่ม)
+    ต้องส่งมาเป็น Bearer เท่านั้น"""
+    token = bearer_token(request)
+    if not token:
+        raise HTTPException(status_code=400, detail="ต้องส่ง token แบบ Bearer")
+    set_auth_cookies(response, token)
     return {"status": "ok"}
 
 @router.get("/me", response_model=UserResponse)
@@ -266,8 +289,11 @@ def login_with_google(req: GoogleLoginRequest, db: Session = Depends(get_db)):
         idinfo = id_token.verify_oauth2_token(req.credential, requests.Request(), settings.GOOGLE_CLIENT_ID)
         email = idinfo['email']
         name = idinfo.get('name', '')
-    except ValueError:
+    except (ValueError, KeyError):
         raise HTTPException(status_code=400, detail="ยืนยันตัวตนกับ Google ไม่สำเร็จ — ลองใหม่อีกครั้ง")
+    # อีเมลที่ Google ยังไม่ยืนยัน = พิสูจน์ไม่ได้ว่าเป็นเจ้าของ → ห้ามสร้าง/ผูกบัญชีจากอีเมลนี้
+    if idinfo.get("email_verified") is not True:
+        raise HTTPException(status_code=400, detail="อีเมลของบัญชี Google นี้ยังไม่ได้ยืนยันกับ Google — ยืนยันอีเมลที่ Google ก่อน หรือสมัครด้วยอีเมลและรหัสผ่าน")
 
     # Check if user exists
     user = user_by_email(db, email)
@@ -296,11 +322,10 @@ def login_with_google(req: GoogleLoginRequest, db: Session = Depends(get_db)):
         if not user.is_active:
             raise HTTPException(status_code=400, detail="บัญชีนี้ถูกระงับการใช้งาน — ติดต่อผู้ดูแลระบบ")
         
-        # Update verification and profile picture if missing
-        changed = False
-        if not user.is_verified:
-            user.is_verified = True
-            changed = True
+        # ยังไม่ยืนยันอีเมล → ล้างรหัสผ่านที่ผู้สมัครคนก่อนตั้งไว้ (กันยึดบัญชีล่วงหน้า) · อัปเดตรูปถ้ายังไม่มี
+        from app.services.account_service import claim_unverified_account
+
+        changed = claim_unverified_account(user)
         if not user.profile_picture and idinfo.get('picture'):
             user.profile_picture = idinfo.get('picture')
             changed = True
@@ -481,7 +506,7 @@ def account_delete_passkey_options(db: Session = Depends(get_db), current_user: 
 
 
 @router.post("/account/delete")
-def delete_my_account(req: DeleteAccountRequest, request: Request, db: Session = Depends(get_db),
+def delete_my_account(req: DeleteAccountRequest, request: Request, response: Response, db: Session = Depends(get_db),
                       current_user: User = Depends(get_current_active_user)):
     """ลบบัญชีถาวร — ต้องพิมพ์อีเมลของตัวเอง และยืนยันตัวตนด้วยรหัสผ่านหรือ passkey"""
     from app.services import account_service, passkey_service
@@ -504,6 +529,7 @@ def delete_my_account(req: DeleteAccountRequest, request: Request, db: Session =
         result = account_service.delete_account(db, current_user, ClientInfo(ip=ip, user_agent=request.headers.get("user-agent")))
     except account_service.AccountDeletionError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from None
+    clear_auth_cookies(response)
     return {"deleted": True, **result}
 
 

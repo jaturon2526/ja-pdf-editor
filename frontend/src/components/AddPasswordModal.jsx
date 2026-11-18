@@ -75,7 +75,7 @@ export default function AddPasswordModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
+    <div role="presentation" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
       onMouseDown={(e) => e.target === e.currentTarget && !submitting && onCancel()}>
       <form role="dialog" aria-modal="true" aria-labelledby="add-password-title" onSubmit={handleSubmit}
         className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-xl shadow-xl flex flex-col max-h-[92dvh]">
@@ -110,13 +110,11 @@ export default function AddPasswordModal({
             <legend className="text-sm font-medium text-gray-800 mb-1">วิธีเข้ารหัส</legend>
             {ENCRYPTION_OPTIONS.map((o) => (
               <label key={o.value}
-                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${encryption === o.value ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
-                <input type="radio" name="encryption" className="mt-1" value={o.value} checked={encryption === o.value}
+                className={`grid grid-cols-[auto_1fr] gap-x-3 items-start p-3 rounded-lg border cursor-pointer ${encryption === o.value ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
+                <input type="radio" name="encryption" className="mt-1 row-span-2" value={o.value} checked={encryption === o.value}
                   onChange={() => setEncryption(o.value)} />
-                <span>
-                  <span className="block text-sm font-medium text-gray-900">{o.label}</span>
-                  <span className="block text-xs text-gray-500">{o.hint}</span>
-                </span>
+                <span className="block text-sm font-medium text-gray-900">{o.label}</span>
+                <span className="block text-xs text-gray-500">{o.hint}</span>
               </label>
             ))}
           </fieldset>

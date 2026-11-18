@@ -47,7 +47,7 @@ test("ลบบัญชี: คำเตือนครบ ปุ่มกด�
   await del.click();
   await page.waitForURL("**/login?deleted=1");
   await expect(page.getByText("ลบบัญชีพร้อมไฟล์และข้อมูลทั้งหมดเรียบร้อยแล้ว")).toBeVisible();
-  expect(await page.evaluate(() => localStorage.getItem("token"))).toBeNull();
+  expect(await page.evaluate(() => document.cookie)).not.toContain("ja_csrf=");
   expect(deleteCalls.at(-1)).toEqual({ confirm_email: EMAIL.toUpperCase(), password: "right-password" });
 });
 

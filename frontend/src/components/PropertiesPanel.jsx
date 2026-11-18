@@ -139,8 +139,8 @@ export default function PropertiesPanel({
           "บันทึกการแก้ไข" บน toolbar อีกครั้งหลังแก้ไขครบทุกจุดแล้ว เพื่อบันทึกลงไฟล์จริง
         </p>
 
-        <label className="properties-label">Font</label>
-        <select
+        <label htmlFor="propertiespanel-f142" className="properties-label">Font</label>
+        <select id="propertiespanel-f142"
           className="properties-select"
           value={familyKey || ""}
           onChange={(e) => handleFamilyChange(e.target.value)}
@@ -180,19 +180,19 @@ export default function PropertiesPanel({
 
         <div className="properties-row">
           <div className="properties-field">
-            <label className="properties-label">ขนาดตัวอักษร</label>
-            <input
+            <label htmlFor="propertiespanel-f183" className="properties-label">ขนาดตัวอักษร</label>
+            <input id="propertiespanel-f183"
               type="number"
               className="properties-number"
               min={6}
               max={96}
               value={fontSize}
-              onChange={(e) => onFontSizeChange(parseFloat(e.target.value) || 14)}
+              onChange={(e) => onFontSizeChange(Number.parseFloat(e.target.value) || 14)}
             />
           </div>
           <div className="properties-field" style={{ flex: 1.2 }}>
-            <label className="properties-label">สีตัวอักษร</label>
-            <div className="flex items-center gap-2 mt-1">
+            <span className="properties-label" id="props-color-label">สีตัวอักษร</span>
+            <div className="flex items-center gap-2 mt-1" role="group" aria-labelledby="props-color-label">
               {PRESET_COLORS.map((preset) => (
                 <button
                   key={preset.key}
@@ -223,8 +223,8 @@ export default function PropertiesPanel({
           </div>
         </div>
 
-        <label className="properties-label">การจัดตัวหนังสือ (แนวนอน)</label>
-        <div className="properties-align-group">
+        <span className="properties-label" id="props-halign-label">การจัดตัวหนังสือ (แนวนอน)</span>
+        <div className="properties-align-group" role="group" aria-labelledby="props-halign-label">
           {ALIGN_OPTIONS.map((opt) => (
             <button
               key={opt.key}
@@ -239,8 +239,8 @@ export default function PropertiesPanel({
           ))}
         </div>
 
-        <label className="properties-label" style={{ marginTop: 16 }}>การจัดตัวหนังสือ (แนวตั้ง)</label>
-        <div className="properties-align-group">
+        <span className="properties-label" id="props-valign-label" style={{ marginTop: 16 }}>การจัดตัวหนังสือ (แนวตั้ง)</span>
+        <div className="properties-align-group" role="group" aria-labelledby="props-valign-label">
           {VALIGN_OPTIONS.map((opt) => (
             <button
               key={opt.key}

@@ -641,7 +641,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
 
   if (!hasDocument) {
     return (
-      <div
+      <div role="presentation"
         ref={canvasAreaRef}
         className="canvas-area canvas-empty"
         onDragOver={(e) => e.preventDefault()}
@@ -673,7 +673,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   const newlyInsertedImageKeys = [...pendingImageKeys].filter((key) => !knownImageXrefKeys.has(key));
 
   return (
-    <div
+    <div role="presentation"
       ref={canvasAreaRef}
       className={`canvas-area ${activeTool === "hand" ? "tool-hand" : ""} ${isPanning ? "panning" : ""} ${imageDragOver ? "image-drop-target" : ""}`}
       onDragOver={handleDragOver}
@@ -697,7 +697,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
         }
         left = Math.min(vw - LOUPE - 8, Math.max(8, left));
         return (
-          <canvas ref={loupeCanvasRef} data-testid="text-loupe" aria-hidden="true"
+          <canvas ref={loupeCanvasRef} data-testid="text-loupe" role="presentation"
             className="fixed z-[150] rounded-full border-2 border-white shadow-xl pointer-events-none"
             style={{ width: LOUPE, height: LOUPE, left, top }} />
         );
@@ -713,7 +713,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
           onZoomOriginal={onZoomOriginal}
         />
       )}
-      <div
+      <div role="presentation"
         className={`page-sheet ${activeTool ? `tool-${activeTool}` : ""}`}
         onClick={handleClick}
         onPointerDown={handlePageMouseDown}
@@ -854,7 +854,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
               if (pending) {
                 if (!pending.text || pending.text.trim() === "") {
                   return (
-                    <div
+                    <div role="presentation"
                       key={block.block_id}
                       className="deleted-mask"
                       style={{
@@ -930,7 +930,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
               }
               if (editMode !== "text") return null;
               return (
-                <div
+                <div role="presentation"
                   key={block.block_id}
                   className="edit-box edit-box-text"
                   style={{
@@ -1003,7 +1003,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
               if (pending) {
                 if (pending.deleted) {
                   return (
-                    <div
+                    <div role="presentation"
                       key={key}
                       className="image-edit-original-mask deleted-mask"
                       style={{
@@ -1074,7 +1074,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                         }}
                       />
                     )}
-                    <div
+                    <div role="presentation"
                       className="edit-box-active image-edit-box-preview edit-box-preview-pending"
                       style={{
                         left: pending.rect.x0 * zoom,
@@ -1097,7 +1097,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
               }
               if (editMode !== "image") return null;
               return (
-                <div
+                <div role="presentation"
                   key={key}
                   className="edit-box edit-box-image"
                   style={{
@@ -1122,7 +1122,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
               const pending = pendingImageEditsForPage[key];
               if (!pending || pending.deleted) return null;
               return (
-                <div
+                <div role="presentation"
                   key={key}
                   className="edit-box-active image-edit-box-preview edit-box-preview-pending"
                   style={{

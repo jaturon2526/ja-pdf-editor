@@ -52,12 +52,10 @@ function CompressForm({ file, submitting, initial, onSubmit, onCancel }) {
       <fieldset className="space-y-2" disabled={submitting}>
         <legend className="sr-only">ระดับการบีบอัด</legend>
         {COMPRESS_PROFILES.map((p) => (
-          <label key={p.value} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${profile === p.value ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
-            <input type="radio" name="compress-profile" className="mt-0.5" value={p.value} checked={profile === p.value} onChange={() => setProfile(p.value)} />
-            <span>
-              <span className="block font-medium text-gray-900">{p.label}</span>
-              <span className="block text-xs text-gray-500">{p.hint}</span>
-            </span>
+          <label key={p.value} className={`grid grid-cols-[auto_1fr] gap-x-3 items-start p-3 rounded-lg border cursor-pointer ${profile === p.value ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
+            <input type="radio" name="compress-profile" className="mt-0.5 row-span-2" value={p.value} checked={profile === p.value} onChange={() => setProfile(p.value)} />
+            <span className="block font-medium text-gray-900">{p.label}</span>
+            <span className="block text-xs text-gray-500">{p.hint}</span>
           </label>
         ))}
       </fieldset>
@@ -210,7 +208,7 @@ export default function QuickFileAction({ action, files, initialFile = null, onC
   const [filePassword, setFilePassword] = useState(null); // รหัสผ่านที่ใช้สแกนผ่านแล้ว (pdpa)
 
   useEffect(() => {
-    if (initialFile) choose(initialFile);
+    if (initialFile) void choose(initialFile);
     // เริ่มครั้งเดียว
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -234,7 +232,7 @@ export default function QuickFileAction({ action, files, initialFile = null, onC
   }
 
   function proceed(f = file) {
-    if (action === "pdpa") runScan(f, null);
+    if (action === "pdpa") void runScan(f, null);
     else setStep("form");
   }
 

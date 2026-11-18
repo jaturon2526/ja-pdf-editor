@@ -175,7 +175,7 @@ export default function EditableTextBox({
 
   if (readOnly) {
     return (
-      <div
+      <div role="presentation"
         className={`edit-box-active edit-box-preview ${pending ? "edit-box-preview-pending" : ""}`}
         style={boxStyle}
         onClick={(e) => {
@@ -192,7 +192,7 @@ export default function EditableTextBox({
   }
 
   return (
-    <div className="edit-box-active" style={boxStyle} onClick={(e) => e.stopPropagation()}>
+    <div role="presentation" className="edit-box-active" style={boxStyle} onClick={(e) => e.stopPropagation()}>
       <button
         className="absolute -bottom-[22px] left-1/2 -translate-x-1/2 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow z-10 cursor-pointer"
         title="ลบกล่องข้อความนี้ (Ctrl + Delete)"
@@ -220,6 +220,10 @@ export default function EditableTextBox({
       <div
         ref={textRef}
         className="edit-inline-text"
+        role="textbox"
+        aria-multiline="true"
+        aria-label="แก้ไขข้อความ"
+        tabIndex={0}
         contentEditable
         suppressContentEditableWarning
         style={textStyle}

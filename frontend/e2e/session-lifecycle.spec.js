@@ -4,7 +4,7 @@ import { login, uploadSample } from "./helpers.js";
 
 async function infoStatus(page, sid) {
   return page.evaluate(async (id) => {
-    const r = await fetch(`/api/pdf/${id}/info`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
+    const r = await fetch(`/api/pdf/${id}/info`);
     return r.status;
   }, sid);
 }

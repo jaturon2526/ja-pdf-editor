@@ -29,15 +29,15 @@ export default function AdminDashboard() {
         const userData = await getMe();
         setUser(userData);
         if (!userData.is_admin) {
-          navigate("/dashboard");
+          void navigate("/dashboard");
           return;
         }
-        fetchData();
+        void fetchData();
       } catch (err) {
-        navigate("/");
+        void navigate("/");
       }
     }
-    init();
+    void init();
   }, [navigate]); // navigate คงที่ตลอดอายุ component — รันครั้งเดียวตอนเปิดหน้า
 
   async function fetchData(showLoading = true) {
@@ -61,7 +61,7 @@ export default function AdminDashboard() {
   const handleSavePlanConfig = async (e, planType, maxSessions, maxStorageMb) => {
     e.preventDefault();
     try {
-      await updateAdminPlanConfig(planType, parseInt(maxSessions), parseInt(maxStorageMb));
+      await updateAdminPlanConfig(planType, Number.parseInt(maxSessions, 10), Number.parseInt(maxStorageMb, 10));
       await fetchData(false);
       setSuccessMessage(`บันทึกแพ็กเกจ ${planType.toUpperCase()} เรียบร้อยแล้ว`);
       setTimeout(() => setSuccessMessage(""), 3000);
@@ -76,7 +76,7 @@ export default function AdminDashboard() {
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   }
 
   async function handleToggleStatus(u) {
@@ -84,7 +84,7 @@ export default function AdminDashboard() {
     setUsers(users.map(x => x.id === u.id ? { ...x, is_active: !x.is_active } : x));
     try {
       await updateAdminUserStatus(u.id, !u.is_active, u.is_admin);
-      fetchData(false); // Sync in background to prevent UI unmount
+      void fetchData(false); // Sync in background to prevent UI unmount
     } catch (e) {
       console.error("Failed to toggle status", e);
       // Revert if failed
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
     try {
       await updateAdminUserPlan(editingUser.id, editPlan);
       setEditingUser(null);
-      fetchData(false); // Sync in background
+      void fetchData(false); // Sync in background
     } catch (err) {
       setError(`บันทึกแพ็กเกจไม่สำเร็จ: ${err.message}`); // เดิมเก็บใน errorMsg ซึ่งไม่ได้แสดงบนหน้าจอ
     }
@@ -349,12 +349,12 @@ export default function AdminDashboard() {
                   </div>
                   <div className="flex-1 flex items-center justify-end gap-6">
                     <div className="flex items-center gap-2">
-                      <label className="text-sm text-gray-600">Sessions:</label>
-                      <input name="max_sessions" type="number" defaultValue={p.max_sessions} min="1" className="w-16 px-2 py-1 border rounded text-center text-sm" />
+                      <label htmlFor={`plan-${p.plan_type}-max_sessions`} className="text-sm text-gray-600">Sessions:</label>
+                      <input id={`plan-${p.plan_type}-max_sessions`} name="max_sessions" type="number" defaultValue={p.max_sessions} min="1" className="w-16 px-2 py-1 border rounded text-center text-sm" />
                     </div>
                     <div className="flex items-center gap-2">
-                      <label className="text-sm text-gray-600">Disk (MB):</label>
-                      <input name="max_storage_mb" type="number" defaultValue={p.max_storage_mb} min="1" className="w-24 px-2 py-1 border rounded text-center text-sm" />
+                      <label htmlFor={`plan-${p.plan_type}-max_storage_mb`} className="text-sm text-gray-600">Disk (MB):</label>
+                      <input id={`plan-${p.plan_type}-max_storage_mb`} name="max_storage_mb" type="number" defaultValue={p.max_storage_mb} min="1" className="w-24 px-2 py-1 border rounded text-center text-sm" />
                     </div>
                     <button type="submit" className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 ml-2">อัปเดต</button>
                   </div>

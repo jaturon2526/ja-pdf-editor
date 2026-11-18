@@ -41,10 +41,10 @@ export default function ForgotPassword() {
             {error && <div className="text-red-500 text-sm bg-red-50 p-2 rounded">{error}</div>}
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="forgotpassword-f44" className="block text-sm font-medium text-gray-700 mb-1">
                 อีเมลที่ใช้สมัครสมาชิก
               </label>
-              <input
+              <input id="forgotpassword-f44"
                 type="email"
                 required
                 value={email}

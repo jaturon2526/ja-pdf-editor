@@ -108,7 +108,7 @@ export default function ScanPage() {
       } else {
         setScreen("camera");
       }
-    });
+    }).catch(() => setScreen("camera"));
     return () => {
       engine.terminate();
       stopStream(camRef.current?.stream);
@@ -144,7 +144,7 @@ export default function ScanPage() {
   useEffect(() => {
     if (screen !== "camera") return undefined;
     let cancelled = false;
-    (async () => {
+    void (async () => {
       if (!cameraSupported()) {
         setCameraError(isInAppBrowser()
           ? "เบราว์เซอร์ในแอปนี้เปิดกล้องไม่ได้ — กด ⋯ แล้วเลือก \"เปิดใน Safari/Chrome\" หรือใช้ปุ่ม กล้องของเครื่อง"
@@ -267,7 +267,7 @@ export default function ScanPage() {
   }
 
   function commitPage(page, isNew) {
-    savePage({ id: page.id, order: page.order, createdAt: page.createdAt, source: page.source, corners: page.corners, rotation: page.rotation });
+    void savePage({ id: page.id, order: page.order, createdAt: page.createdAt, source: page.source, corners: page.corners, rotation: page.rotation });
     if (isNew) {
       if (!startedAtRef.current) {
         startedAtRef.current = new Date();
@@ -306,7 +306,7 @@ export default function ScanPage() {
   useEffect(() => {
     if (screen !== "review" || !engineReady) return undefined;
     let cancelled = false;
-    (async () => {
+    void (async () => {
       for (const p of pages) {
         if (cancelled) return;
         const key = `${mode}|${strength}|${p.rotation}`;
@@ -330,7 +330,7 @@ export default function ScanPage() {
       const j = index + delta;
       if (j < 0 || j >= next.length) return ps;
       [next[index], next[j]] = [next[j], next[index]];
-      next.forEach((p, k) => { p.order = k; savePage({ id: p.id, order: k, createdAt: p.createdAt, source: p.source, corners: p.corners, rotation: p.rotation }); });
+      next.forEach((p, k) => { p.order = k; void savePage({ id: p.id, order: k, createdAt: p.createdAt, source: p.source, corners: p.corners, rotation: p.rotation }); });
       return next;
     });
   }
@@ -341,7 +341,7 @@ export default function ScanPage() {
       if (p) { URL.revokeObjectURL(p.sourceUrl); if (p.thumbUrl) URL.revokeObjectURL(p.thumbUrl); }
       return ps.filter((x) => x.id !== id);
     });
-    deletePage(id);
+    void deletePage(id);
   }
 
   function editPage(p) {
@@ -406,7 +406,7 @@ export default function ScanPage() {
   async function openResult() {
     try {
       const res = await openFile(result.session_id);
-      navigate(`/editor/${res.session_id}`);
+      void navigate(`/editor/${res.session_id}`);
     } catch (e) {
       setError(e.message);
     }
@@ -414,7 +414,7 @@ export default function ScanPage() {
 
   function exitScan() {
     if (pages.length && screen !== "done" && !window.confirm("ออกจากหน้าสแกน? หน้าที่ถ่ายไว้ยังเก็บในเครื่อง กลับมาสแกนต่อได้")) return;
-    navigate("/dashboard");
+    void navigate("/dashboard");
   }
 
   // ---------- หน้าจอ ----------

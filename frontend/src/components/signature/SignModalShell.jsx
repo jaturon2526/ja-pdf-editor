@@ -10,7 +10,7 @@ export default function SignModalShell({ title, subtitle, icon, onCancel, footer
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-stretch sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-6 short:p-0" onClick={onCancel}>
+    <div role="presentation" className="fixed inset-0 z-[100] flex items-stretch sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-6 short:p-0" onClick={onCancel}>
       <div
         role="dialog"
         aria-modal="true"

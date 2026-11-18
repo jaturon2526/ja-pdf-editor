@@ -199,7 +199,7 @@ export default function DonationsPanel() {
                           )}
                           <button type="button" onClick={() => {
                             const note = window.prompt("เหตุผล (ผู้แจ้งจะเห็น) เช่น ไม่พบยอดเข้า", "ไม่พบยอดเข้าบัญชี");
-                            if (note !== null) act(() => rejectDonation(d.id, note));
+                            if (note !== null) void act(() => rejectDonation(d.id, note));
                           }} className="text-red-600 hover:underline">ปฏิเสธ</button>
                         </>
                       )}
@@ -217,7 +217,7 @@ export default function DonationsPanel() {
         </div>
       )}
       {slip && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setSlip(null)}>
+        <div role="presentation" className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setSlip(null)}>
           <img src={slip.url} alt="สลิป" className="max-h-[90vh] max-w-full rounded-lg bg-white" />
         </div>
       )}

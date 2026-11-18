@@ -14,11 +14,13 @@ Anthropic/OpenAI เรียกผ่าน HTTP ตรง (urllib) ไม่�
 from __future__ import annotations
 
 import base64
+import http.client
 import io
 import ipaddress
 import json
 import logging
 import socket
+import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -155,14 +157,36 @@ def validate_base_url(url: str, *, personal: bool) -> str:
     if parsed.scheme != "https":
         raise ValueError("URL ของ API ต้องเป็น https://")
     try:
-        infos = socket.getaddrinfo(host, parsed.port or 443, proto=socket.IPPROTO_TCP)
-    except socket.gaierror:
-        raise ValueError(f"หาเซิร์ฟเวอร์ {host} ไม่เจอ") from None
-    for info in infos:
-        ip = ipaddress.ip_address(info[4][0])
-        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
-            raise ValueError(f"{host} อยู่ในเครือข่ายภายใน — ให้ผู้ดูแลเพิ่มใน AI_PRIVATE_HOSTS ก่อน")
+        _public_addresses(host, parsed.port or 443)
+    except _BlockedAddress as exc:
+        raise ValueError(str(exc)) from None
     return url
+
+
+class _BlockedAddress(OSError):
+    """โฮสต์หาไม่เจอ หรือชี้เข้าเครือข่ายภายใน — เป็น OSError เพื่อให้ urllib ห่อเป็น URLError ตามปกติ"""
+
+
+def _public_addresses(host: str, port: int) -> list[tuple]:
+    """resolve ครั้งเดียว ตรวจว่าทุก IP เป็นเครือข่ายสาธารณะ — คืน sockaddr ที่ตรวจแล้วไว้เชื่อมต่อตรง (กัน DNS rebinding)"""
+    try:
+        infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM, proto=socket.IPPROTO_TCP)
+    except socket.gaierror:
+        raise _BlockedAddress(f"หาเซิร์ฟเวอร์ {host} ไม่เจอ") from None
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0].split("%", 1)[0])
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+            raise _BlockedAddress(f"{host} อยู่ในเครือข่ายภายใน — ให้ผู้ดูแลเพิ่มใน AI_PRIVATE_HOSTS ก่อน")
+    return [(info[0], info[4]) for info in infos]
+
+
+def _needs_pinning(cfg: AIConfig) -> bool:
+    """URL ของผู้ใช้ (ไม่ใช่โฮสต์ใน AI_PRIVATE_HOSTS) → เชื่อมต่อเฉพาะ IP ที่ตรวจแล้ว"""
+    if cfg.source != "personal" or not cfg.base_url or cfg.provider == "gemini":
+        return False
+    host = (urllib.parse.urlparse(cfg.base_url).hostname or "").lower()
+    allowed = {h.strip().lower() for h in (settings.AI_PRIVATE_HOSTS or "").split(",") if h.strip()}
+    return host not in allowed
 
 
 # ---------------------------------------------------------------- เรียกใช้
@@ -232,13 +256,43 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-_opener = urllib.request.build_opener(_NoRedirect)
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """resolve + ตรวจ IP แล้วต่อ socket ไปที่ IP นั้นเลย (TLS ยังตรวจใบรับรองกับชื่อโฮสต์เดิม) — DNS เปลี่ยนคำตอบระหว่าง
+    ตรวจกับเชื่อมต่อไม่ได้ (SEC-08) · ผ่าน proxy (HTTPS_PROXY): proxy เป็นคนออกเน็ต ใช้การเชื่อมต่อปกติ"""
+
+    def connect(self):
+        if self._tunnel_host:
+            return super().connect()
+        last: Optional[OSError] = None
+        for family, sockaddr in _public_addresses(self.host, self.port):
+            sock = socket.socket(family, socket.SOCK_STREAM)
+            try:
+                if self.timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
+                    sock.settimeout(self.timeout)
+                sock.connect(sockaddr)
+            except OSError as exc:
+                sock.close()
+                last = exc
+                continue
+            self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+            return None
+        raise last or _BlockedAddress(f"เชื่อมต่อ {self.host} ไม่ได้")
 
 
-def _post_json(url: str, headers: dict, body: dict) -> dict:
+class _PinningHTTPSHandler(urllib.request.HTTPSHandler):
+    def https_open(self, req):
+        conn = _PinnedHTTPSConnection if getattr(req, "pin_public", False) else http.client.HTTPSConnection
+        return self.do_open(conn, req, context=self._context)
+
+
+_opener = urllib.request.build_opener(_NoRedirect, _PinningHTTPSHandler(context=ssl.create_default_context()))
+
+
+def _post_json(url: str, headers: dict, body: dict, *, pin_public: bool = False) -> dict:
     data = json.dumps(body).encode("utf-8")
     req = urllib.request.Request(url, data=data, method="POST",
                                  headers={"content-type": "application/json", "accept": "application/json", **headers})
+    req.pin_public = pin_public
     try:
         with _opener.open(req, timeout=REQUEST_TIMEOUT) as resp:  # noqa: S310 (URL ตรวจแล้ว)
             return json.loads(resp.read().decode("utf-8") or "{}")
@@ -263,7 +317,8 @@ def _anthropic(cfg: AIConfig, model: str, prompt: str, image: Any, max_tokens: i
     base = (cfg.base_url or ANTHROPIC_BASE).rstrip("/")
     url = base + ("/messages" if base.endswith("/v1") else "/v1/messages")
     data = _post_json(url, {"x-api-key": cfg.api_key, "anthropic-version": ANTHROPIC_VERSION},
-                      {"model": model, "max_tokens": max_tokens, "messages": [{"role": "user", "content": content}]})
+                      {"model": model, "max_tokens": max_tokens, "messages": [{"role": "user", "content": content}]},
+                      pin_public=_needs_pinning(cfg))
     parts = [b.get("text", "") for b in data.get("content", []) if isinstance(b, dict) and b.get("type") == "text"]
     return "".join(parts).strip()
 
@@ -281,14 +336,14 @@ def _openai(cfg: AIConfig, model: str, prompt: str, image: Any, max_tokens: int)
         headers = {"authorization": f"Bearer {cfg.api_key}", "api-key": cfg.api_key}
     body = {"model": model, "max_tokens": max_tokens, "messages": [{"role": "user", "content": content}]}
     try:
-        data = _post_json(url, headers, body)
+        data = _post_json(url, headers, body, pin_public=_needs_pinning(cfg))
     except AIError as exc:
         # รุ่นใหม่ของ OpenAI/Azure ไม่รับ max_tokens (ต้องใช้ max_completion_tokens) — ลองอีกครั้ง
         if exc.status != 400 or "max_tokens" not in str(exc):
             raise
         body.pop("max_tokens")
         body["max_completion_tokens"] = max_tokens
-        data = _post_json(url, headers, body)
+        data = _post_json(url, headers, body, pin_public=_needs_pinning(cfg))
     choices = data.get("choices") or []
     if not choices:
         return ""

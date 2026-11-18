@@ -37,8 +37,8 @@ JA PDF Editor เผยแพร่ภายใต้ **GNU Affero General Publi
 | SQLAlchemy, Alembic | ORM, migrations | MIT |
 | psycopg 3 | PostgreSQL driver | LGPL-3.0 |
 | redis-py | Redis client | MIT |
-| passlib, bcrypt | hash รหัสผ่าน | BSD / Apache-2.0 |
-| python-jose | JWT | MIT |
+| bcrypt | hash รหัสผ่าน | Apache-2.0 |
+| PyJWT | JWT | MIT |
 | email-validator | ตรวจอีเมล | Unlicense |
 | google-genai, google-auth | Gemini SDK, Google Sign-In | Apache-2.0 |
 | tzdata | ฐานข้อมูลเขตเวลา | Apache-2.0 |

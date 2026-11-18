@@ -125,3 +125,16 @@ def test_identical_files_and_cleanup(client, make_user, monkeypatch):
     os.utime(folder, (old, old))
     assert routes_compare.cleanup_old_tasks() >= 1 and not folder.exists()
     assert client.get(f"/compare/{task_id}", headers=h).status_code == 404
+
+
+def test_page_zoom_is_quantized_so_cache_stays_small(client, make_user):
+    """SEC-06: ค่า zoom ถูกปัดเป็นขั้น 0.25 ในช่วง 0.5–3.0 — ขอหลายค่าก็ไม่สร้างไฟล์ cache เพิ่มไม่จำกัด"""
+    from app.api.routes_compare import task_dir
+
+    _, h = make_user()
+    task_id, _ = _run(client, h, files={"a_upload": ("v1.pdf", _pdf(["ก"]), "application/pdf"),
+                                        "b_upload": ("v2.pdf", _pdf(["ข"]), "application/pdf")})
+    for z in ["0.01", "0.33", "0.37", "1.49", "1.51", "3.9", "100", "nan"]:
+        assert client.get(f"/compare/{task_id}/page/a/0?zoom={z}", headers=h).status_code == 200
+    names = sorted(p.name for p in task_dir(task_id).glob("a-0-*.jpg"))
+    assert names == ["a-0-0.50.jpg", "a-0-1.50.jpg", "a-0-3.00.jpg"]

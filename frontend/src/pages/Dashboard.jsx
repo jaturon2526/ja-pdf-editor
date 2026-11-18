@@ -4,6 +4,7 @@ import useWordConversion from '../hooks/useWordConversion.jsx';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPublicConfig } from '../api/config.js';
+import { clearLocalSession } from '../api/client.js';
 import { getMyFiles, getMe, uploadPdf, openFile, unlockPdf, closeSession, deleteFile, renameFile, getAiQuota, logout } from '../api';
 import AppBrand from "../components/AppBrand.jsx";
 import UserAvatar from "../components/UserAvatar.jsx";
@@ -94,7 +95,7 @@ export default function Dashboard() {
   };
   const handleFileClick = (f) => {
     if (selectMode) toggleSelect(f.id);
-    else handleOpenFile(f.session_id);
+    else void handleOpenFile(f.session_id);
   };
 
   // Esc ออกจากโหมดเลือก (ยกเว้นตอนหน้าต่างยืนยันการลบเปิดอยู่)
@@ -209,13 +210,13 @@ export default function Dashboard() {
         } catch (e) { console.error(e) }
       } catch (err) {
         if (err.message && err.message.includes("401")) {
-           handleLogout();
+           void handleLogout();
         }
       } finally {
         setLoading(false);
       }
     }
-    loadData();
+    void loadData();
     // โหลดครั้งเดียวตอนเปิดหน้า — handleLogout เป็นฟังก์ชันที่สร้างใหม่ทุก render ถ้าใส่ใน deps จะโหลดซ้ำไม่หยุด
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -300,9 +301,13 @@ export default function Dashboard() {
   }
 
   async function handleLogout() {
-    await logout();
-    localStorage.removeItem("token");
-    navigate("/");
+    try {
+      await logout();
+    } catch (e) {
+      console.warn("logout request failed — clearing local session anyway", e);
+    }
+    clearLocalSession(); // logout() ลบให้แล้ว — กันกรณี throw ก่อนถึง finally
+    void navigate("/");
   }
   
   async function handleNewProject(e) {
@@ -319,7 +324,7 @@ export default function Dashboard() {
         setUploading(false);
         return;
       }
-      navigate(`/editor/${data.session_id}`);
+      void navigate(`/editor/${data.session_id}`);
     } catch (err) {
       setMessage({ type: 'error', text: "อัปโหลดไม่สำเร็จ: " + err.message });
       setUploading(false);
@@ -335,7 +340,7 @@ export default function Dashboard() {
         setPasswordState({ sessionId: data.session_id, filename: data.filename, error: null, submitting: false });
         return;
       }
-      navigate(`/editor/${data.session_id}`);
+      void navigate(`/editor/${data.session_id}`);
     } catch (err) {
       setMessage({ type: 'error', text: "ไม่สามารถเปิดไฟล์ได้: " + err.message });
     }
@@ -352,7 +357,7 @@ export default function Dashboard() {
       }
       const sessionId = passwordState.sessionId;
       setPasswordState(null);
-      navigate(`/editor/${sessionId}`);
+      void navigate(`/editor/${sessionId}`);
     } catch (err) {
       setPasswordState((s) => ({ ...s, submitting: false, error: err.message }));
     }
@@ -421,10 +426,10 @@ export default function Dashboard() {
     const input = e.target;
     const picked = Array.from(input.files || []);
     if (picked.length > 1) {
-      handleUploadMany(picked).finally(() => { input.value = ""; });
+      void handleUploadMany(picked).finally(() => { input.value = ""; });
       return;
     }
-    handleNewProject(e); // ไฟล์เดียว: อัปโหลดแล้วเปิดใน Editor เหมือนเดิม
+    void handleNewProject(e); // ไฟล์เดียว: อัปโหลดแล้วเปิดใน Editor เหมือนเดิม
   }
 
   function hasFiles(e) {
@@ -459,11 +464,11 @@ export default function Dashboard() {
     e.stopPropagation();
     dragDepth.current = 0;
     setIsDragging(false);
-    handleUploadMany(e.dataTransfer.files);
+    void handleUploadMany(e.dataTransfer.files);
   }
 
   return (
-    <div 
+    <div role="presentation" 
       className="min-h-screen bg-gray-50 relative" onClick={closeContextMenu}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
@@ -518,28 +523,28 @@ export default function Dashboard() {
                         {user.display_name && <p className="text-xs text-gray-500 truncate mt-0.5">{user.email}</p>}
                         <p className="text-xs text-blue-600 mt-1 font-medium uppercase tracking-wider">Plan: {user.plan_type}{user.plan_type !== "free" && user.expire_date ? ` · ถึง ${new Date(user.expire_date).toLocaleDateString("th-TH", { dateStyle: "medium" })}` : ""}</p>
                       </div>
-                      <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/profile"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                      <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/profile"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
                         โปรไฟล์ส่วนตัว
                       </a>
-                      {donationsOn && !user.is_admin && <a href="#" data-testid="menu-support" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/support"); }} className="block px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 transition-colors">
+                      {donationsOn && !user.is_admin && <a href="#" data-testid="menu-support" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/support"); }} className="block px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 transition-colors">
                         ☕ สนับสนุนผู้พัฒนา
                       </a>}
-                      <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/security"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                      <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/security"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
                         ความปลอดภัย
                       </a>
                       {/* ไม่มี AI ของระบบและไม่เปิดให้ใช้ key ส่วนตัว = ไม่มีอะไรให้ตั้ง → ซ่อนเมนู */}
                       {(aiQuota?.system_ai || aiQuota?.user_keys_enabled) && (
-                        <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/ai-config"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                        <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/ai-config"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
                           ตั้งค่า AI (API Key)
                         </a>
                       )}
                       {user.is_admin && (
-                        <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); navigate("/admin"); }} className="block px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition-colors font-medium">
+                        <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/admin"); }} className="block px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition-colors font-medium">
                           จัดการระบบ (Admin)
                         </a>
                       )}
                       <div className="border-t border-gray-100"></div>
-                      <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }} className="block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 font-medium transition-colors">
+                      <a href="#" onClick={(e) => { e.preventDefault(); void handleLogout(); }} className="block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 font-medium transition-colors">
                         ออกจากระบบ
                       </a>
                     </div>
@@ -831,12 +836,21 @@ export default function Dashboard() {
             {viewMode === 'grid' ? (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredFiles.map(f => (
-                  <div 
-                    key={f.id} 
+                  <div
+                    key={f.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={f.filename}
+                    aria-pressed={selectMode ? selectedIds.has(f.id) : undefined}
                     onClick={() => handleFileClick(f)}
+                    onKeyDown={(e) => {
+                      if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        handleFileClick(f);
+                      }
+                    }}
                     onContextMenu={(e) => handleContextMenu(e, f)}
                     data-testid="file-card"
-                    aria-selected={selectMode ? selectedIds.has(f.id) : undefined}
                     className={`relative bg-white overflow-hidden shadow-sm rounded-xl border transition-all cursor-pointer group flex flex-col ${selectMode && selectedIds.has(f.id) ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:shadow-lg hover:border-blue-300'}`}
                   >
                     {selectMode && (
@@ -986,7 +1000,7 @@ export default function Dashboard() {
             title="เลือกเอกสารที่จะส่งให้ลงนาม"
             files={files}
             onCancel={() => setShowSignChooser(false)}
-            onChoose={(f) => { setShowSignChooser(false); navigate(`/signing/new?file=${f.id}`); }}
+            onChoose={(f) => { setShowSignChooser(false); void navigate(`/signing/new?file=${f.id}`); }}
           />
         )}
 
@@ -1029,7 +1043,7 @@ export default function Dashboard() {
           documents={files}
           onClose={() => setShowMergeModal(false)}
           onMerged={async (res) => {
-            navigate(`/editor/${res.session_id}`);
+            void navigate(`/editor/${res.session_id}`);
           }}
         />
       )}
@@ -1051,6 +1065,7 @@ export default function Dashboard() {
       {contextMenu && (
         <div 
           role="menu"
+          tabIndex={-1}
           className="absolute bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-1 w-[190px] animate-in fade-in zoom-in-95 duration-100"
           style={{ top: contextMenu.mouseY, left: contextMenu.mouseX }}
           onClick={(e) => e.stopPropagation()}
@@ -1070,7 +1085,7 @@ export default function Dashboard() {
             role="menuitem"
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600 flex items-center gap-2"
             onClick={() => {
-              handleDownloadFile(contextMenu.file);
+              void handleDownloadFile(contextMenu.file);
               closeContextMenu();
             }}
           >
@@ -1092,7 +1107,7 @@ export default function Dashboard() {
             role="menuitem"
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-emerald-600 flex items-center gap-2"
             onClick={() => {
-              navigate(`/signing/new?file=${contextMenu.file.id}`);
+              void navigate(`/signing/new?file=${contextMenu.file.id}`);
               closeContextMenu();
             }}
           >

@@ -153,6 +153,27 @@ def delete_account(db: Session, user: User, client: ClientInfo) -> dict:
     return {**info, **counts}
 
 
+def claim_unverified_account(user: User) -> bool:
+    """ยืนยันอีเมลผ่านผู้ให้บริการภายนอก (Google / LINE) ให้บัญชีที่ยังไม่ยืนยัน — คืน True ถ้าบัญชีถูก "ยึดคืน"
+
+    กันการยึดบัญชีล่วงหน้า (pre-account takeover): คนอื่นอาจสมัครด้วยอีเมลของเราแล้วตั้งรหัสผ่านไว้ก่อน
+    (ยัง login ไม่ได้เพราะยังไม่ยืนยันอีเมล) — พอเจ้าของอีเมลตัวจริงเข้าระบบด้วย Google/LINE จึงต้องล้างรหัสผ่านเดิม
+    ทิ้งเป็นค่าสุ่ม และตัดทุก session ก่อน ไม่อย่างนั้นรหัสผ่านของผู้สมัครคนก่อนจะใช้เข้าบัญชีได้ทันที
+    (เจ้าของตัวจริงอยากใช้รหัสผ่าน → "ลืมรหัสผ่าน") · caller เป็นคน commit"""
+    if user.is_verified:
+        return False
+    import secrets
+
+    from app.core.auth_session import auth_session_manager
+    from app.core.security import get_password_hash
+
+    user.hashed_password = get_password_hash(secrets.token_urlsafe(32))
+    user.is_verified = True
+    auth_session_manager.revoke_all(user.id)
+    logger.info("ยืนยันบัญชี %s ผ่านผู้ให้บริการภายนอก — ล้างรหัสผ่านที่ตั้งไว้ก่อนยืนยัน", user.id)
+    return True
+
+
 def grants_initial_admin(db: Session, email: str) -> bool:
     """ผู้ใช้ใหม่คนนี้ควรเป็นผู้ดูแลระบบอัตโนมัติไหม — INITIAL_ADMIN_EMAILS ตั้งไว้: เฉพาะอีเมลในรายการ
     ไม่ตั้ง: ผู้ใช้คนแรกของระบบ (พฤติกรรมเดิม — เว็บเปิดสาธารณะแล้วคนนอกสมัครก่อนจะได้สิทธิ์ผู้ดูแล)"""

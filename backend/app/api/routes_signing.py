@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.deps import client_ip, get_current_active_user
+from app.core import ratelimit
 from app.db.database import get_db
 from app.models.domain import Notification, SigningEvent, User
 from app.services import signing_pdf, signing_service
@@ -59,9 +60,22 @@ class RejectPayload(BaseModel):
     reason: str = Field(min_length=1, max_length=2000)
 
 
+LOOKUP_WINDOW = 10 * 60
+LOOKUP_MAX_PER_USER = 40
+LOOKUP_MAX_PER_IP = 120
+_LOOKUP_MSG = "ค้นหาผู้ลงนามบ่อยเกินไป"
+
+
 @router.get("/users/lookup")
-def lookup_user(email: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
-    """หาผู้ลงนามด้วยอีเมล (ตรงทั้งหมดเท่านั้น — ไม่เปิดให้ค้นหาบางส่วนเพื่อไม่ให้ไล่ดูรายชื่อผู้ใช้ได้)"""
+def lookup_user(email: str, request: Request, current_user: User = Depends(get_current_active_user),
+                db: Session = Depends(get_db)):
+    """หาผู้ลงนามด้วยอีเมล (ตรงทั้งหมดเท่านั้น — ไม่เปิดให้ค้นหาบางส่วนเพื่อไม่ให้ไล่ดูรายชื่อผู้ใช้ได้)
+    จำกัดความถี่ต่อผู้ใช้และต่อ IP กันไล่เดาอีเมลเพื่อเก็บรายชื่อผู้ใช้ (SEC-07)"""
+    ip = ratelimit.client_ip(request)
+    ratelimit.ensure_below("signer-lookup-user", str(current_user.id), LOOKUP_MAX_PER_USER, _LOOKUP_MSG)
+    ratelimit.ensure_below("signer-lookup-ip", ip, LOOKUP_MAX_PER_IP, _LOOKUP_MSG)
+    ratelimit.hit("signer-lookup-user", str(current_user.id), LOOKUP_WINDOW)
+    ratelimit.hit("signer-lookup-ip", ip, LOOKUP_WINDOW)
     user = signing_service.find_signer(db, email)
     if user is None:
         raise HTTPException(status_code=404, detail="ไม่พบผู้ใช้อีเมลนี้ในระบบ (หรือยังไม่ได้ยืนยันอีเมล)")

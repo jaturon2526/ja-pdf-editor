@@ -91,7 +91,7 @@ export default function WatermarkModal({ onClose, onSubmit, fileName = null, sub
     `px-2.5 py-1 min-h-[32px] text-xs rounded-full border ${active ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`;
 
   return (
-    <div
+    <div role="presentation"
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
       onMouseDown={(e) => e.target === e.currentTarget && !submitting && onClose()}
     >

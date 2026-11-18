@@ -50,7 +50,7 @@ export default function PasskeySection() {
   }
 
   useEffect(() => {
-    reload();
+    void reload();
   }, []);
 
   async function handleAdd(e) {

@@ -49,9 +49,7 @@ test("อัปโหลดไฟล์ Word → แปลงเป็น PDF �
   ]);
   await expect(page.getByText("อัปโหลดสำเร็จ 2 ไฟล์")).toBeVisible({ timeout: 90_000 });
   await expect(page.getByText(`${name}-a`, { exact: false }).first()).toBeVisible();
-  const res = await page.request.get("/api/pdf/files", {
-    headers: { Authorization: `Bearer ${await page.evaluate(() => localStorage.getItem("token"))}` },
-  });
+  const res = await page.request.get("/api/pdf/files"); // cookie ja_session แนบให้เอง
   const files = (await res.json()).files.map((f) => f.filename);
   expect(files).toContain(`${name}-a.pdf`);
   expect(files).toContain(`${name}-b.pdf`);

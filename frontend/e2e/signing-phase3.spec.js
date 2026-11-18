@@ -34,7 +34,7 @@ test("ลงนามพร้อมกัน 2 คน แล้วรอผู�
   await login(owner);
   const sessionId = await uploadSample(owner);
   const fileId = await owner.evaluate(async (sid) => {
-    const res = await fetch("/api/pdf/files", { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
+    const res = await fetch("/api/pdf/files");
     return (await res.json()).files.find((f) => f.session_id === sid).id;
   }, sessionId);
 

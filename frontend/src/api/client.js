@@ -1,33 +1,86 @@
-// ตัวกลางเรียก backend: BASE, fetchWithAuth (แนบ token + จัดการ 401), handle, ดาวน์โหลด Blob
-// Wrapper บาง ๆ คุยกับ backend (FastAPI) ทุก endpoint ที่ทำไว้ในเฟสก่อนหน้า
-// ระหว่าง dev เรียกผ่าน /api ซึ่ง vite proxy ไป http://localhost:8000 ให้ (ดู vite.config.js)
+// ตัวกลางเรียก backend: BASE, fetchWithAuth (แนบ CSRF token + จัดการ 401), handle, ดาวน์โหลด Blob
+// ระหว่าง dev เรียกผ่าน /api ซึ่ง vite proxy ไป backend ให้ (ดู vite.config.js)
+//
+// การยืนยันตัวตน (SEC-04): access token อยู่ใน HttpOnly cookie `ja_session` — JavaScript อ่านไม่ได้ เบราว์เซอร์แนบให้เอง
+// คำขอที่แก้ข้อมูลต้องส่ง cookie `ja_csrf` กลับมาใน header X-CSRF-Token (double-submit — backend app/core/auth_cookies.py)
+// "มี ja_csrf" = น่าจะ login อยู่ (ใช้เลือกลิงก์/ปุ่ม) — ตัวจริงตรวจที่ backend ทุกคำขอ
 
 export const BASE = "/api";
 
-export function getToken() {
-  return localStorage.getItem("token");
+const CSRF_COOKIE = "ja_csrf";
+const LEGACY_TOKEN_KEY = "token";
+
+// ส่งตอน login ทุกแบบ → backend ใส่ token ใน cookie แทนการส่งกลับใน body
+export const COOKIE_AUTH_HEADERS = Object.freeze({ "X-Auth-Mode": "cookie" });
+
+function readCookie(name) {
+  if (typeof document === "undefined" || !document.cookie) return "";
+  for (const part of document.cookie.split(";")) {
+    const [k, ...v] = part.trim().split("=");
+    if (k === name) return decodeURIComponent(v.join("="));
+  }
+  return "";
+}
+
+export function csrfToken() {
+  return readCookie(CSRF_COOKIE);
+}
+
+export function isLoggedIn() {
+  return Boolean(csrfToken());
+}
+
+// ลืมสถานะ login ในเครื่อง (cookie ja_session เป็น HttpOnly — ลบได้ที่ backend /auth/logout เท่านั้น)
+export function clearLocalSession() {
+  if (typeof document !== "undefined") document.cookie = `${CSRF_COOKIE}=; Max-Age=0; path=/; SameSite=Lax`;
+  try {
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+  } catch {
+    /* storage ถูกปิด */
+  }
+}
+
+// header สำหรับ fetch/XHR ที่ไม่ได้ผ่าน fetchWithAuth
+export function authHeaders(extra = {}) {
+  const headers = new Headers(extra);
+  const csrf = csrfToken();
+  if (csrf) headers.set("X-CSRF-Token", csrf);
+  return headers;
+}
+
+function redirectToLogin() {
+  clearLocalSession();
+  window.location.href = "/login?expired=1";
 }
 
 export async function fetchWithAuth(url, options = {}) {
-  const token = getToken();
-  const headers = new Headers(options.headers || {});
-  
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-  
-  const newOptions = { ...options, headers };
-  const res = await fetch(url, newOptions);
-  
+  const res = await fetch(url, { credentials: "same-origin", ...options, headers: authHeaders(options.headers || {}) });
+
   // Global 401 Interceptor
   if (res.status === 401) {
-    localStorage.removeItem("token");
-    
-    window.location.href = "/login?expired=1";
+    redirectToLogin();
     throw new Error("Unauthorized");
   }
-  
+
   return res;
+}
+
+// หน้าเว็บรุ่นก่อน v1.35.5 เก็บ token ใน localStorage — ย้ายเป็น cookie ครั้งเดียว (ผู้ใช้ไม่ต้อง login ใหม่) แล้วลบทิ้ง
+export async function migrateLegacyToken() {
+  let token;
+  try {
+    token = localStorage.getItem(LEGACY_TOKEN_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+  } catch {
+    return;
+  }
+  if (!token) return;
+  try {
+    await fetch(`${BASE}/auth/session/cookie`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+  } catch {
+    /* ออฟไลน์/หมดอายุ — ให้ login ใหม่ตามปกติ */
+  }
 }
 
 // endpoint ที่ใช้ตอนยังไม่ login (login, สมัคร, ลืมรหัสผ่าน ฯลฯ): 401 = อีเมล/รหัสผ่านผิด หรือยังไม่ยืนยันอีเมล
@@ -39,9 +92,7 @@ export async function handlePublic(res) {
 export async function handle(res, { sessionRedirect = true } = {}) {
   if (!res.ok) {
     if (res.status === 401 && sessionRedirect) {
-      localStorage.removeItem("token");
-      
-      window.location.href = "/login?expired=1";
+      redirectToLogin();
       throw new Error("Unauthorized");
     }
     let detail = res.statusText;

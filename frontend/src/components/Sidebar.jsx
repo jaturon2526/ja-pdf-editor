@@ -141,7 +141,7 @@ export default function Sidebar({
       const next = newPositions(reorderedPages(pageCount, pages, opts), pages);
       setSelectedPages(new Set(next));
       setLastClickedPage(next[0] ?? null);
-    });
+    }).catch(() => { /* ย้ายไม่สำเร็จ — แจ้ง error ที่ตัวย้ายหน้าแล้ว */ });
   }
 
   // ปิดเมนูคลิกขวาเมื่อคลิกนอกเมนู หรือกด Escape (ดู pattern เดียวกับ MenuBar.jsx)
@@ -445,7 +445,7 @@ export default function Sidebar({
   if (collapsed) {
     return (
       <>
-        {isOpenOnMobile && <div className="fixed inset-0 bg-black/20 z-10 desk:hidden" onClick={onCloseMobile} />}
+        {isOpenOnMobile && <div role="presentation" className="fixed inset-0 bg-black/20 z-10 desk:hidden" onClick={onCloseMobile} />}
         <div className={`flex flex-col bg-slate-50 border-r border-slate-200 relative shrink-0 transition-all z-20 ${isOpenOnMobile ? "absolute inset-y-0 left-0 shadow-2xl h-full" : "hidden desk:flex"}`} style={{ width: SIDEBAR_COLLAPSED_WIDTH }}>
           <button className="w-full p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors font-bold text-lg" title="ขยายแผงหน้าเอกสาร" onClick={() => setCollapsed(false)}>
             »
@@ -457,7 +457,7 @@ export default function Sidebar({
 
   return (
     <>
-      {isOpenOnMobile && <div className="fixed inset-0 bg-black/20 z-10 desk:hidden" onClick={onCloseMobile} />}
+      {isOpenOnMobile && <div role="presentation" className="fixed inset-0 bg-black/20 z-10 desk:hidden" onClick={onCloseMobile} />}
       {/* กดค้างบนมือถือ = เมนูของแอป — ปิดการเลือกข้อความ/เมนู "คัดลอก ค้นดู" ของ iOS ทั้งแผง (เดิมขึ้นซ้อนกับเมนูของแอป
           และเลือกคำว่า "บุ๊คมาร์ค" ค้างไว้) · ช่องเปลี่ยนชื่อบุ๊คมาร์คคืน select-text */}
       <div className={`flex flex-col bg-slate-50 border-r border-slate-200 relative shrink-0 transition-all z-20 select-none [-webkit-touch-callout:none] ${isOpenOnMobile ? "absolute inset-y-0 left-0 shadow-2xl h-full" : "hidden desk:flex"}`} style={{ width }} data-testid="page-sidebar">
@@ -496,7 +496,7 @@ export default function Sidebar({
 
       <div className="flex-1 overflow-y-auto bg-slate-50 p-3" ref={scrollRef}>
         {tab === "pages" && (
-          <div
+          <div role="presentation"
             className={`flex flex-col gap-4 ${reorderDrag ? "opacity-80" : ""}`}
             ref={listRef}
             onPointerDown={handleListPointerDown}

@@ -399,7 +399,7 @@ export default function ComparePage() {
         if (alive) setError(e.message);
       }
     };
-    poll();
+    void poll();
     return () => { alive = false; clearTimeout(timer); };
   }, [taskId]);
 

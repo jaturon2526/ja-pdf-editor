@@ -18,6 +18,12 @@ cp .env.template .env           # ตั้ง JWT_SECRET, FRONTEND_URL · DATAB
 uvicorn app.main:app --reload --port 8000
 ```
 
+### Dependency (เวอร์ชันตายตัว + hash)
+
+- แก้รายการที่ `requirements.in` (เครื่องมือทดสอบ: `requirements-dev.in`) แล้วรัน `scripts/lock-backend-deps.sh`
+  (ต้องมี [uv](https://docs.astral.sh/uv/)) เพื่อสร้าง `requirements.txt` / `requirements-dev.txt` ใหม่ — `--upgrade` = อัปเกรดทั้งหมด
+- Docker และ CI ติดตั้งด้วย `--require-hashes` · CI รัน `pip-audit` และตรวจว่า lock ตรงกับ `.in`
+
 Swagger UI (รายการ API ทั้งหมดพร้อมทดลองเรียก): `http://localhost:8000/docs`
 
 ## ทดสอบ

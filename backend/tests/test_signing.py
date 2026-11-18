@@ -176,3 +176,14 @@ def test_lookup_is_exact_match_only(client, make_user):
     email = _email(client, headers)
     r = client.get("/signing/users/lookup", params={"email": email.upper()}, headers=headers)
     assert r.status_code == 200 and r.json()["email"] == email
+
+
+def test_lookup_is_rate_limited_per_user(client, make_user, monkeypatch):
+    """SEC-07: ไล่เดาอีเมลผ่าน /signing/users/lookup ได้จำกัด"""
+    from app.api import routes_signing
+
+    monkeypatch.setattr(routes_signing, "LOOKUP_MAX_PER_USER", 3)
+    _, headers = make_user()
+    codes = [client.get("/signing/users/lookup", params={"email": f"nobody{i}@example.com"}, headers=headers).status_code
+             for i in range(5)]
+    assert codes[:3] == [404, 404, 404] and codes[3:] == [429, 429]

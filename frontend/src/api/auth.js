@@ -1,12 +1,12 @@
 // Auth & ผู้ใช้: login/register/Google, โปรไฟล์, รหัสผ่าน, Gemini API key, ToS
-import { BASE, fetchWithAuth, handle, handlePublic } from "./client.js";
+import { BASE, COOKIE_AUTH_HEADERS, authHeaders, clearLocalSession, fetchWithAuth, handle, handlePublic } from "./client.js";
 
 // ---------- Auth & User APIs ----------
 export async function authLogin(email, password) {
   const form = new FormData();
   form.append("username", email);
   form.append("password", password);
-  const res = await fetch(`${BASE}/auth/login`, { method: "POST", body: form });
+  const res = await fetch(`${BASE}/auth/login`, { method: "POST", body: form, headers: COOKIE_AUTH_HEADERS });
   return handlePublic(res);
 }
 
@@ -63,7 +63,7 @@ export async function resetPassword(token, newPassword) {
 export async function authGoogleLogin(credential) {
   const res = await fetch(`${BASE}/auth/google`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...COOKIE_AUTH_HEADERS },
     body: JSON.stringify({ credential })
   });
   return handlePublic(res);
@@ -138,14 +138,14 @@ export async function deleteAccount({ confirmEmail, password, passkey }) {
   return handle(res, { sessionRedirect: false });
 }
 
-// ออกจากระบบฝั่งเซิร์ฟเวอร์ด้วย (token เดิมใช้ต่อไม่ได้) — ไม่ผ่าน fetchWithAuth: token หมดอายุแล้วก็ไม่ต้องเด้งหน้า login
+// ออกจากระบบฝั่งเซิร์ฟเวอร์ด้วย (ตัด session ของ token + ลบ cookie) — ไม่ผ่าน fetchWithAuth: หมดอายุแล้วก็ไม่ต้องเด้งหน้า login
 export async function logout() {
-  const token = localStorage.getItem("token");
-  if (!token) return;
   try {
-    await fetch(`${BASE}/auth/logout`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    await fetch(`${BASE}/auth/logout`, { method: "POST", headers: authHeaders() });
   } catch {
-    /* ออฟไลน์ — ลบ token ในเครื่องอย่างเดียว */
+    /* ออฟไลน์ — ลืมสถานะในเครื่องอย่างเดียว */
+  } finally {
+    clearLocalSession();
   }
 }
 

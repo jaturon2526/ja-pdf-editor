@@ -8,7 +8,7 @@ export function colorIntToHex(colorInt) {
 }
 
 export function hexToRgb01(hex) {
-  const n = parseInt(hex.replace("#", ""), 16) || 0;
+  const n = Number.parseInt(hex.replace("#", ""), 16) || 0;
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 

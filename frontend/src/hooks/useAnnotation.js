@@ -168,7 +168,7 @@ export function useAnnotation({ session, currentPage, editMode, zoom, fonts, set
 
   function submitPendingAnnotation(text) {
     if (!pendingAnnotation) return;
-    createAnnotation(pendingAnnotation.type, pendingAnnotation.rect, text, pendingAnnotation.autoHeight);
+    void createAnnotation(pendingAnnotation.type, pendingAnnotation.rect, text, pendingAnnotation.autoHeight);
     setPendingAnnotation(null);
   }
 
