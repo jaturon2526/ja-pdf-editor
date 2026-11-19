@@ -28,12 +28,14 @@ import base64
 import binascii
 
 from app.api.deps import get_current_active_user, get_owned_session
+from app.db.database import get_db
 from app.models.domain import User
 from app.core.session import PDFSession
-from fastapi import Depends, APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import Body, Depends, APIRouter, File, Form, HTTPException, UploadFile
+from sqlalchemy.orm import Session
 
 from app.models.schemas import ElectronicSignRequest, Rect, SignatureStatusResponse
-from app.services import signature_service
+from app.services import certificate_store, signature_service
 from app.services.pdf_service import PDFError
 
 router = APIRouter(prefix="/signature", tags=["signature"])
@@ -74,13 +76,99 @@ def electronic_sign(session_id: str, payload: ElectronicSignRequest, session: PD
     return SignatureStatusResponse(status="ok", is_signed=True, signature_type="electronic")
 
 
-@router.post("/check-certificate")
-async def check_certificate(password: str = Form(...), file: UploadFile = File(...),
-                            current_user: User = Depends(get_current_active_user)):
-    """ตรวจไฟล์ใบรับรอง + รหัสผ่านตั้งแต่หน้าต่างเลือกใบรับรอง (ก่อนวางตำแหน่ง) — คืนชื่อผู้เซ็น/วันหมดอายุ/คำเตือน"""
+# ---------- ใบรับรองที่เก็บไว้บนระบบ (app/services/certificate_store.py) ----------
+
+def _cert_http(exc: certificate_store.CertificateError) -> HTTPException:
+    return HTTPException(status_code=exc.status_code, detail=str(exc))
+
+
+async def _pfx_from(file: UploadFile | None, certificate_id: int | None, password: str,
+                    user: User, db: Session) -> bytes:
+    """ไบต์ p12 จากไฟล์ที่แนบมา หรือจากใบรับรองที่เก็บไว้ (ตรวจรหัส + นับครั้งผิด) — ต้องมีอย่างใดอย่างหนึ่ง"""
+    if certificate_id is not None:
+        try:
+            return await asyncio.to_thread(certificate_store.unlock, db, user, certificate_id, password)
+        except certificate_store.CertificateError as exc:
+            raise _cert_http(exc)
+    if file is None:
+        raise HTTPException(status_code=400, detail="เลือกไฟล์ใบรับรอง หรือใบรับรองที่บันทึกไว้")
     pfx_bytes = await file.read(_MAX_UPLOAD + 1)
     if len(pfx_bytes) > _MAX_UPLOAD:
         raise HTTPException(status_code=413, detail="ไฟล์ใบรับรองใหญ่เกินไป (สูงสุด 5 MB)")
+    return pfx_bytes
+
+
+@router.get("/certificates")
+def list_certificates(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    """ใบรับรองที่เก็บไว้ (ไม่มีไฟล์/กุญแจในคำตอบ)"""
+    return certificate_store.list_for(db, current_user)
+
+
+@router.post("/certificates", status_code=201)
+async def upload_certificate(password: str = Form(...), file: UploadFile = File(...), label: str | None = Form(None),
+                             current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    """เก็บใบรับรอง — ตรวจรหัสครั้งแรกก่อนเก็บ (รหัสไม่ถูกบันทึก)"""
+    pfx_bytes = await file.read(certificate_store.MAX_FILE_BYTES + 1)
+    try:
+        return await asyncio.to_thread(certificate_store.add, db, current_user, pfx_bytes, password, label)
+    except certificate_store.CertificateError as exc:
+        raise _cert_http(exc)
+
+
+@router.post("/certificates/{certificate_id}/delete", status_code=204)
+async def delete_certificate(certificate_id: int, password: str = Body(..., embed=True),
+                             current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    """ลบใบรับรองที่เก็บไว้ — ต้องยืนยันรหัสของใบรับรองก่อน"""
+    try:
+        await asyncio.to_thread(certificate_store.delete, db, current_user, certificate_id, password)
+    except certificate_store.CertificateError as exc:
+        raise _cert_http(exc)
+
+
+@router.post("/certificates/{certificate_id}/passkeys/options")
+def certificate_passkey_options(certificate_id: int, current_user: User = Depends(get_current_active_user),
+                                db: Session = Depends(get_db)):
+    """challenge สำหรับผูก passkey กับใบรับรอง (ขอไว้ก่อนกดปุ่ม — Safari ต้องเรียก WebAuthn ทันทีจากการกด)"""
+    try:
+        return certificate_store.passkey_options(db, current_user, certificate_id)
+    except certificate_store.CertificateError as exc:
+        raise _cert_http(exc)
+
+
+@router.post("/certificates/{certificate_id}/passkeys", status_code=201)
+async def bind_certificate_passkey(certificate_id: int, payload: dict = Body(...),
+                                   current_user: User = Depends(get_current_active_user),
+                                   db: Session = Depends(get_db)):
+    """ผูก passkey: {flow_id, credential, password, prf_salt, wrapped} — wrapped เข้ารหัสในเบราว์เซอร์ด้วยค่าจาก passkey"""
+    credential = payload.get("credential")
+    if not isinstance(credential, dict):
+        raise HTTPException(status_code=400, detail="ข้อมูล passkey ไม่ถูกต้อง")
+    try:
+        return await asyncio.to_thread(
+            certificate_store.bind_passkey, db, current_user, certificate_id,
+            password=str(payload.get("password") or ""), flow_id=str(payload.get("flow_id") or ""),
+            credential=credential, prf_salt=str(payload.get("prf_salt") or ""), wrapped=str(payload.get("wrapped") or ""),
+        )
+    except certificate_store.CertificateError as exc:
+        raise _cert_http(exc)
+
+
+@router.delete("/certificates/{certificate_id}/passkeys/{binding_id}")
+def unbind_certificate_passkey(certificate_id: int, binding_id: int,
+                               current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    try:
+        return certificate_store.unbind_passkey(db, current_user, certificate_id, binding_id)
+    except certificate_store.CertificateError as exc:
+        raise _cert_http(exc)
+
+
+@router.post("/check-certificate")
+async def check_certificate(password: str = Form(...), file: UploadFile | None = File(None),
+                            certificate_id: int | None = Form(None),
+                            current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    """ตรวจไฟล์ใบรับรอง (หรือใบที่เก็บไว้) + รหัสผ่านตั้งแต่หน้าต่างเลือกใบรับรอง (ก่อนวางตำแหน่ง)
+    — คืนชื่อผู้เซ็น/วันหมดอายุ/คำเตือน"""
+    pfx_bytes = await _pfx_from(file, certificate_id, password, current_user, db)
     try:
         _signer, info = await asyncio.to_thread(signature_service.load_signer, pfx_bytes, password)
     except PDFError as exc:
@@ -101,14 +189,15 @@ async def digital_sign(
     location: str | None = Form(None),
     contact: str | None = Form(None),
     name: str | None = Form(None),
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(None),
+    certificate_id: int | None = Form(None),
     signature_image: UploadFile = File(None), session: PDFSession = Depends(get_owned_session),
+    current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db),
 ):
     """Digital Sign — เซ็นด้วยลายเซ็นดิจิทัลแบบเข้ารหัสจริง (PAdES) จากไฟล์ p12/pfx ที่ผู้ใช้อัปโหลด
+    หรือใบรับรองที่เก็บไว้บนระบบ (certificate_id + รหัสผ่าน)
     ดู signature_service.apply_digital_signature สำหรับรายละเอียดการเซ็น/รักษาไบต์ลายเซ็นให้ไม่เสียหาย"""
-    pfx_bytes = await file.read(_MAX_UPLOAD + 1)
-    if len(pfx_bytes) > _MAX_UPLOAD:
-        raise HTTPException(status_code=413, detail="ไฟล์ใบรับรองใหญ่เกินไป (สูงสุด 5 MB)")
+    pfx_bytes = await _pfx_from(file, certificate_id, password, current_user, db)
     image_bytes = await signature_image.read(_MAX_UPLOAD + 1) if signature_image else None
     if image_bytes is not None and len(image_bytes) > _MAX_UPLOAD:
         raise HTTPException(status_code=413, detail="รูปลายเซ็นใหญ่เกินไป (สูงสุด 5 MB)")

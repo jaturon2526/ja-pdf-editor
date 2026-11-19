@@ -326,6 +326,10 @@ def rename(db: Session, passkey: Passkey, name: str) -> Passkey:
 
 
 def delete(db: Session, passkey: Passkey) -> None:
+    from app.models.domain import CertificatePasskey
+
+    # ใบรับรองที่ผูกกับ passkey นี้กลับไปใช้รหัสอย่างเดียว (FK CASCADE ก็ลบให้ — ลบเองเผื่อ SQLite ไม่เปิด foreign_keys)
+    db.query(CertificatePasskey).filter(CertificatePasskey.passkey_id == passkey.id).delete(synchronize_session=False)
     db.delete(passkey)
     db.commit()
 

@@ -59,7 +59,7 @@ export async function getSigningPasskeyOptions(id) {
   return handle(await fetchWithAuth(`${BASE}/signing/requests/${id}/passkey/options`, { method: "POST" }));
 }
 
-// electronic: { signatureBlob } · digital: { pfxFile, password, signatureBlob? } · passkey: { flowId, credential } (ไม่บังคับ)
+// electronic: { signatureBlob } · digital: { pfxFile (File หรือ { certificateId }), password, signatureBlob? } · passkey: { flowId, credential } (ไม่บังคับ)
 export async function signSigningRequest(id, { signType, signatureBlob, pfxFile, password, reason, passkey }) {
   const form = new FormData();
   form.append("sign_type", signType);
@@ -69,7 +69,8 @@ export async function signSigningRequest(id, { signType, signatureBlob, pfxFile,
   }
   if (reason) form.append("reason", reason);
   if (signatureBlob) form.append("signature_image", signatureBlob, "signature.png");
-  if (pfxFile) form.append("pfx_file", pfxFile, pfxFile.name || "certificate.p12");
+  if (pfxFile?.certificateId) form.append("certificate_id", pfxFile.certificateId); // ใบรับรองที่บันทึกไว้บนระบบ
+  else if (pfxFile) form.append("pfx_file", pfxFile, pfxFile.name || "certificate.p12");
   if (password) form.append("pfx_password", password);
   return handle(await fetchWithAuth(`${BASE}/signing/requests/${id}/sign`, { method: "POST", body: form }));
 }

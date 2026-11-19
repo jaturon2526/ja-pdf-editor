@@ -80,6 +80,7 @@ test("ลายเซ็นดิจิทัล: เลือกเซ็นส
     await expect(dialog.getByRole("tab", { name })).toBeVisible();
   }
   await dialog.getByRole("tab", { name: "เซ็นสด" }).click();
+  await page.getByTestId("signature-pad").scrollIntoViewIfNeeded(); // หน้าต่างสูงกว่าจอทดสอบ — เลื่อนให้เห็นก่อนวาด
   const box = await page.getByTestId("signature-pad").boundingBox();
   await page.mouse.move(box.x + 40, box.y + 60);
   await page.mouse.down();

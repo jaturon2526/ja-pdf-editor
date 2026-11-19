@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { changePassword } from "../api";
 import { validatePassword } from "../utils/password";
 import PasskeySection from "../components/security/PasskeySection.jsx";
+import CertificatesSection from "../components/security/CertificatesSection.jsx";
 import LineSection from "../components/security/LineSection.jsx";
 import LineLoginSection from "../components/security/LineLoginSection.jsx";
 
@@ -55,6 +56,8 @@ export default function SecurityPage() {
         </div>
 
         <PasskeySection />
+
+        <CertificatesSection />
 
         <LineLoginSection />
 

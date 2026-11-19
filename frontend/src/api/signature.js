@@ -14,6 +14,12 @@ export async function electronicSign(sessionId, pageNumber, rect, imageBase64) {
 
 // Digital Sign — ต้องแนบไฟล์ p12/pfx จริง จึงส่งเป็น multipart (เหมือน insertImage ด้านบน) rect ส่งเป็น
 // form field แยก x0/y0/x1/y1 คืน {status, is_signed, signature_type, signer_name} (ชื่อผู้เซ็นจาก certificate)
+// pfxFile = ไฟล์ .p12/.pfx (File) หรือ { certificateId } = ใบรับรองที่บันทึกไว้บนระบบ
+function appendCertificate(form, pfxFile) {
+  if (pfxFile && typeof pfxFile === "object" && "certificateId" in pfxFile) form.append("certificate_id", pfxFile.certificateId);
+  else form.append("file", pfxFile);
+}
+
 export async function digitalSign(sessionId, pageNumber, rect, pfxFile, password, reason, location, contact, name, imageFile) {
   const form = new FormData();
   form.append("page_number", pageNumber);
@@ -26,7 +32,7 @@ export async function digitalSign(sessionId, pageNumber, rect, pfxFile, password
   if (location) form.append("location", location);
   if (contact) form.append("contact", contact);
   if (name) form.append("name", name);
-  form.append("file", pfxFile);
+  appendCertificate(form, pfxFile);
   if (imageFile) form.append("signature_image", imageFile);
   const res = await fetchWithAuth(`${BASE}/signature/${sessionId}/digital`, {
     method: "POST",
@@ -39,7 +45,48 @@ export async function digitalSign(sessionId, pageNumber, rect, pfxFile, password
 export async function checkCertificate(pfxFile, password) {
   const form = new FormData();
   form.append("password", password);
-  form.append("file", pfxFile);
+  appendCertificate(form, pfxFile);
   const res = await fetchWithAuth(`${BASE}/signature/check-certificate`, { method: "POST", body: form });
   return handle(res);
+}
+
+// ---------- ใบรับรองที่บันทึกไว้บนระบบ (ระบบไม่เก็บรหัสผ่าน — ต้องกรอกทุกครั้งที่ใช้/ลบ) ----------
+export async function listCertificates() {
+  return handle(await fetchWithAuth(`${BASE}/signature/certificates`));
+}
+
+export async function uploadCertificate(file, password, label) {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("password", password);
+  if (label) form.append("label", label);
+  return handle(await fetchWithAuth(`${BASE}/signature/certificates`, { method: "POST", body: form }));
+}
+
+export async function deleteCertificate(id, password) {
+  const res = await fetchWithAuth(`${BASE}/signature/certificates/${id}/delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+  });
+  if (res.status === 204) return;
+  return handle(res);
+}
+
+// ---------- ปลดล็อกใบรับรองด้วย passkey (utils/certPasskey.js เข้ารหัสรหัสผ่านในเบราว์เซอร์ — server ถอดไม่ได้) ----------
+export async function prepareCertificatePasskey(id) {
+  const res = await fetchWithAuth(`${BASE}/signature/certificates/${id}/passkeys/options`, { method: "POST" });
+  return { ...(await handle(res)), at: Date.now() };
+}
+
+export async function bindCertificatePasskey(id, payload) {
+  return handle(await fetchWithAuth(`${BASE}/signature/certificates/${id}/passkeys`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }));
+}
+
+export async function unbindCertificatePasskey(id, bindingId) {
+  return handle(await fetchWithAuth(`${BASE}/signature/certificates/${id}/passkeys/${bindingId}`, { method: "DELETE" }));
 }

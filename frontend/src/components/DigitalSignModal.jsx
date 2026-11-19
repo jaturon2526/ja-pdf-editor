@@ -1,9 +1,11 @@
 // ลายเซ็นดิจิทัล: ใบรับรอง .p12/.pfx + รายละเอียด + รูปลายเซ็น (ไม่บังคับ — เซ็นสด / พิมพ์ / รูปภาพ เหมือนลายเซ็นอิเล็กทรอนิกส์)
 // onConfirm(pfxFile, password, reason, location, contact, name, imageFile, certInfo) — ตรวจใบรับรอง/รหัสผ่านก่อนเรียก
-import React, { useRef, useState } from "react";
+// pfxFile = File ที่เลือก หรือ { certificateId } = ใบรับรองที่บันทึกไว้ (หน้าความปลอดภัย) — ระบบไม่เก็บรหัส ต้องกรอกทุกครั้ง
+import React, { useEffect, useRef, useState } from "react";
 import SignModalShell from "./signature/SignModalShell.jsx";
 import SignatureCreator from "./signature/SignatureCreator.jsx";
 import * as api from "../api.js";
+import { certPasskeyErrorMessage, supportsWebAuthn, unlockWithPasskey } from "../utils/certPasskey.js";
 
 function dataUrlToFile(dataUrl, name) {
   const [meta, body] = dataUrl.split(",");
@@ -14,9 +16,22 @@ function dataUrlToFile(dataUrl, name) {
   return new File([arr], name, { type: mime });
 }
 
+const fmtDate = (iso) => new Date(iso).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
+
+// บรรทัดรองของใบที่บันทึกไว้ (ข้อความล้วนในป้ายของ radio — ไม่ซ้อน element)
+function certSummary(c) {
+  const parts = [c.subject_cn || "—", `ออกโดย ${c.issuer_cn || "—"}`, c.expired ? "หมดอายุแล้ว" : `ใช้ได้ถึง ${fmtDate(c.valid_to)}`];
+  if (c.passkeys?.length) parts.push("ปลดล็อกด้วย passkey ได้");
+  return parts.join(" · ");
+}
+
 const INPUT = "w-full px-4 py-2.5 text-base sm:text-sm border border-slate-300 rounded-lg bg-white text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500";
 
 export default function DigitalSignModal({ onConfirm, onCancel }) {
+  // ที่มาของใบรับรอง: "saved" = ที่บันทึกไว้บนระบบ · "file" = เลือกไฟล์จากเครื่อง (ไม่มีใบที่บันทึกไว้ → file)
+  const [savedCerts, setSavedCerts] = useState(null);
+  const [source, setSource] = useState("file");
+  const [certId, setCertId] = useState(null);
   const [file, setFile] = useState(null);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,10 +44,50 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
   const [checking, setChecking] = useState(false);
   const [certError, setCertError] = useState("");
   const [certInfo, setCertInfo] = useState(null);
+  // ปลดล็อกด้วย passkey ที่ผูกไว้กับใบที่บันทึกไว้ (หน้าความปลอดภัย) — ได้รหัสมาเติมในช่องแทนการพิมพ์
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockedBy, setUnlockedBy] = useState(null);
   const fileInputRef = React.useRef(null);
   const creatorRef = useRef(null);
 
-  const canConfirm = !!file && password.length > 0 && imageReady && !checking;
+  useEffect(() => {
+    let alive = true;
+    api.listCertificates().then((list) => {
+      if (!alive) return;
+      setSavedCerts(list);
+      const usable = list.find((c) => !c.expired);
+      if (usable) { setSource("saved"); setCertId(usable.id); }
+    }).catch(() => { if (alive) setSavedCerts([]); });
+    return () => { alive = false; };
+  }, []);
+
+  const certificate = source === "saved" ? (certId ? { certificateId: certId } : null) : file;
+  const selectedCert = source === "saved" ? savedCerts?.find((c) => c.id === certId) : null;
+  const passkeyReady = !!selectedCert?.passkeys?.length && supportsWebAuthn();
+
+  function changePassword(value) {
+    setPassword(value);
+    setCertError("");
+    setUnlockedBy(null);
+  }
+
+  async function handlePasskeyUnlock() {
+    if (!selectedCert || unlocking) return;
+    setCertError("");
+    setUnlocking(true);
+    try {
+      const pw = await unlockWithPasskey(selectedCert); // เรียก WebAuthn ทันทีจากการกด (Safari)
+      setPassword(pw);
+      setShowPassword(false);
+      setUnlockedBy(selectedCert.id);
+    } catch (err) {
+      const msg = certPasskeyErrorMessage(err);
+      if (msg) setCertError(msg);
+    } finally {
+      setUnlocking(false);
+    }
+  }
+  const canConfirm = !!certificate && password.length > 0 && imageReady && !checking;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -41,7 +96,7 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
     setCertError("");
     let info;
     try {
-      info = await api.checkCertificate(file, password);
+      info = await api.checkCertificate(certificate, password);
       setCertInfo(info);
     } catch (err) {
       setCertError(err.message || "ตรวจใบรับรองไม่สำเร็จ");
@@ -51,13 +106,13 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
     setChecking(false);
     const dataUrl = creatorRef.current?.getDataUrl();
     const imageFile = dataUrl ? dataUrlToFile(dataUrl, "signature.png") : null;
-    onConfirm(file, password, reason || undefined, location || undefined, contact || undefined, name || undefined, imageFile, info);
+    onConfirm(certificate, password, reason || undefined, location || undefined, contact || undefined, name || undefined, imageFile, info);
   }
 
   return (
     <SignModalShell
       title="ลายเซ็นดิจิทัล (ใบรับรอง)"
-      subtitle="เลือกไฟล์ใบรับรอง (.p12 / .pfx) และระบุข้อมูลผู้เซ็น"
+      subtitle="เลือกใบรับรองที่บันทึกไว้ หรือไฟล์ .p12 / .pfx และระบุข้อมูลผู้เซ็น"
       icon={
         <svg className="w-5 h-5 text-sky-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -82,6 +137,32 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-200 pb-2">1. ใบรับรองและรหัสผ่าน</h3>
             
+            {savedCerts?.length > 0 && (
+              <div role="radiogroup" aria-label="ที่มาของใบรับรอง" className="grid grid-cols-2 gap-2">
+                {[["saved", "ใบรับรองที่บันทึกไว้"], ["file", "เลือกไฟล์จากเครื่อง"]].map(([value, text]) => (
+                  <button key={value} type="button" role="radio" aria-checked={source === value}
+                    onClick={() => { setSource(value); setCertError(""); setCertInfo(null); }}
+                    className={`py-2 text-sm rounded-lg border ${source === value ? "border-sky-600 bg-sky-50 text-sky-800 font-medium" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>
+                    {text}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {source === "saved" && savedCerts?.length > 0 ? (
+              <ul className="space-y-2" data-testid="saved-certificates">
+                {savedCerts.map((c) => (
+                  <li key={c.id}>
+                    <label className={`grid grid-cols-[auto_1fr] gap-x-3 items-start p-3 rounded-lg border text-sm ${c.expired ? "opacity-60 cursor-not-allowed" : "cursor-pointer"} ${certId === c.id ? "border-sky-600 bg-sky-50" : "border-slate-200 bg-white"}`}>
+                      <input type="radio" name="saved-cert" className="mt-1 row-span-2" disabled={c.expired} checked={certId === c.id}
+                        onChange={() => { setCertId(c.id); setCertError(""); setCertInfo(null); if (unlockedBy) { setPassword(""); setUnlockedBy(null); } }} />
+                      <span className="block min-w-0 font-medium text-slate-900 break-words">{c.label}</span>
+                      <span className="block min-w-0 text-xs text-slate-600 break-words">{certSummary(c)}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            ) : (
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
               <input
                 ref={fileInputRef}
@@ -109,15 +190,30 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
                   <><span className="w-2 h-2 rounded-full bg-amber-400"></span> ยังไม่ได้เลือกไฟล์</>
                 )}
               </div>
+              {/* แสดงตั้งแต่เปิด (ไม่รอผลโหลดรายการ) — กันเนื้อหาด้านล่างเลื่อนลงหลังเปิดหน้าต่าง */}
+              {!savedCerts?.length && (
+                <p className="mt-2 text-xs text-slate-500">ใช้บ่อย? บันทึกใบรับรองไว้ที่หน้า “ความปลอดภัย” จะได้ไม่ต้องเลือกไฟล์ทุกครั้ง</p>
+              )}
             </div>
+            )}
 
+            {passkeyReady && (
+              <button type="button" onClick={handlePasskeyUnlock} disabled={unlocking || unlockedBy === certId}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-sky-600 bg-white text-sm font-medium text-sky-700 hover:bg-sky-50 disabled:opacity-60">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4.5" /><path d="M10.7 12.3L21 2M16 7l3 3M18.5 4.5l2 2" /></svg>
+                {unlocking ? "กำลังรอ passkey..." : unlockedBy === certId ? "ปลดล็อกด้วย passkey แล้ว" : "ปลดล็อกด้วย passkey"}
+              </button>
+            )}
+            {unlockedBy === certId && (
+              <p className="text-xs text-green-700" role="status">เติมรหัสให้แล้ว — กรอกรายละเอียดที่เหลือ (ถ้ามี) แล้วกด “ตกลง”</p>
+            )}
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 className={`${INPUT} pr-12`}
                 placeholder="รหัสผ่านสำหรับเปิดคีย์ (Passphrase) *"
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); setCertError(""); }}
+                onChange={(e) => changePassword(e.target.value)}
               />
               <button
                 type="button"

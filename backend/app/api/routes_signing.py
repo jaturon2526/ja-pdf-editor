@@ -232,6 +232,7 @@ async def sign(
     pfx_password: Optional[str] = Form(None),
     signature_image: Optional[UploadFile] = File(None),
     pfx_file: Optional[UploadFile] = File(None),
+    certificate_id: Optional[int] = Form(None),  # ใบรับรองที่เก็บไว้บนระบบ (แทน pfx_file)
     passkey_flow_id: Optional[str] = Form(None),
     passkey_credential: Optional[str] = Form(None),  # JSON จาก navigator.credentials.get()
     current_user: User = Depends(get_current_active_user),
@@ -257,6 +258,13 @@ async def sign(
             raise HTTPException(status_code=400, detail="ข้อมูล passkey ไม่ถูกต้อง")
     png = await _read(signature_image)
     pfx = await _read(pfx_file)
+    if certificate_id is not None and sign_type == "digital":
+        from app.services import certificate_store
+
+        try:
+            pfx = await run_in_threadpool(certificate_store.unlock, db, current_user, certificate_id, pfx_password or "")
+        except certificate_store.CertificateError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc))
     client = _client(request)
     try:
         return await run_in_threadpool(

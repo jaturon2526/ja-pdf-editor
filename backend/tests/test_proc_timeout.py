@@ -18,7 +18,7 @@ def _alive(pid: int) -> bool:
     try:
         with open(f"/proc/{pid}/stat") as f:
             return f.read().split()[2] != "Z"
-    except FileNotFoundError:
+    except (FileNotFoundError, ProcessLookupError):  # หายไประหว่างอ่าน (reap แล้ว) — read() ได้ ESRCH
         return False
 
 

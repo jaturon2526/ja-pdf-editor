@@ -39,7 +39,8 @@ export async function preparePasskeyLogin() {
 
 export async function registerPasskey(name, prepared = null) {
   const { flow_id, options } = isFresh(prepared) ? prepared : await preparePasskeyRegistration();
-  const credential = await startRegistration({ optionsJSON: options });
+  // ขอ PRF ตั้งแต่สร้าง — กุญแจฮาร์ดแวร์บางรุ่นเปิด PRF (hmac-secret) ได้เฉพาะตอนสร้าง · ใช้ปลดล็อกใบรับรอง (utils/certPasskey.js)
+  const credential = await startRegistration({ optionsJSON: { ...options, extensions: { ...options.extensions, prf: {} } } });
   const verify = await fetchWithAuth(`${BASE}/auth/passkeys/register/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

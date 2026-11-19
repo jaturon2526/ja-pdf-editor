@@ -21,7 +21,8 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.session import session_manager
-from app.models.domain import (AIUsageDaily, ConversionTask, FileRecord, License, Notification, Passkey,
+from app.models.domain import (AIUsageDaily, CertificatePasskey, ConversionTask, FileRecord, License, Notification,
+                               Passkey, UserCertificate,
                                SigningEvent, SigningRequest, SigningStep, User)
 from app.services import file_storage, mailer, signing_service
 from app.services.signing_service import ClientInfo
@@ -67,6 +68,7 @@ def summary(db: Session, user: User) -> dict:
         "pending_as_signer": int(pending_as_signer or 0),
         "signed_for_others": int(signed_for_others or 0),
         "passkeys": db.query(func.count(Passkey.id)).filter(Passkey.user_id == user.id).scalar() or 0,
+        "certificates": db.query(func.count(UserCertificate.id)).filter(UserCertificate.user_id == user.id).scalar() or 0,
         "line_linked": bool(user.line_user_id),
         "is_last_admin": _is_last_admin(db, user),
     }
@@ -124,7 +126,10 @@ def delete_account(db: Session, user: User, client: ClientInfo) -> dict:
     db.flush()
     for record in records:
         db.delete(record)
+    owned_certs = db.query(UserCertificate.id).filter(UserCertificate.user_id == user_id)
+    db.query(CertificatePasskey).filter(CertificatePasskey.certificate_id.in_(owned_certs)).delete(synchronize_session=False)
     db.query(Passkey).filter(Passkey.user_id == user_id).delete(synchronize_session=False)
+    db.query(UserCertificate).filter(UserCertificate.user_id == user_id).delete(synchronize_session=False)
     db.query(Notification).filter(Notification.user_id == user_id).delete(synchronize_session=False)
     db.query(AIUsageDaily).filter(AIUsageDaily.user_id == user_id).delete(synchronize_session=False)
     db.query(License).filter(License.used_by_user_id == user_id).update({License.used_by_user_id: None},

@@ -318,3 +318,48 @@ class Donation(Base):
     verify_detail = Column(Text, nullable=True)
     verified_at = Column(DateTime(timezone=True), nullable=True)
 
+
+
+class UserCertificate(Base):
+    """ใบรับรองลายเซ็นดิจิทัล (.p12/.pfx) ที่ผู้ใช้เก็บไว้บนระบบ — ดู app/services/certificate_store.py
+
+    - pfx_encrypted : ไฟล์ p12 เดิม (ล็อกด้วยรหัสของผู้ใช้อยู่แล้ว) เข้ารหัสซ้ำด้วยกุญแจของระบบ · **ไม่เก็บรหัสผ่าน**
+      ต้องกรอกรหัสทุกครั้งที่ใช้เซ็นหรือลบ
+    - ข้อมูลอื่นอ่านจากใบรับรองตอนอัปโหลด (ผ่านการตรวจรหัสครั้งแรกแล้ว) ไว้แสดงในรายการ"""
+    __tablename__ = "user_certificates"
+    __table_args__ = (UniqueConstraint("user_id", "fingerprint_sha256", name="uq_user_certificates_user_fp"),)
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    label = Column(String(100), nullable=False)
+    subject_cn = Column(String(255), nullable=True)
+    organization = Column(String(255), nullable=True)
+    issuer_cn = Column(String(255), nullable=True)
+    serial_hex = Column(String(130), nullable=True)
+    fingerprint_sha256 = Column(String(64), nullable=False)
+    self_signed = Column(Boolean, nullable=False, default=False, server_default="false")
+    valid_from = Column(DateTime(timezone=True), nullable=False)
+    valid_to = Column(DateTime(timezone=True), nullable=False)
+    pfx_encrypted = deferred(Column(LargeBinary, nullable=False))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+    passkey_bindings = relationship("CertificatePasskey", cascade="all, delete-orphan", passive_deletes=True,
+                                    lazy="selectin", order_by="CertificatePasskey.id")
+
+
+class CertificatePasskey(Base):
+    """passkey ที่ปลดล็อกใบรับรองที่เก็บไว้ได้แทนการพิมพ์รหัส — ดู app/services/certificate_store.py
+
+    ใช้ส่วนขยาย WebAuthn PRF: เบราว์เซอร์ได้ค่าลับ 32 ไบต์จาก passkey (ผูกกับ prf_salt) แล้วเข้ารหัส
+    รหัสผ่านของใบรับรองด้วย AES-GCM **ในเครื่องผู้ใช้** · server เก็บแค่ wrapped (ถอดไม่ได้เพราะไม่มีค่าจาก passkey)
+    ตอนใช้: เบราว์เซอร์ขอค่าเดิมจาก passkey → ถอด wrapped ได้รหัส → ส่งรหัสไปตรวจเหมือนพิมพ์เอง"""
+    __tablename__ = "certificate_passkeys"
+    __table_args__ = (UniqueConstraint("certificate_id", "passkey_id", name="uq_certificate_passkeys_cert_pk"),)
+
+    id = Column(Integer, primary_key=True)
+    certificate_id = Column(Integer, ForeignKey("user_certificates.id", ondelete="CASCADE"), nullable=False, index=True)
+    passkey_id = Column(Integer, ForeignKey("passkeys.id", ondelete="CASCADE"), nullable=False, index=True)
+    prf_salt = Column(String(64), nullable=False)
+    wrapped = Column(String(512), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    passkey = relationship("Passkey", lazy="joined")
