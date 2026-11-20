@@ -11,6 +11,12 @@ import AnnotationTextPrompt from "../components/AnnotationTextPrompt.jsx";
 import { CompressModal, FlattenModal, PrintOptionsModal, SaveCopyModal } from "../components/EditorDialogs.jsx";
 import AboutModal from "../components/AboutModal.jsx";
 import DocumentPropertiesModal from "../components/DocumentPropertiesModal.jsx";
+import DocumentFontsModal from "../components/editor/DocumentFontsModal.jsx";
+import InsertPagesModal from "../components/editor/InsertPagesModal.jsx";
+import TableEditPanel from "../components/editor/TableEditPanel.jsx";
+import { useTableEdit } from "../hooks/useTableEdit.js";
+import FontInspectorPanel from "../components/editor/FontInspectorPanel.jsx";
+import { useFontInspector } from "../hooks/useFontInspector.js";
 import AddPasswordModal from "../components/AddPasswordModal.jsx";
 import PropertiesPanel from "../components/PropertiesPanel.jsx";
 import ElectronicSignModal from "../components/ElectronicSignModal.jsx";
@@ -84,6 +90,8 @@ export default function Editor() {
   const [showFlattenModal, setShowFlattenModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [compressProfile, setCompressProfile] = useState("screen");
+  const [showDocumentFonts, setShowDocumentFonts] = useState(false);
+  const [insertPagesAt, setInsertPagesAt] = useState(null); // ตำแหน่งเริ่มต้นในหน้าต่างแทรกหน้า (null = ปิด)
 
   // ---------- Derived ----------
   const editMode =
@@ -127,6 +135,9 @@ export default function Editor() {
     });
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
   const { session, setSession, currentPage, setCurrentPage } = sessionHook;
+  const fontInspector = useFontInspector({
+    session, currentPage, pageImage: sessionHook.pageImage, active: activeTool === "inspect_font",
+  });
 
   // คืนหน่วยความจำบนเซิร์ฟเวอร์เมื่อออกจากหน้าแก้ไข (กลับหน้าเอกสารของฉัน / ปิดแท็บ / รีเฟรช) — เดิมเอกสารค้างจนหมดอายุ
   // งานที่ยังไม่บันทึกถูกถามยืนยันก่อนออกอยู่แล้ว (confirmDiscard / beforeunload) · เปิดลิงก์เดิมอีกครั้งได้ (เปิดจากไฟล์ที่บันทึก)
@@ -265,11 +276,31 @@ export default function Editor() {
     annotationHook,
     signatureHook,
     redactHook,
+    activeTool,
     setActiveTool,
     setCanUndo,
     setCanRedo,
     setStatusMessage,
   });
+
+  const tableEdit = useTableEdit({
+    session, currentPage, pageImage: sessionHook.pageImage, active: activeTool === "edit_table", runDocumentChange,
+  });
+  // ลูกศรขยับตารางที่เลือก 1 pt (Shift = 10 pt) — ไม่แย่งปุ่มลูกศรตอนพิมพ์ในช่องตัวเลข
+  useEffect(() => {
+    if (activeTool !== "edit_table" || !tableEdit.selected) return undefined;
+    const onKey = (e) => {
+      const tag = e.target?.tagName;
+      if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+      const step = e.shiftKey ? 10 : 1;
+      const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      tableEdit.moveBy(d[0], d[1]);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activeTool, tableEdit.selected, tableEdit.moveBy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ตั้ง callbacks ให้ annotationHook ใช้ refresh pageImage และ undo/redo state
   // (annotation CRUD ต้องการ re-render หน้า ซึ่ง setPageImage อยู่ใน sessionHook)
@@ -579,6 +610,7 @@ export default function Editor() {
     },
     openWatermark: () => setShowWatermarkModal(true),
     openPageNumbers: () => setShowPageNumberModal(true),
+    openInsertPages: () => setInsertPagesAt(currentPage + 1),
     openBarcode: () => setShowBarcodeModal(true),
     insertImage: () => imageEditHook.openImagePicker(),
     openCompress: () => setShowCompressModal(true),
@@ -814,6 +846,7 @@ export default function Editor() {
           onDeletePages={pageOps.remove}
           onRotatePages={pageOps.rotate}
           onMovePages={pageOps.move}
+          onInsertPages={(position) => setInsertPagesAt(position)}
           isOpenOnMobile={isSidebarOpen}
           onCloseMobile={() => setIsSidebarOpen(false)}
         />
@@ -828,6 +861,8 @@ export default function Editor() {
           onZoomOriginal={() => setZoom(1)}
           hasDocument={!!session}
           pageImage={sessionHook.pageImage}
+          fontInspector={fontInspector}
+          tableEdit={tableEdit}
           pageWidthPt={session?.pageSizes?.[currentPage]?.[0] || 1}
           pageHeightPt={session?.pageSizes?.[currentPage]?.[1] || 1}
           zoom={zoom}
@@ -887,6 +922,15 @@ export default function Editor() {
           onCancelSignature={signatureHook.handleCancelSignature}
         />
 
+        {activeTool === "edit_table" && session && (
+          <TableEditPanel hook={tableEdit} onClose={() => setActiveTool(null)} />
+        )}
+
+        {activeTool === "inspect_font" && session && (
+          <FontInspectorPanel inspector={fontInspector} onClose={() => setActiveTool(null)}
+            onShowDocumentFonts={() => setShowDocumentFonts(true)} />
+        )}
+
         {textEditHook.draftEdit && (
           <PropertiesPanel
             fontFamilies={fontsHook.fontFamilies}
@@ -902,6 +946,7 @@ export default function Editor() {
             onValignChange={patchDraftEdit("valign")}
             underline={textEditHook.draftEdit.underline || false}
             onUnderlineChange={patchDraftEdit("underline")}
+            sourceFonts={textEditHook.draftEdit.sourceFonts}
             saving={false}
             errorMessage={textEditHook.textEditError}
             onSave={textEditHook.handleCommitBlockEdit}
@@ -954,7 +999,17 @@ export default function Editor() {
           loading={docPropsHook.docPropsLoading}
           errorMessage={docPropsHook.docPropsError}
           onClose={docPropsHook.handleCloseDocProps}
+          onShowFontDetails={session ? () => { docPropsHook.handleCloseDocProps(); setShowDocumentFonts(true); } : undefined}
         />
+      )}
+
+      {insertPagesAt !== null && session && (
+        <InsertPagesModal session={session} currentPage={currentPage} defaultPosition={insertPagesAt}
+          onInsert={pageOps.insert} onClose={() => setInsertPagesAt(null)} />
+      )}
+
+      {showDocumentFonts && session && (
+        <DocumentFontsModal sessionId={session.sessionId} onClose={() => setShowDocumentFonts(false)} />
       )}
 
       {docPropsHook.addPasswordOpen && (

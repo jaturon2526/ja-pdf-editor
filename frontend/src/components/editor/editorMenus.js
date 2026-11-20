@@ -33,6 +33,7 @@ export function buildEditorMenus({
   openPii,
   openWatermark,
   openPageNumbers,
+  openInsertPages,
   openBarcode,
   insertImage,
   openCompress,
@@ -95,6 +96,7 @@ export function buildEditorMenus({
         { label: "แทรกรูปภาพ", onClick: insertImage, disabled: noDoc },
         { label: "บาร์โค้ด / QR Code...", onClick: openBarcode, disabled: noDoc },
         { label: "เลขหน้า...", onClick: openPageNumbers, disabled: noDoc },
+        { label: "แทรกหน้า...", hint: "จากไฟล์ / เอกสารของฉัน / หน้าว่าง", onClick: openInsertPages, disabled: noDoc },
       ],
     },
     {
@@ -113,7 +115,9 @@ export function buildEditorMenus({
       items: [
         { label: "แก้ไขข้อความ", onClick: toggleTool("edit_text"), disabled: noDoc },
         { label: "แก้ไขรูปภาพ", onClick: toggleTool("edit_image"), disabled: noDoc },
+        { label: "แก้ไขตาราง", hint: "ย้าย ขนาด คอลัมน์ แถว", onClick: toggleTool("edit_table"), disabled: noDoc },
         { label: "เซ็นเซอร์", onClick: toggleTool("redact"), disabled: noDoc },
+        { label: "ตรวจฟอนต์", hint: "ชื่อฟอนต์ ขนาด การฝัง", onClick: toggleTool("inspect_font"), disabled: noDoc },
         { label: "เซ็นเซอร์ด้วยคำค้นหา...", onClick: openRedactSearch, disabled: noDoc },
         { label: "อ่านข้อความในรูปภาพ (OCR)", onClick: runOcrLayer, disabled: noDoc },
         { label: "ตรวจหาข้อมูลส่วนบุคคล (PDPA)...", onClick: openPii, disabled: noDoc },

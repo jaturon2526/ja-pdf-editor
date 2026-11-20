@@ -111,6 +111,20 @@ class ReorderPagesResponse(BaseModel):
 class DeletePagesRequest(BaseModel):
     page_numbers: list[int]
 
+class BlankPagesSpec(BaseModel):
+    count: int = Field(1, ge=1, le=50)
+    width: float = 595.0   # pt (A4 แนวตั้ง)
+    height: float = 842.0
+
+
+class InsertPagesRequest(BaseModel):
+    """แทรกหน้า (v1.39.0): จากเอกสารต้นทาง (session ชั่วคราวจาก /pdf/insert-source) หรือหน้าว่าง"""
+    position: int = Field(..., ge=0)           # แทรกก่อนหน้านี้ (0-based) · = จำนวนหน้า → ท้ายไฟล์
+    source_session_id: Optional[str] = None
+    pages: str = Field("", max_length=500)    # ช่วงหน้าของต้นทาง "1-3, 5" · ว่าง = ทุกหน้า
+    blank: Optional[BlankPagesSpec] = None
+
+
 class RotatePagesRequest(BaseModel):
     page_numbers: list[int]
     angle: int = 90  # 90 for clockwise, -90 for counter-clockwise
@@ -267,6 +281,20 @@ class WordInfo(BaseModel):
 TextAlign = Literal["left", "center", "right"]
 
 
+class SourceFont(BaseModel):
+    """ฟอนต์จริงในไฟล์ของข้อความช่วงหนึ่ง (ตรวจฟอนต์ v1.38.0 — app/services/font_inspect.py)"""
+    name: str                 # ชื่อในไฟล์ ตัด subset prefix แล้ว เช่น "THSarabunNew-Bold"
+    size: float               # pt ตามที่ PDF ระบุ (ปัดครึ่ง pt)
+    color: str                # "#rrggbb"
+    bold: bool = False
+    italic: bool = False
+    type: str = ""            # TrueType / Type 0 (CID) / Type 1 / Type 3
+    embedded: bool = False
+    subset: bool = False
+    base14: bool = False      # ฟอนต์มาตรฐาน PDF (ไม่ต้องฝัง)
+    chars: int = 0            # จำนวนตัวอักษรในย่อหน้าที่ใช้ชุดนี้
+
+
 class TextBlock(BaseModel):
     """หนึ่งช่วงข้อความ (ย่อหน้า) ที่ดึงจากหน้า PDF พร้อมตำแหน่งและ font เดิม ใช้ให้ frontend
     คลิกเลือกแล้วส่งกลับมาแก้ไข — block_id อาจมาจาก 2 แหล่ง (ดู edit_service.get_text_blocks):
@@ -289,6 +317,7 @@ class TextBlock(BaseModel):
                                 # จะได้ค่าจากทะเบียนเหมือน align ด้านบน
     is_bold: bool = False      # ตรวจจากชื่อ font + span flags ของ PDF — ใช้ pre-select ปุ่ม Bold บน Properties Panel
     is_italic: bool = False    # ตรวจจากชื่อ font + span flags ของ PDF — ใช้ pre-select ปุ่ม Italic บน Properties Panel
+    source_fonts: list[SourceFont] = []  # ฟอนต์จริงในไฟล์ (มากไปน้อย) — ย่อหน้าที่แก้ไขแล้วเป็นรายการว่าง
 
 
 class TextEditRequest(BaseModel):
@@ -456,3 +485,11 @@ class PlanConfigResponse(BaseModel):
 
 class PlanConfigUpdateRequest(BaseModel):
     max_sessions: int
+
+
+class TableEditRequest(BaseModel):
+    """แก้โครงตาราง (v1.40.0): bbox เดิมของตาราง + ตำแหน่งเส้นแบ่งคอลัมน์/แถวใหม่ (จำนวนเท่าเดิม)"""
+    bbox: Rect
+    xs: list[float] = Field(..., min_length=2, max_length=200)
+    ys: list[float] = Field(..., min_length=2, max_length=500)
+    allow_overlap: bool = False

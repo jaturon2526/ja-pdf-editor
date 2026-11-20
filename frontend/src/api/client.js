@@ -102,7 +102,9 @@ export async function handle(res, { sessionRedirect = true } = {}) {
     } catch {
       /* ignore */
     }
-    throw new Error(detail);
+    const err = new Error(detail);
+    err.status = res.status; // ให้ผู้เรียกแยกกรณีได้ (เช่น 409 ตารางทับข้อความ → ถามยืนยัน)
+    throw err;
   }
   return res.json();
 }

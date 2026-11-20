@@ -1,4 +1,6 @@
 import React, { forwardRef, useEffect, useLayoutEffect, useRef, useState } from "react";
+import FontInspectorLayer from "./editor/FontInspectorLayer.jsx";
+import TableEditLayer from "./editor/TableEditLayer.jsx";
 import { pageImageSrc } from "../utils/pageImage.js";
 import CanvasContextMenu from "./CanvasContextMenu.jsx";
 import EditableTextBox from "./EditableTextBox.jsx";
@@ -64,6 +66,8 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   onResumeImageEdit,   // คลิกกล่องพรีวิวรูปที่ "ตกลง" ไปแล้ว (ทั้งรูปเดิมที่ย้าย/แทนที่ หรือรูปที่เพิ่งแทรกใหม่)
   pendingRedactions,   // รายการกรอบเซ็นเซอร์ที่รอการกดยืนยัน (สำหรับโหมด redact)
   piiHighlights,       // PDPA: [{id, rects, selected, active}] ของหน้านี้ — กรอบที่จะถูกปิด (ยังไม่ปิดจริง)
+  tableEdit,           // เครื่องมือแก้ตาราง (activeTool === "edit_table"): useTableEdit
+  fontInspector,       // เครื่องมือตรวจฟอนต์ (activeTool === "inspect_font"): { spans, selected, setSelected }
   draftEdit,       // ย่อหน้าที่กำลังแก้ไขอยู่ตอนนี้ { blockId, text, rect, fontKey, fontSize, colorHex, bgColor }
   onDraftTextChange,
   onDraftRectChange,
@@ -760,6 +764,17 @@ const PDFCanvas = forwardRef(function PDFCanvas({
             }}
           />
         ))}
+
+        {activeTool === "edit_table" && tableEdit && (
+          <TableEditLayer tables={tableEdit.tables} selected={tableEdit.selected} draft={tableEdit.draft} zoom={zoom}
+            pageSrc={pageImage ? pageImageSrc(pageImage) : ""} pageWidthPt={pageWidthPt} pageHeightPt={pageHeightPt}
+            onSelect={tableEdit.select} onUpdate={tableEdit.update} />
+        )}
+
+        {activeTool === "inspect_font" && fontInspector && (
+          <FontInspectorLayer spans={fontInspector.spans} zoom={zoom}
+            selected={fontInspector.selected} onSelect={fontInspector.setSelected} />
+        )}
 
         {/* PDPA: ส้มทึบ = เลือกไว้ (จะถูกปิด) · เส้นประเทา = ไม่ได้เลือก */}
         {piiHighlights && piiHighlights.flatMap((h) => h.rects.map((rect, idx) => (

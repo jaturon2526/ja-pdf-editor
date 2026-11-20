@@ -11,6 +11,7 @@ from app.api.deps import get_current_active_user
 from app.models.domain import User
 
 from app.models.schemas import (
+    TableEditRequest,
     FontFamilyResponse,
     FontInstallResponse,
     FontOptionResponse,
@@ -183,6 +184,66 @@ def get_text_blocks(session_id: str, page_number: int, session: PDFSession = Dep
     try:
         with session.lock:
             return edit_service.get_text_blocks(session, page_number)
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/{session_id}/page/{page_number}/font-spans")
+def get_font_spans(session_id: str, page_number: int, session: PDFSession = Depends(get_owned_session)):
+    """ข้อความระดับ span พร้อมฟอนต์/ขนาด/สี/การฝัง — เครื่องมือ "ตรวจฟอนต์" (ไม่แก้ไฟล์)"""
+    from app.services import font_inspect
+    from app.services.pdf_service import require_unlocked
+
+    try:
+        with session.lock:
+            doc = require_unlocked(session)
+            if not (0 <= page_number < doc.page_count):
+                raise PDFError(f"page_number {page_number} อยู่นอกช่วง")
+            return {"spans": font_inspect.page_spans(doc[page_number])}
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/{session_id}/fonts")
+def get_document_fonts(session_id: str, session: PDFSession = Depends(get_owned_session)):
+    """ฟอนต์ทั้งเอกสาร (ชนิด/ฝัง/subset/หน้าที่ใช้) — แบบ Acrobat › คุณสมบัติ › ฟอนต์"""
+    from app.services import font_inspect
+    from app.services.pdf_service import require_unlocked
+
+    try:
+        with session.lock:
+            return {"fonts": font_inspect.document_fonts(require_unlocked(session))}
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/{session_id}/page/{page_number}/tables")
+def get_tables(session_id: str, page_number: int, session: PDFSession = Depends(get_owned_session)):
+    """ตารางที่มีเส้นในหน้า (รวมตารางที่แก้ไปแล้วในเซสชันนี้) — {tables: [{id, bbox, xs, ys, cells}]}"""
+    from app.services.edit_service import tables
+
+    try:
+        with session.lock:
+            return {"tables": tables.get_tables(session, page_number)}
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/{session_id}/page/{page_number}/table")
+def edit_table(session_id: str, page_number: int, payload: TableEditRequest,
+               session: PDFSession = Depends(get_owned_session)):
+    """ย้าย/ย่อขยายตาราง ปรับความกว้างคอลัมน์และความสูงแถว — วาดตารางใหม่ (ดู edit_service/tables.py)
+    ทับข้อความอื่น → 409 (ส่ง allow_overlap=true มาใหม่ถ้าผู้ใช้ยืนยัน)"""
+    from app.services.edit_service import tables
+
+    try:
+        with session.lock:
+            result = tables.rebuild_table(session, page_number, payload.bbox.model_dump(), payload.xs, payload.ys,
+                                          allow_overlap=payload.allow_overlap)
+            session.push_history()
+            return {"status": "ok", **result}
+    except tables.TableOverlapError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     except PDFError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 

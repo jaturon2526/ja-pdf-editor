@@ -96,6 +96,7 @@ export function useTextEdit({
       align: block.align || "left",
       valign: block.valign || "top",
       underline: block.underline || false,
+      sourceFonts: block.source_fonts || [],
     });
   }
 

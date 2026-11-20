@@ -1,6 +1,19 @@
 import React, { useEffect, useState } from "react";
 
 const ICONS = {
+  editTable: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="1.5" y="2.5" width="13" height="11" rx="1" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M1.5 6h13M1.5 9.5h13M6 2.5v11M10.5 2.5v11" stroke="currentColor" strokeWidth="1.1" />
+    </svg>
+  ),
+  inspectFont: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M2 12.5 5.2 3.5h1.2L9.6 12.5M3.3 9.2h4.9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="11.6" cy="10.4" r="2.2" stroke="currentColor" strokeWidth="1.3" />
+      <path d="m13.2 12 1.6 1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  ),
   redact: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
       <rect x="2" y="4" width="12" height="8" rx="1" />
@@ -362,6 +375,20 @@ export default function Toolbar({
           label="เซ็นเซอร์"
           active={activeTool === "redact"}
           onClick={() => onSelectTool("redact")}
+          disabled={!hasDocument}
+        />
+        <ToolbarButton
+          icon="editTable"
+          label="แก้ไขตาราง"
+          active={activeTool === "edit_table"}
+          onClick={() => onSelectTool(activeTool === "edit_table" ? null : "edit_table")}
+          disabled={!hasDocument}
+        />
+        <ToolbarButton
+          icon="inspectFont"
+          label="ตรวจฟอนต์"
+          active={activeTool === "inspect_font"}
+          onClick={() => onSelectTool(activeTool === "inspect_font" ? null : "inspect_font")}
           disabled={!hasDocument}
         />
       </div>

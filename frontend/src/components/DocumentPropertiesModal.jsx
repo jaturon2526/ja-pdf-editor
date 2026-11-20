@@ -64,7 +64,7 @@ function PropRow({ label, value }) {
  * รับข้อมูลจาก backend GET /pdf/{session_id}/properties (รูปแบบ DocumentPropertiesResponse) — บางฟิลด์
  * เป็น None ได้ตามข้อจำกัดของแต่ละไฟล์ (ผู้ใช้บอกให้ทำเท่าที่ทำได้) จึงแสดง "-"/"ไม่ทราบ" แทนการ error
  */
-export default function DocumentPropertiesModal({ fileName, properties, loading, errorMessage, onClose }) {
+export default function DocumentPropertiesModal({ fileName, properties, loading, errorMessage, onClose, onShowFontDetails }) {
   return (
     <div role="presentation" className="modal-overlay" onClick={onClose}>
       <div role="presentation" className="modal-card docprops-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -94,6 +94,11 @@ export default function DocumentPropertiesModal({ fileName, properties, loading,
               <div className="docprops-section">
                 <h3 className="docprops-section-title">ฟอนต์ที่ใช้ในเอกสาร (Fonts)</h3>
                 <PropRow label="รายชื่อฟอนต์" value={properties.fonts.join(", ")} />
+                {onShowFontDetails && (
+                  <button type="button" className="text-sm text-blue-700 hover:underline mt-1" onClick={onShowFontDetails}>
+                    ดูชนิด การฝัง และหน้าที่ใช้ของแต่ละฟอนต์...
+                  </button>
+                )}
               </div>
             )}
 

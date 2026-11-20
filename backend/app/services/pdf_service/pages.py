@@ -224,6 +224,10 @@ def rotate_pages(session: PDFSession, page_numbers: list[int], angle: int) -> bo
                 # หมุนเข้าเนื้อหน้าจริง (/Rotate กลับเป็น 0) — พิกัดบนจอ = พิกัดใน PDF (ดู core.normalize_page_rotation)
                 to_visible = page.rotation_matrix
                 if normalize_page_rotation(page):
+                    # ทะเบียนตาราง (พิกัดเส้นแบ่ง) ใช้ไม่ได้แล้ว — ตรวจหาตารางใหม่จากหน้าแทน
+                    edits = session.text_edits.get(p, {})
+                    for key in [k for k, rec in edits.items() if rec.get("kind") == "table"]:
+                        edits.pop(key)
                     # ทะเบียนย่อหน้าที่เคยแก้ไข (กรอบในพิกัดหน้าเดิม) หมุนตามเนื้อหน้า ให้คลิกแก้ซ้ำได้ตรงตำแหน่ง
                     for rec in session.text_edits.get(p, {}).values():
                         r = rec.get("rect")
@@ -476,3 +480,81 @@ def build_print_pdf(session: PDFSession, layout: str = "as_shown") -> bytes:
     finally:
         out.close()
         src.close()
+
+
+# ---------- แทรกหน้า (v1.39.0) ----------
+INSERT_MAX_TOTAL_PAGES = 2000
+INSERT_MAX_BLANK = 50
+
+
+def _runs(pages: list[int]) -> list[tuple[int, int]]:
+    """[0, 1, 2, 5, 7, 8] → [(0, 2), (5, 5), (7, 8)] — แทรกทีละช่วงต่อเนื่อง (เร็วกว่าทีละหน้า และลิงก์ภายในช่วงยังทำงาน)"""
+    runs: list[tuple[int, int]] = []
+    for p in pages:
+        if runs and p == runs[-1][1] + 1:
+            runs[-1] = (runs[-1][0], p)
+        else:
+            runs.append((p, p))
+    return runs
+
+
+def _guard_insert(session: PDFSession, adding: int) -> fitz.Document:
+    doc = require_unlocked(session)
+    if session.signed_pdf_bytes is not None or has_digital_signatures(doc):
+        raise PDFError(
+            "เอกสารนี้มีลายเซ็นดิจิทัลฝังอยู่ แทรกหน้าไม่ได้ เพราะลายเซ็นจะใช้งานไม่ได้ — "
+            "กด Undo ย้อนไปก่อนจุดที่เซ็นถ้าต้องการแทรกหน้า"
+        )
+    if adding < 1:
+        raise PDFError("ไม่มีหน้าที่จะแทรก")
+    if doc.page_count + adding > INSERT_MAX_TOTAL_PAGES:
+        raise PDFError(f"แทรกแล้วเอกสารจะยาวเกิน {INSERT_MAX_TOTAL_PAGES} หน้า")
+    return doc
+
+
+def _shift_text_edits(session: PDFSession, position: int, count: int) -> None:
+    session.text_edits = {(p + count if p >= position else p): e for p, e in session.text_edits.items()}
+
+
+def insert_pages_from(session: PDFSession, source: fitz.Document, page_range: str, position: int) -> dict:
+    """แทรกหน้าจากเอกสารต้นทาง (ช่วงหน้าแบบ "1-3, 5" — ว่าง = ทุกหน้า) ก่อนหน้า ``position`` (0-based; = จำนวนหน้า → ท้ายไฟล์)
+
+    - ช่องกรอกฟอร์มของต้นทาง: ``insert_pdf`` ของ PyMuPDF 1.24 ไม่คัดลอก widget → "ฝัง" ค่าลงหน้าก่อน (``bake``)
+      ข้อความในช่องยังเห็นครบแต่แก้เป็นช่องฟอร์มไม่ได้ (บอกผู้ใช้ผ่าน ``flattened_fields``)
+    - บุ๊กมาร์กเดิมของไฟล์ปลายทางชี้หน้าเดิมต่อ (อ้างอิงวัตถุหน้า ไม่ใช่เลขหน้า) · บุ๊กมาร์กของต้นทางไม่ถูกนำมา
+    """
+    if source.page_count < 1:
+        raise PDFError("ไฟล์ต้นทางไม่มีหน้า")
+    pages = parse_page_range(page_range, source.page_count) if (page_range or "").strip() else list(range(source.page_count))
+    doc = _guard_insert(session, len(pages))
+    position = max(0, min(int(position), doc.page_count))
+
+    src = fitz.open("pdf", source.tobytes())  # สำเนา — ไม่แตะเอกสารต้นทาง
+    flattened = sum(1 for p in pages for _w in src[p].widgets())
+    if flattened:
+        src.bake(annots=False, widgets=True)
+    at = position
+    for a, b in _runs(pages):
+        doc.insert_pdf(src, from_page=a, to_page=b, start_at=at, links=True, annots=True)
+        at += b - a + 1
+    src.close()
+    _shift_text_edits(session, position, len(pages))
+    session.mark_dirty()
+    _flush_mupdf_warnings(f"insert_pages session={session.session_id}")
+    return {"inserted": len(pages), "position": position, "flattened_fields": flattened}
+
+
+def insert_blank_pages(session: PDFSession, count: int, position: int, width: float, height: float) -> dict:
+    """แทรกหน้าว่าง ``count`` หน้า ขนาด width×height pt ก่อนหน้า ``position``"""
+    count = int(count)
+    if not (1 <= count <= INSERT_MAX_BLANK):
+        raise PDFError(f"แทรกหน้าว่างได้ครั้งละ 1–{INSERT_MAX_BLANK} หน้า")
+    if not (72 <= width <= 14400 and 72 <= height <= 14400):
+        raise PDFError("ขนาดหน้าว่างไม่ถูกต้อง")
+    doc = _guard_insert(session, count)
+    position = max(0, min(int(position), doc.page_count))
+    for i in range(count):
+        doc.new_page(pno=position + i, width=width, height=height)
+    _shift_text_edits(session, position, count)
+    session.mark_dirty()
+    return {"inserted": count, "position": position, "flattened_fields": 0}

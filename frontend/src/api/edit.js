@@ -198,3 +198,29 @@ export async function insertBarcode(sessionId, pageNumber, rect, spec) {
   });
   return handle(res);
 }
+
+// ---------- ตรวจฟอนต์ (v1.38.0 — backend app/services/font_inspect.py) ----------
+export async function getFontSpans(sessionId, pageNumber) {
+  const res = await fetchWithAuth(`${BASE}/edit/${sessionId}/page/${pageNumber}/font-spans?_t=${Date.now()}`, { cache: "no-store" });
+  return (await handle(res)).spans || [];
+}
+
+export async function getDocumentFonts(sessionId) {
+  const res = await fetchWithAuth(`${BASE}/edit/${sessionId}/fonts?_t=${Date.now()}`, { cache: "no-store" });
+  return (await handle(res)).fonts || [];
+}
+
+// ---------- แก้โครงตาราง (v1.40.0 — backend app/services/edit_service/tables.py) ----------
+export async function getTables(sessionId, pageNumber) {
+  const res = await fetchWithAuth(`${BASE}/edit/${sessionId}/page/${pageNumber}/tables?_t=${Date.now()}`, { cache: "no-store" });
+  return (await handle(res)).tables || [];
+}
+
+// ทับข้อความอื่น → error.status 409 (ถามผู้ใช้แล้วส่ง allowOverlap: true มาใหม่)
+export async function editTable(sessionId, pageNumber, { bbox, xs, ys, allowOverlap = false }) {
+  return handle(await fetchWithAuth(`${BASE}/edit/${sessionId}/page/${pageNumber}/table`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bbox, xs, ys, allow_overlap: allowOverlap }),
+  }));
+}

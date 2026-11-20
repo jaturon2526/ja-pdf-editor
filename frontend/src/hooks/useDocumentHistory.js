@@ -3,6 +3,9 @@
 import * as api from "../api.js";
 import { reorderedPages } from "../utils/pageOrder.js";
 
+// เครื่องมือที่ไม่มี draft ค้าง (อ่านข้อมูลใหม่จากหน้าเอง) — undo/redo แล้วยังเปิดอยู่ แก้/ดูต่อได้
+const TOOLS_KEPT_ON_HISTORY = new Set(["edit_table", "inspect_font"]);
+
 export function useDocumentHistory({
   session,
   setSession,
@@ -16,14 +19,15 @@ export function useDocumentHistory({
   annotationHook,
   signatureHook,
   redactHook,
+  activeTool,
   setActiveTool,
   setCanUndo,
   setCanRedo,
   setStatusMessage,
 }) {
   // ล้าง draft + pending ทุกชนิดทิ้ง (ใช้หลัง undo/redo/ย้ายหน้า — state ค้างไม่ valid แล้ว)
-  function resetTransientEditState() {
-    setActiveTool(null);
+  function resetTransientEditState({ keepTool = false } = {}) {
+    if (!keepTool) setActiveTool(null);
     textEditHook.reset();
     imageEditHook.reset();
     annotationHook.reset();
@@ -104,7 +108,7 @@ export function useDocumentHistory({
         setStatusMessage(isUndo ? "ไม่มีขั้นตอนก่อนหน้าให้เลิกทำแล้ว" : "ไม่มีขั้นตอนที่ทำซ้ำได้แล้ว");
         return;
       }
-      resetTransientEditState();
+      resetTransientEditState({ keepTool: TOOLS_KEPT_ON_HISTORY.has(activeTool) });
       await refreshAfterHistoryChange();
       setStatusMessage(`${label} (${isUndo ? "Undo" : "Redo"}) สำเร็จ`);
     } catch (err) {
@@ -116,7 +120,7 @@ export function useDocumentHistory({
   // action(sessionId) คืน response ของ API — status "no_change" = ไม่มีอะไรเปลี่ยน (แสดง noChange ถ้ามี)
   // success เป็นข้อความ หรือฟังก์ชัน (res) => ข้อความ ก็ได้ (เช่น แสดงขนาดไฟล์ก่อน/หลัง)
   // คืน true เมื่อเอกสารเปลี่ยนจริง (แผงหน้าเอกสารใช้ย้าย selection ตามหน้าที่ย้าย)
-  async function runDocumentChange(action, { busy, success, failure, noChange, nextPage = null } = {}) {
+  async function runDocumentChange(action, { busy, success, failure, noChange, nextPage = null, rethrow = false, keepTool = false } = {}) {
     if (!session) return false;
     if (busy) setStatusMessage(busy);
     try {
@@ -127,12 +131,13 @@ export function useDocumentHistory({
       }
       setCanUndo(true);
       setCanRedo(false);
-      resetTransientEditState();
+      resetTransientEditState({ keepTool });
       await refreshAfterHistoryChange(typeof nextPage === "function" ? nextPage() : nextPage);
       setStatusMessage(typeof success === "function" ? success(res) : success);
       return true;
     } catch (err) {
       setStatusMessage(`${failure}: ${err.message}`);
+      if (rethrow) throw err; // หน้าต่างที่เรียก (เช่น แทรกหน้า) แสดงข้อความเองและยังไม่ปิด
       return false;
     }
   }
@@ -162,6 +167,18 @@ export function useDocumentHistory({
       return runDocumentChange((sid) => api.rotatePages(sid, pageNumbers, angle), {
         success: plural(pageNumbers, "หมุนหน้าที่เลือก", "หมุนหน้าสำเร็จ"),
         failure: "หมุนหน้าไม่สำเร็จ",
+      });
+    },
+    // แทรกหน้า (v1.39.0): body = { position, source_session_id, pages } | { position, blank } — ไปที่หน้าแรกที่แทรก
+    insert(body) {
+      if (!session) return false;
+      return runDocumentChange((sid) => api.insertPages(sid, body), {
+        busy: "กำลังแทรกหน้า...",
+        nextPage: body.position,
+        success: (res) => `แทรก ${res.inserted} หน้าแล้ว${res.flattened_fields
+          ? ` · ช่องกรอกฟอร์ม ${res.flattened_fields} ช่องของไฟล์ที่แทรกกลายเป็นข้อความตายตัว` : ""}`,
+        failure: "แทรกหน้าไม่สำเร็จ",
+        rethrow: true,
       });
     },
     move(pageNumbers, direction) {

@@ -71,6 +71,7 @@ export default function Sidebar({
   onMovePages,
   onDeletePages,
   onRotatePages,
+  onInsertPages,       // (position 0-based: แทรกก่อนหน้านี้) → เปิดหน้าต่างแทรกหน้า
   isOpenOnMobile,
   onCloseMobile,
 }) {
@@ -561,6 +562,12 @@ export default function Sidebar({
                 </button>
               );
             })}
+            {pageCount > 0 && onInsertPages && !selectMode && (
+              <button type="button" onClick={(e) => { e.stopPropagation(); onInsertPages(pageCount); }}
+                className="self-center w-[120px] py-2 rounded border-2 border-dashed border-slate-300 text-xs font-medium text-slate-500 hover:border-sky-400 hover:text-sky-700 hover:bg-sky-50">
+                ＋ แทรกหน้า
+              </button>
+            )}
           </div>
         )}
 
@@ -660,6 +667,14 @@ export default function Sidebar({
             <MenuChip label={`หมุนซ้าย ↺ (-90°)${countSuffix}`} disabled={!hasSelection}
               onClick={() => { onRotatePages(Array.from(selectedPages), -90); setContextMenu(null); }}>↺ ซ้าย</MenuChip>
           </MenuRow>
+          {onInsertPages && (
+            <MenuRow label="แทรกหน้า">
+              <MenuChip label="แทรกหน้าก่อนหน้านี้" disabled={!hasSelection}
+                onClick={() => { onInsertPages(Math.min(...selectedPages)); setContextMenu(null); }}>＋ ก่อน</MenuChip>
+              <MenuChip label="แทรกหน้าหลังหน้านี้" disabled={!hasSelection}
+                onClick={() => { onInsertPages(Math.max(...selectedPages) + 1); setContextMenu(null); }}>＋ หลัง</MenuChip>
+            </MenuRow>
+          )}
           <div className="h-px bg-slate-200 my-1 mx-2" />
           <button
             className="w-full text-left px-4 py-1.5 text-slate-700 hover:bg-sky-50 focus:bg-sky-50 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent"

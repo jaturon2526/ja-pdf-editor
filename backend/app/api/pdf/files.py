@@ -328,6 +328,47 @@ async def merge_pdf_files(
     return _store_pdf(merged, filename, db, current_user)
 
 
+@router.post("/insert-source")
+async def create_insert_source(file: UploadFile = File(...), current_user: User = Depends(get_current_active_user)):
+    """ไฟล์ต้นทางสำหรับ "แทรกหน้า" (v1.39.0): PDF / รูปภาพ / Office → session ชั่วคราว (ไม่บันทึกในเอกสารของฉัน
+    ไม่นับพื้นที่ · ปิดเมื่อแทรกเสร็จหรือหมดอายุตามปกติ) — ใช้ภาพย่อ/ปลดรหัสผ่านด้วย endpoint ของ session เดิม"""
+    name = re.split(r"[\\/]", file.filename or "")[-1] or "file.pdf"
+    if not name.lower().endswith((".pdf",) + IMAGE_EXTS + OFFICE_EXTS):
+        raise HTTPException(status_code=400,
+                            detail="รองรับเฉพาะไฟล์ PDF, รูปภาพ (.png, .jpg) หรือไฟล์ Office (Word, Excel, PowerPoint)")
+    content = await file.read(settings.MAX_UPLOAD_SIZE + 1)
+    if len(content) > settings.MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail="ไฟล์ใหญ่เกินขนาดที่กำหนด")
+    pdf_bytes, pdf_name = await _to_pdf(content, name, current_user)
+    return _open_insert_source(pdf_bytes, pdf_name, current_user)
+
+
+@router.post("/insert-source/from-file/{file_id}")
+def create_insert_source_from_file(file_id: int, db: Session = Depends(get_db),
+                                   current_user: User = Depends(get_current_active_user)):
+    """ไฟล์ต้นทางจากเอกสารของฉัน (เวอร์ชันที่บันทึกล่าสุด) → session ชั่วคราว"""
+    record = db.query(FileRecord).filter(FileRecord.id == file_id, FileRecord.user_id == current_user.id).first()
+    path = file_storage.resolve_stored_pdf(record) if record else None
+    if not path:
+        raise HTTPException(status_code=404, detail="ไม่พบไฟล์ที่เลือกในเอกสารของฉัน")
+    return _open_insert_source(path.read_bytes(), record.filename, current_user)
+
+
+def _open_insert_source(pdf_bytes: bytes, filename: str, user: User) -> dict:
+    try:
+        session, needs_password = pdf_service.create_session_from_upload(pdf_bytes, filename, user_id=user.id)
+    except ServerBusyError:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"เปิดไฟล์ไม่สำเร็จ: {exc}")
+    page_count = None
+    if not needs_password:
+        with session.lock:
+            page_count = pdf_service.get_page_count(session)
+    return {"session_id": session.session_id, "filename": filename,
+            "status": "password_required" if needs_password else "ok", "page_count": page_count}
+
+
 @router.post("/upload", response_model=UploadResponse)
 async def upload_pdf(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     """อัปโหลดจาก Dashboard: PDF, รูปภาพ (OCR ให้ค้นหาได้) หรือไฟล์ Office (แปลงเป็น PDF) — เก็บเป็น PDF เสมอ"""

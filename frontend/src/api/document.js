@@ -277,3 +277,24 @@ export async function addOcrTextLayer(sessionId, pages = null) {
   });
   return handle(res);
 }
+
+// ---------- แทรกหน้า (v1.39.0) ----------
+// ไฟล์ต้นทาง → session ชั่วคราว (ไม่บันทึกในเอกสารของฉัน) · ใช้ renderPage/unlockPdf/closeSession กับ session นี้ได้ตามปกติ
+export async function createInsertSource(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return handle(await fetchWithAuth(`${BASE}/pdf/insert-source`, { method: "POST", body: form }));
+}
+
+export async function createInsertSourceFromFile(fileId) {
+  return handle(await fetchWithAuth(`${BASE}/pdf/insert-source/from-file/${fileId}`, { method: "POST" }));
+}
+
+// body: { position, source_session_id, pages } หรือ { position, blank: { count, width, height } }
+export async function insertPages(sessionId, body) {
+  return handle(await fetchWithAuth(`${BASE}/pdf/${sessionId}/pages/insert`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }));
+}

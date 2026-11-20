@@ -1,3 +1,4 @@
+import SourceFontList from "./fonts/SourceFontList.jsx";
 import React from "react";
 import { resolveFamilyAndStyle } from "../utils/textEditUtils.js";
 
@@ -102,6 +103,7 @@ export default function PropertiesPanel({
   onValignChange,
   underline = false,
   onUnderlineChange,
+  sourceFonts,
   onSave,
   onCancel,
   saving,
@@ -138,6 +140,14 @@ export default function PropertiesPanel({
           พิมพ์แก้ข้อความได้ที่กล่องบนหน้าเอกสารโดยตรง กด "ตกลง" เพื่อยืนยันย่อหน้านี้ แล้วไปกดปุ่ม
           "บันทึกการแก้ไข" บน toolbar อีกครั้งหลังแก้ไขครบทุกจุดแล้ว เพื่อบันทึกลงไฟล์จริง
         </p>
+
+        {sourceFonts?.length > 0 && (
+          <section className="mb-3 p-2 rounded-md bg-slate-50 border border-slate-200" aria-labelledby="props-source-fonts">
+            <h4 id="props-source-fonts" className="text-xs font-semibold text-slate-700 mb-1">ฟอนต์ในไฟล์</h4>
+            <SourceFontList fonts={sourceFonts} showChars={sourceFonts.length > 1} />
+            <p className="mt-1.5 text-[11px] text-slate-500">ข้อความที่แก้จะวาดใหม่ด้วยฟอนต์ที่เลือกด้านล่าง</p>
+          </section>
+        )}
 
         <label htmlFor="propertiespanel-f142" className="properties-label">Font</label>
         <select id="propertiespanel-f142"

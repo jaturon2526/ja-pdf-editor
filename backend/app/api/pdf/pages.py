@@ -2,12 +2,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.api.deps import get_current_active_user, get_owned_session
+from app.api.deps import ensure_session_owner, get_current_active_user, get_owned_session
+from app.db.database import get_db
 from app.core.session import PDFSession
 from app.models.domain import User
 from app.models.schemas import (
     CompressPdfRequest,
     DeletePagesRequest,
+    InsertPagesRequest,
     Rect,
     ReorderPagesRequest,
     ReorderPagesResponse,
@@ -36,6 +38,38 @@ def delete_pages(session_id: str, payload: DeletePagesRequest, session: PDFSessi
             if changed:
                 session.push_history()
             return {"status": "ok" if changed else "no_change"}
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/{session_id}/pages/insert")
+def insert_pages(session_id: str, payload: InsertPagesRequest, current_user: User = Depends(get_current_active_user),
+                 session: PDFSession = Depends(get_owned_session), db=Depends(get_db)):
+    """แทรกหน้าจากไฟล์ต้นทาง (session ชั่วคราวของผู้ใช้คนเดียวกัน — แทรกจากไฟล์ตัวเองก็ได้ = ทำซ้ำหน้า) หรือหน้าว่าง"""
+    import fitz
+
+    from app.core.session import session_manager
+    from app.services.pdf_service import require_unlocked
+
+    if (payload.source_session_id is None) == (payload.blank is None):
+        raise HTTPException(status_code=400, detail="ระบุไฟล์ต้นทาง หรือหน้าว่าง อย่างใดอย่างหนึ่ง")
+    try:
+        if payload.blank is not None:
+            with session.lock:
+                result = pdf_service.insert_blank_pages(session, payload.blank.count, payload.position,
+                                                        payload.blank.width, payload.blank.height)
+                session.push_history()
+                return {"status": "ok", **result, "page_count": session.doc.page_count}
+        source = session_manager.get(payload.source_session_id)
+        if source is None:
+            raise HTTPException(status_code=404, detail="ไฟล์ต้นทางหมดอายุแล้ว — เลือกไฟล์ใหม่อีกครั้ง")
+        ensure_session_owner(source, current_user, db)
+        with source.lock:  # คัดลอกเป็นไบต์ก่อน แล้วค่อยล็อกปลายทาง — ไม่ถือสองล็อกพร้อมกัน (กัน deadlock / ต้นทางคือไฟล์เดียวกัน)
+            src_bytes = require_unlocked(source).tobytes()
+        with fitz.open("pdf", src_bytes) as src, session.lock:
+            result = pdf_service.insert_pages_from(session, src, payload.pages, payload.position)
+            session.push_history()
+            return {"status": "ok", **result, "page_count": session.doc.page_count}
     except PDFError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 

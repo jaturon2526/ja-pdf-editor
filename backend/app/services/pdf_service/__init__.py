@@ -50,6 +50,8 @@ from app.services.pdf_service.pages import (  # noqa: F401
     parse_page_range,
     extract_pages,
     build_print_pdf,
+    insert_pages_from,
+    insert_blank_pages,
 )
 from app.services.pdf_service.optimize import (  # noqa: F401
     compress_pdf,

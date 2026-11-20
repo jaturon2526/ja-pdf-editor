@@ -9,7 +9,7 @@ from fpdf import FPDF
 
 from app.core.session import PDFSession
 from app.models.schemas import Rect, TextBlock
-from app.services import fonts, thai_text
+from app.services import font_inspect, fonts, thai_text
 from app.services.pdf_service import PDFError, require_unlocked
 from app.services.edit_service.layout import (
     _measure_width,
@@ -46,6 +46,7 @@ def get_text_blocks(session: PDFSession, page_number: int) -> list[TextBlock]:
     raw = thai_text.normalize_page_dict(text_page.get_text("rawdict"), text_page)
     rules = _vertical_rules(page)
     hrules = _horizontal_rules(page) if rules else []
+    font_info = font_inspect.font_table(text_page)
 
     # รวบรวมกรอบกล่องข้อความ (FreeText) เพื่อกรองบรรทัดที่อยู่ใต้กล่องออก (กล่องแก้ไขข้อความจะซ้อนกล่องข้อความ)
     # — ไม่รวมกรอบสี่เหลี่ยม (Square): เดิมวาดกรอบล้อมย่อหน้าไว้ แล้วแก้ไขข้อความในย่อหน้านั้นไม่ได้อีกเลย
@@ -83,6 +84,8 @@ def get_text_blocks(session: PDFSession, page_number: int) -> list[TextBlock]:
         # ดึงกรอบ overlay_rect ของข้อความที่เพิ่งแก้ไขไป (เพื่อใช้กรองออกไม่ให้ซ้ำ)
         edit_overlays = []
         for rec in session.text_edits.get(page_number, {}).values():
+            if rec.get("kind") == "table":  # ทะเบียนตารางที่วาดใหม่ (edit_service/tables.py) ไม่ใช่ข้อความ
+                continue
             if "overlay_rect" in rec:
                 o = rec["overlay_rect"]
                 edit_overlays.append(fitz.Rect(o["x0"], o["y0"], o["x1"], o["y1"]))
@@ -162,6 +165,11 @@ def get_text_blocks(session: PDFSession, page_number: int) -> list[TextBlock]:
         # Auto-match font name: แปลงชื่อ raw PDF font เป็น key ที่มีอยู่ในระบบ
         raw_font = first_span.get("font", "")
         matched_font = fonts.match_pdf_font_name(raw_font, flag_bold=flag_bold, flag_italic=flag_italic)
+        source_fonts = font_inspect.summarize_spans([sc for li in group for sc in li.get("span_chars", [])], font_info)
+        # ฟอนต์เดิมเป็นตระกูลเดียวกับฟอนต์ระบบที่จะใช้วาด (เช่น Sarabun → sarabun) = ขนาดจริงในไฟล์ตรงกับที่เห็นแล้ว
+        # ใช้ขนาดจริงของฟอนต์หลักแทนค่าประมาณจากความสูงกรอบ (ประมาณได้ 10.1 ทั้งที่ไฟล์เป็น 10.5 pt)
+        if source_fonts and font_inspect.same_family(source_fonts[0]["name"], matched_font):
+            calculated_size = source_fonts[0]["size"]
 
         blocks.append(
             TextBlock(
@@ -179,12 +187,15 @@ def get_text_blocks(session: PDFSession, page_number: int) -> list[TextBlock]:
                 underline=False,
                 is_bold=flag_bold or ("-bold" in matched_font),
                 is_italic=flag_italic or ("-italic" in matched_font),
+                source_fonts=source_fonts,
             )
         )
 
     # ต่อท้ายด้วยย่อหน้าที่เคยแก้ไขไปแล้วในเซสชันนี้ (ไม่โผล่มาจาก page.get_text('dict') อีกต่อไป
     # เพราะกลายเป็นรูปภาพไปแล้ว — ดูหมายเหตุ "แก้บั๊กสำคัญ #6" ด้านบนของไฟล์) ให้ยังคลิกแก้ไขซ้ำได้
     for edit_id, rec in session.text_edits.get(page_number, {}).items():
+        if rec.get("kind") == "table":
+            continue
         r = rec["rect"]
         blocks.append(
             TextBlock(
@@ -352,10 +363,14 @@ def _line_segments(line: dict, rules) -> list[dict]:
         text = "".join(c for c, _b, _sp in seg).strip()
         if not ink or not text:
             continue
+        counts: dict[int, list] = {}
+        for _c, _b, sp in ink:  # จำนวนตัวอักษรต่อ span — ใช้สรุปฟอนต์ในย่อหน้า (font_inspect.summarize_spans)
+            counts.setdefault(id(sp), [sp, 0])[1] += 1
         out.append({"text": text,
                     "bbox": (min(b[0] for _c, b, _s in ink), min(b[1] for _c, b, _s in ink),
                              max(b[2] for _c, b, _s in ink), max(b[3] for _c, b, _s in ink)),
-                    "span": ink[0][2]})
+                    "span": ink[0][2],
+                    "span_chars": [tuple(v) for v in counts.values()]})
     return out
 
 
