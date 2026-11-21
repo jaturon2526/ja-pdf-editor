@@ -1,6 +1,7 @@
 import React, { forwardRef, useEffect, useLayoutEffect, useRef, useState } from "react";
 import FontInspectorLayer from "./editor/FontInspectorLayer.jsx";
 import TableEditLayer from "./editor/TableEditLayer.jsx";
+import BarcodeEditLayer from "./editor/BarcodeEditLayer.jsx";
 import { pageImageSrc } from "../utils/pageImage.js";
 import CanvasContextMenu from "./CanvasContextMenu.jsx";
 import EditableTextBox from "./EditableTextBox.jsx";
@@ -67,6 +68,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   pendingRedactions,   // รายการกรอบเซ็นเซอร์ที่รอการกดยืนยัน (สำหรับโหมด redact)
   piiHighlights,       // PDPA: [{id, rects, selected, active}] ของหน้านี้ — กรอบที่จะถูกปิด (ยังไม่ปิดจริง)
   tableEdit,           // เครื่องมือแก้ตาราง (activeTool === "edit_table"): useTableEdit
+  barcodeEdit,         // เครื่องมือย้าย/ลบบาร์โค้ด (activeTool === "edit_barcode"): useBarcodeEdit
   fontInspector,       // เครื่องมือตรวจฟอนต์ (activeTool === "inspect_font"): { spans, selected, setSelected }
   draftEdit,       // ย่อหน้าที่กำลังแก้ไขอยู่ตอนนี้ { blockId, text, rect, fontKey, fontSize, colorHex, bgColor }
   onDraftTextChange,
@@ -769,6 +771,12 @@ const PDFCanvas = forwardRef(function PDFCanvas({
           <TableEditLayer tables={tableEdit.tables} selected={tableEdit.selected} draft={tableEdit.draft} zoom={zoom}
             pageSrc={pageImage ? pageImageSrc(pageImage) : ""} pageWidthPt={pageWidthPt} pageHeightPt={pageHeightPt}
             onSelect={tableEdit.select} onUpdate={tableEdit.update} />
+        )}
+
+        {activeTool === "edit_barcode" && barcodeEdit && (
+          <BarcodeEditLayer barcodes={barcodeEdit.barcodes} selected={barcodeEdit.selected} draft={barcodeEdit.draft}
+            zoom={zoom} pageSrc={pageImage ? pageImageSrc(pageImage) : ""} pageWidthPt={pageWidthPt} pageHeightPt={pageHeightPt}
+            onSelect={barcodeEdit.select} onMoveTo={barcodeEdit.moveTo} />
         )}
 
         {activeTool === "inspect_font" && fontInspector && (

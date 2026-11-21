@@ -14,6 +14,12 @@ const ICONS = {
       <path d="m13.2 12 1.6 1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   ),
+  editBarcode: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M2 3v10M4.5 3v10M7.5 3v10M11 3v10M14 3v10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M6 3v10M9.3 3v10M12.5 3v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  ),
   redact: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
       <rect x="2" y="4" width="12" height="8" rx="1" />
@@ -389,6 +395,13 @@ export default function Toolbar({
           label="ตรวจฟอนต์"
           active={activeTool === "inspect_font"}
           onClick={() => onSelectTool(activeTool === "inspect_font" ? null : "inspect_font")}
+          disabled={!hasDocument}
+        />
+        <ToolbarButton
+          icon="editBarcode"
+          label="ย้าย / ลบบาร์โค้ด"
+          active={activeTool === "edit_barcode"}
+          onClick={() => onSelectTool(activeTool === "edit_barcode" ? null : "edit_barcode")}
           disabled={!hasDocument}
         />
       </div>

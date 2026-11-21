@@ -15,6 +15,8 @@ import DocumentFontsModal from "../components/editor/DocumentFontsModal.jsx";
 import InsertPagesModal from "../components/editor/InsertPagesModal.jsx";
 import TableEditPanel from "../components/editor/TableEditPanel.jsx";
 import { useTableEdit } from "../hooks/useTableEdit.js";
+import BarcodeEditPanel from "../components/editor/BarcodeEditPanel.jsx";
+import { useBarcodeEdit } from "../hooks/useBarcodeEdit.js";
 import FontInspectorPanel from "../components/editor/FontInspectorPanel.jsx";
 import { useFontInspector } from "../hooks/useFontInspector.js";
 import AddPasswordModal from "../components/AddPasswordModal.jsx";
@@ -286,9 +288,18 @@ export default function Editor() {
   const tableEdit = useTableEdit({
     session, currentPage, pageImage: sessionHook.pageImage, active: activeTool === "edit_table", runDocumentChange,
   });
-  // ลูกศรขยับตารางที่เลือก 1 pt (Shift = 10 pt) — ไม่แย่งปุ่มลูกศรตอนพิมพ์ในช่องตัวเลข
+  const barcodeEdit = useBarcodeEdit({
+    session, currentPage, pageImage: sessionHook.pageImage, active: activeTool === "edit_barcode", runDocumentChange,
+  });
+  // ลูกศรขยับตาราง/บาร์โค้ดที่เลือก 1 pt (Shift = 10 pt) — ไม่แย่งปุ่มลูกศรตอนพิมพ์ในช่องตัวเลข
+  let arrowTarget = null;
+  if (activeTool === "edit_table" && tableEdit.selected) {
+    arrowTarget = tableEdit.moveBy;
+  } else if (activeTool === "edit_barcode" && barcodeEdit.selected) {
+    arrowTarget = barcodeEdit.moveBy;
+  }
   useEffect(() => {
-    if (activeTool !== "edit_table" || !tableEdit.selected) return undefined;
+    if (!arrowTarget) return undefined;
     const onKey = (e) => {
       const tag = e.target?.tagName;
       if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
@@ -296,11 +307,11 @@ export default function Editor() {
       const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
       if (!d) return;
       e.preventDefault();
-      tableEdit.moveBy(d[0], d[1]);
+      arrowTarget(d[0], d[1]);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeTool, tableEdit.selected, tableEdit.moveBy]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [arrowTarget]);
 
   // ตั้ง callbacks ให้ annotationHook ใช้ refresh pageImage และ undo/redo state
   // (annotation CRUD ต้องการ re-render หน้า ซึ่ง setPageImage อยู่ใน sessionHook)
@@ -863,6 +874,7 @@ export default function Editor() {
           pageImage={sessionHook.pageImage}
           fontInspector={fontInspector}
           tableEdit={tableEdit}
+          barcodeEdit={barcodeEdit}
           pageWidthPt={session?.pageSizes?.[currentPage]?.[0] || 1}
           pageHeightPt={session?.pageSizes?.[currentPage]?.[1] || 1}
           zoom={zoom}
@@ -924,6 +936,11 @@ export default function Editor() {
 
         {activeTool === "edit_table" && session && (
           <TableEditPanel hook={tableEdit} onClose={() => setActiveTool(null)} />
+        )}
+
+        {activeTool === "edit_barcode" && session && (
+          <BarcodeEditPanel hook={barcodeEdit} onClose={() => setActiveTool(null)}
+            onInsertNew={() => setShowBarcodeModal(true)} />
         )}
 
         {activeTool === "inspect_font" && session && (

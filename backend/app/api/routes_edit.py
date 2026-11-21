@@ -11,6 +11,7 @@ from app.api.deps import get_current_active_user
 from app.models.domain import User
 
 from app.models.schemas import (
+    BarcodeObjectEditRequest,
     TableEditRequest,
     FontFamilyResponse,
     FontInstallResponse,
@@ -244,6 +245,36 @@ def edit_table(session_id: str, page_number: int, payload: TableEditRequest,
             return {"status": "ok", **result}
     except tables.TableOverlapError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/{session_id}/page/{page_number}/barcodes")
+def get_barcodes(session_id: str, page_number: int, session: PDFSession = Depends(get_owned_session)):
+    """บาร์โค้ด/QR ในหน้า (อ่านด้วย zxing-cpp) — {barcodes: [{id, bbox, format, text}], rotated}"""
+    from app.services.edit_service import barcodes
+
+    try:
+        with session.lock:
+            return barcodes.get_barcodes(session, page_number)
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/{session_id}/page/{page_number}/barcodes/edit")
+def edit_barcode_object(session_id: str, page_number: int, payload: BarcodeObjectEditRequest,
+                        session: PDFSession = Depends(get_owned_session)):
+    """ย้าย (target) หรือลบ (delete) บาร์โค้ดที่มีอยู่ในหน้า · undo ได้ — ดู edit_service/barcodes.py"""
+    from app.services.edit_service import barcodes
+
+    if payload.delete == (payload.target is not None):
+        raise HTTPException(status_code=400, detail="ระบุ target (ย้าย) หรือ delete (ลบ) อย่างใดอย่างหนึ่ง")
+    try:
+        with session.lock:
+            result = barcodes.edit_barcode(session, page_number, payload.bbox.model_dump(),
+                                           None if payload.delete else payload.target.model_dump())
+            session.push_history()
+            return {"status": "ok", **result}
     except PDFError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 

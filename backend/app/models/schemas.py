@@ -493,3 +493,10 @@ class TableEditRequest(BaseModel):
     xs: list[float] = Field(..., min_length=2, max_length=200)
     ys: list[float] = Field(..., min_length=2, max_length=500)
     allow_overlap: bool = False
+
+
+class BarcodeObjectEditRequest(BaseModel):
+    """ย้าย/ลบบาร์โค้ดที่มีอยู่ในหน้า (v1.41.0): bbox เดิม (จาก GET .../barcodes) + กรอบใหม่ หรือ delete"""
+    bbox: Rect
+    target: Optional[Rect] = None
+    delete: bool = False

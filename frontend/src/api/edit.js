@@ -224,3 +224,18 @@ export async function editTable(sessionId, pageNumber, { bbox, xs, ys, allowOver
     body: JSON.stringify({ bbox, xs, ys, allow_overlap: allowOverlap }),
   }));
 }
+
+// ---------- ย้าย/ลบบาร์โค้ดที่มีอยู่ในหน้า (v1.41.0 — backend app/services/edit_service/barcodes.py) ----------
+export async function getBarcodes(sessionId, pageNumber) {
+  const res = await fetchWithAuth(`${BASE}/edit/${sessionId}/page/${pageNumber}/barcodes?_t=${Date.now()}`, { cache: "no-store" });
+  return handle(res); // { barcodes: [{id, bbox, format, text}], rotated }
+}
+
+// target = กรอบใหม่ (ย้าย) · ไม่ส่ง target = ลบ
+export async function editBarcodeObject(sessionId, pageNumber, { bbox, target = null }) {
+  return handle(await fetchWithAuth(`${BASE}/edit/${sessionId}/page/${pageNumber}/barcodes/edit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(target ? { bbox, target } : { bbox, delete: true }),
+  }));
+}
