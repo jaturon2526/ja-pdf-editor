@@ -560,12 +560,18 @@ export default function Editor() {
     });
   }
 
+  const hasLocalUndo = !!(
+    pendingEditCount > 0 ||
+    textEditHook.draftEdit ||
+    imageEditHook.draftImageEdit
+  );
+
   // ======================== Menu (ดู components/editor/editorMenus.js) ========================
   const menus = buildEditorMenus({
     session,
     activeTool,
     setActiveTool,
-    canUndo,
+    canUndo: canUndo || hasLocalUndo,
     canRedo,
     isSidebarOpen,
     setIsSidebarOpen,
@@ -836,7 +842,7 @@ export default function Editor() {
         onApplyAllPages={applyAllPages}
         onUndo={handleUndo}
         onRedo={handleRedo}
-        canUndo={canUndo}
+        canUndo={canUndo || hasLocalUndo}
         canRedo={canRedo}
       />
 

@@ -195,6 +195,29 @@ export function useTextEdit({
     setApplyingEdits(false);
   }
 
+  // ย้อนรายการแก้ไขข้อความล่าสุดที่ยังไม่กด "ยืนยัน" (ไม่ล้างรายการอื่นที่ทำไว้แล้ว)
+  function undoLastPending() {
+    if (draftEdit) {
+      handleCancelEdit();
+      return true;
+    }
+    const curKeys = Object.keys(pendingEdits[currentPage] || {});
+    if (curKeys.length > 0) {
+      handleRestoreTextEdit(curKeys.at(-1));
+      return true;
+    }
+    const pagesWithEdits = Object.keys(pendingEdits).filter((p) => Object.keys(pendingEdits[p] || {}).length > 0);
+    if (pagesWithEdits.length === 0) return false;
+    const targetP = pagesWithEdits.at(-1);
+    const lastKey = Object.keys(pendingEdits[targetP]).at(-1);
+    setPendingEdits((prev) => {
+      const pageMap = { ...(prev[targetP] || {}) };
+      delete pageMap[lastKey];
+      return { ...prev, [targetP]: pageMap };
+    });
+    return true;
+  }
+
   return {
     // state
     textBlocks,
@@ -218,6 +241,7 @@ export function useTextEdit({
     handleDeleteEdit,
     handleRestoreTextEdit,
     handleCommitBlockEdit,
+    undoLastPending,
     // cross-hook
     reset,
   };

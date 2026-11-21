@@ -94,6 +94,7 @@ def get_info(session_id: str, session: PDFSession = Depends(get_owned_session)):
             page_sizes = pdf_service.get_page_sizes(session)
             is_password_protected = bool(pdf_service.get_encryption_state(session))
             is_signed, signature_type = session.is_signed, session.signature_type
+            can_undo, can_redo = session.can_undo(), session.can_redo()
     except PDFError as exc:
         raise HTTPException(status_code=423, detail=str(exc))  # 423 Locked
     return PDFInfoResponse(
@@ -105,6 +106,8 @@ def get_info(session_id: str, session: PDFSession = Depends(get_owned_session)):
         is_password_protected=is_password_protected,
         is_signed=is_signed,
         signature_type=signature_type,
+        can_undo=can_undo,
+        can_redo=can_redo,
     )
 
 

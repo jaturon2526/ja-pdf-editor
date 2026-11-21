@@ -55,7 +55,7 @@ logger = logging.getLogger("session")
 
 # จำนวน snapshot สูงสุดที่เก็บไว้ต่อ session (undo ย้อนได้ไกลสุดเท่านี้ก้าว) — แต่ละ snapshot คือไบต์
 # ทั้งไฟล์ PDF ทั้งฉบับ ณ ตอนนั้น ถ้าเก็บไม่จำกัดจะกินหน่วยความจำมากถ้าผู้ใช้แก้ไขเยอะในเซสชันเดียว
-_HISTORY_LIMIT = 25
+_HISTORY_LIMIT = 15
 
 
 @dataclass
@@ -667,12 +667,17 @@ class RedisSessionManager:
         history_pos = int(raw.get(b"history_pos", b"-1").decode())
         if raw.get(b"history_seqs"):
             seqs = json.loads(raw[b"history_seqs"])
-            entries = []
+            pipe = self._redis.pipeline()
             for seq in seqs:
-                data = self._redis.get(self._hist_key(session_id, seq))
+                pipe.get(self._hist_key(session_id, seq))
+                pipe.hgetall(self._hist_meta_key(session_id, seq))
+            results = pipe.execute() if seqs else []
+            entries = []
+            for idx, seq in enumerate(seqs):
+                data = results[idx * 2]
                 if data is None:
                     continue
-                hmeta = self._redis.hgetall(self._hist_meta_key(session_id, seq))
+                hmeta = results[idx * 2 + 1] or {}
                 entries.append(_HistoryEntry(
                     doc_bytes=data,
                     text_edits=_te(hmeta.get(b"text_edits")),

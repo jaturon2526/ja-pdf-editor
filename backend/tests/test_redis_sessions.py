@@ -66,6 +66,7 @@ def test_history_survives_trimming_and_reconstruct(pods):
         _rotate(s, (i % 4) * 90)
     fresh = b.get(s.session_id)
     with fresh.lock:
+        assert len(fresh.history) == 15
         assert len(fresh.history) == len(s.history)
         assert [e.seq for e in fresh.history] == [e.seq for e in s.history]
     keys = {k.decode() for k in a._redis.keys(f"session:{s.session_id}:hist:*")}

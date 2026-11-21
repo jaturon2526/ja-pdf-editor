@@ -62,12 +62,19 @@ export default function useRedact({ session, currentPage, editMode, setStatusMes
     setPendingRedactions([]);
   };
 
+  const undoLastPending = () => {
+    if (pendingRedactions.length === 0) return false;
+    setPendingRedactions((prev) => prev.slice(0, -1));
+    return true;
+  };
+
   return {
     pendingRedactions,
     addRedactions,
     applyRedactions,
     applyRedactionsAllPages,
     cancelRedactions,
+    undoLastPending,
     applying,
     reset,
   };

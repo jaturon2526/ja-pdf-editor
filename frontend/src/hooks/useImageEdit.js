@@ -272,6 +272,31 @@ export function useImageEdit({
     setPendingImageEdits({});
   }
 
+  // ย้อนรายการแก้ไขรูปภาพล่าสุดที่ยังไม่กด "ยืนยัน" (ไม่ล้างรูปอื่นที่วางไว้แล้ว)
+  function undoLastPending() {
+    if (draftImageEdit) {
+      handleCancelImageEdit();
+      return true;
+    }
+    const curKeys = Object.keys(pendingImageEdits[currentPage] || {});
+    if (curKeys.length > 0) {
+      handleRestoreImageEdit(curKeys.at(-1));
+      return true;
+    }
+    const pagesWithEdits = Object.keys(pendingImageEdits).filter((p) => Object.keys(pendingImageEdits[p] || {}).length > 0);
+    if (pagesWithEdits.length === 0) return false;
+    const targetP = pagesWithEdits.at(-1);
+    const lastKey = Object.keys(pendingImageEdits[targetP]).at(-1);
+    setPendingImageEdits((prev) => {
+      const pageMap = { ...(prev[targetP] || {}) };
+      const edit = pageMap[lastKey];
+      if (edit?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(edit.previewUrl);
+      delete pageMap[lastKey];
+      return { ...prev, [targetP]: pageMap };
+    });
+    return true;
+  }
+
   return {
     // state
     images,
@@ -296,6 +321,7 @@ export function useImageEdit({
     handleCancelImageEdit,
     handleDeleteImageEdit,
     handleRestoreImageEdit,
+    undoLastPending,
     // cross-hook
     reset,
     // utilities (used by handleApplyAllEdits in App.jsx)

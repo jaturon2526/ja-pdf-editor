@@ -13,13 +13,20 @@ def _rotation(client, sid, headers):
 def test_rotate_undo_redo(client, make_user, upload):
     _, headers = make_user()
     sid = upload(headers)
+    info0 = client.get(f"/pdf/{sid}/info", headers=headers).json()
+    assert info0["can_undo"] is False and info0["can_redo"] is False
+
     r = client.post(f"/pdf/{sid}/pages/rotate", headers=headers, json={"page_numbers": [0], "angle": 90})
     assert r.status_code == 200 and r.json()["status"] == "ok"
     assert _rotation(client, sid, headers) == 90
+    info1 = client.get(f"/pdf/{sid}/info", headers=headers).json()
+    assert info1["can_undo"] is True and info1["can_redo"] is False
 
     r = client.post(f"/pdf/{sid}/undo", headers=headers)
     assert r.json()["status"] == "ok" and r.json()["can_redo"] is True
     assert _rotation(client, sid, headers) == 0
+    info2 = client.get(f"/pdf/{sid}/info", headers=headers).json()
+    assert info2["can_undo"] is False and info2["can_redo"] is True
 
     r = client.post(f"/pdf/{sid}/redo", headers=headers)
     assert r.json()["status"] == "ok"

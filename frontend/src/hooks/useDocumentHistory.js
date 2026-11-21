@@ -1,5 +1,6 @@
 // เลิกทำ/ทำซ้ำ และงานที่เปลี่ยนเนื้อเอกสาร (ย้าย/ลบ/หมุนหน้า, ลดขนาด, รวมเลเยอร์, ลายน้ำ) — แยกมาจาก Editor.jsx
 // ทุกงานในนี้จบด้วยขั้นตอนเดียวกัน: เปิดปุ่ม Undo, ล้าง draft ที่ค้าง แล้วรีเฟรชหน้า/ข้อมูลประกอบ
+import { useRef } from "react";
 import * as api from "../api.js";
 import { reorderedPages } from "../utils/pageOrder.js";
 
@@ -25,6 +26,8 @@ export function useDocumentHistory({
   setCanRedo,
   setStatusMessage,
 }) {
+  const historyBusyRef = useRef(false); // กันกด Ctrl+Z / Ctrl+Y รัวซ้อนกันระหว่างรอคำตอบ
+
   // ล้าง draft + pending ทุกชนิดทิ้ง (ใช้หลัง undo/redo/ย้ายหน้า — state ค้างไม่ valid แล้ว)
   function resetTransientEditState({ keepTool = false } = {}) {
     if (!keepTool) setActiveTool(null);
@@ -56,6 +59,8 @@ export function useDocumentHistory({
             }
           : s
       );
+      if (typeof info.can_undo === "boolean") setCanUndo(info.can_undo);
+      if (typeof info.can_redo === "boolean") setCanRedo(info.can_redo);
       if (targetPage >= info.page_count) {
         targetPage = Math.max(0, info.page_count - 1);
         setCurrentPage(targetPage);
@@ -65,39 +70,56 @@ export function useDocumentHistory({
     }
 
     sessionHook.setThumbnails({}); // undo/redo อาจกระทบหน้าอื่น — รีโหลดทุก thumbnail
-    // bookmark ผูกกับ TOC จริง — undo/redo/reorder อาจเปลี่ยนเลขหน้าอ้างอิง จึงดึงใหม่เสมอ
-    try {
-      const bm = await api.getBookmarks(session.sessionId);
-      sessionHook.setBookmarks((prev) =>
-        bm.bookmarks.map((b, i) => ({ ...b, id: prev[i]?.id ?? `${Date.now()}-${i}` }))
-      );
-    } catch {
-      /* ignore */
+
+    // ยิงโหลด bookmark, ภาพหน้าปัจจุบัน, และข้อมูลตามโหมดแก้ไขพร้อมกัน (Promise.all) ให้ตอบสนองเร็วขึ้น
+    const loadBookmarks = api
+      .getBookmarks(session.sessionId)
+      .then((bm) => {
+        sessionHook.setBookmarks((prev) =>
+          bm.bookmarks.map((b, i) => ({ ...b, id: prev[i]?.id ?? `${Date.now()}-${i}` }))
+        );
+      })
+      .catch(() => { /* ignore */ });
+
+    const loadPage = api
+      .renderPage(session.sessionId, targetPage, zoom)
+      .then((data) => sessionHook.setPageImage(data.image_base64))
+      .catch((err) => setStatusMessage(`รีเฟรชหน้าไม่สำเร็จ: ${err.message}`));
+
+    let loadModeData;
+    if (editMode === "text") {
+      loadModeData = api
+        .getTextBlocks(session.sessionId, targetPage)
+        .then((blocks) => textEditHook.setTextBlocks(blocks))
+        .catch(() => { /* ignore */ });
+    } else if (editMode === "image") {
+      loadModeData = api
+        .getImages(session.sessionId, targetPage)
+        .then((imgs) => imageEditHook.setImages(imgs))
+        .catch(() => { /* ignore */ });
+    } else {
+      loadModeData = annotationHook.refreshAnnotations();
     }
-    try {
-      const data = await api.renderPage(session.sessionId, targetPage, zoom);
-      sessionHook.setPageImage(data.image_base64);
-    } catch (err) {
-      setStatusMessage(`รีเฟรชหน้าไม่สำเร็จ: ${err.message}`);
-    }
-    try {
-      if (editMode === "text") {
-        textEditHook.setTextBlocks(await api.getTextBlocks(session.sessionId, targetPage));
-      } else if (editMode === "image") {
-        imageEditHook.setImages(await api.getImages(session.sessionId, targetPage));
-      }
-    } catch {
-      /* ignore */
-    }
-    if (editMode !== "text" && editMode !== "image") {
-      await annotationHook.refreshAnnotations();
-    }
+
+    await Promise.all([loadBookmarks, loadPage, loadModeData]);
+  }
+
+  function tryUndoPendingEdit() {
+    if (editMode === "redact" && redactHook?.undoLastPending?.()) return true;
+    if (editMode === "text" && textEditHook?.undoLastPending?.()) return true;
+    if (editMode === "image" && imageEditHook?.undoLastPending?.()) return true;
+    return false;
   }
 
   async function undoOrRedo(kind) {
-    if (!session) return;
+    if (!session || historyBusyRef.current) return;
     const isUndo = kind === "undo";
+    if (isUndo && tryUndoPendingEdit()) {
+      setStatusMessage("ยกเลิกรายการแก้ไขล่าสุดที่รอยืนยันแล้ว");
+      return;
+    }
     const label = isUndo ? "เลิกทำ" : "ทำซ้ำ";
+    historyBusyRef.current = true;
     try {
       const res = await (isUndo ? api.undo : api.redo)(session.sessionId);
       setCanUndo(res.can_undo);
@@ -113,6 +135,8 @@ export function useDocumentHistory({
       setStatusMessage(`${label} (${isUndo ? "Undo" : "Redo"}) สำเร็จ`);
     } catch (err) {
       setStatusMessage(`${label}ไม่สำเร็จ: ${err.message}`);
+    } finally {
+      historyBusyRef.current = false;
     }
   }
 

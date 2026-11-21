@@ -138,8 +138,8 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
       setBookmarks([]);
     }
 
-    setCanUndo(false);
-    setCanRedo(false);
+    setCanUndo(!!info.can_undo);
+    setCanRedo(!!info.can_redo);
     setStatusMessage(`เปิด ${actualFilename} สำเร็จ — ${actualPageCount} หน้า`);
   }
 

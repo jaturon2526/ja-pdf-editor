@@ -37,6 +37,8 @@ class PDFInfoResponse(BaseModel):
     # ออกทั้งสองแบบ — ดู app/services/signature_service.py)
     is_signed: bool = False
     signature_type: Optional[Literal["electronic", "digital"]] = None
+    can_undo: bool = False
+    can_redo: bool = False
 
 
 # ---------- จัดการรหัสผ่าน (เมนู File > ลบรหัสผ่าน / เข้ารหัส PDF — ผู้ใช้แจ้งขอ) ----------
