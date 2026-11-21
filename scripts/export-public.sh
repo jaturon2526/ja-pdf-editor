@@ -41,7 +41,7 @@ if [ -f "$BLOCKLIST" ] && git ls-files --error-unmatch "$BLOCKLIST" >/dev/null 2
   echo "✗ $BLOCKLIST ถูก commit เข้า git — เอาออก (git rm --cached) ก่อน"; exit 1
 fi
 # ไม่ส่งออก: สคริปต์ทดลองเก่า (มี path เครื่องผู้พัฒนา), บันทึกการทำงานกับ Claude, คู่มือ deploy เฉพาะเซิร์ฟเวอร์ของเรา
-EXCLUDES=(archive CLAUDE.md DEPLOYMENT_ORACLE_GUIDE.md .local-test ship-now.command)
+EXCLUDES=(archive CLAUDE.md GEMINI.md DEPLOYMENT_ORACLE_GUIDE.md .local-test ship-now.command docs/features)
 
 SHA="$(git rev-parse --short "$REF^{commit}")"
 VERSION="$(grep -o 'APP_VERSION = "v[0-9.]*"' frontend/src/components/AboutModal.jsx | grep -o 'v[0-9.]*' || echo dev)"
