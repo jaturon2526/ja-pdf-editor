@@ -161,6 +161,12 @@ const ICONS = {
       <path d="M8 7.3v4M8 5.2v.1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   ),
+  search: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="m10.5 10.5 3.3 3.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
 };
 
 function ToolbarButton({ icon, label, onClick, active, disabled }) {
@@ -275,6 +281,8 @@ export default function Toolbar({
   onRedo,
   canUndo = false,
   canRedo = false,
+  findOpen = false,
+  onFindClick,
   onApplyAllPages,
 }) {
   return (
@@ -310,6 +318,7 @@ export default function Toolbar({
       <div className="flex items-center gap-1 shrink-0">
         <ToolbarButton icon="undo" label="เลิกทำ (Ctrl+Z)" onClick={onUndo} disabled={!hasDocument || !canUndo} />
         <ToolbarButton icon="redo" label="ทำซ้ำ (Ctrl+Y)" onClick={onRedo} disabled={!hasDocument || !canRedo} />
+        <ToolbarButton icon="search" label="ค้นหาในเอกสาร (Ctrl+F)" active={findOpen} onClick={onFindClick} disabled={!hasDocument} />
       </div>
 
       <div className="w-px h-6 shrink-0 bg-slate-300 mx-1" />

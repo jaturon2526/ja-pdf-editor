@@ -23,6 +23,7 @@ export function buildEditorMenus({
   openSaveCopy,
   undo,
   redo,
+  openFind,
   zoomIn,
   zoomOut,
   setZoom,
@@ -74,6 +75,8 @@ export function buildEditorMenus({
       items: [
         { label: "เลิกทำ", shortcut: "Ctrl+Z", onClick: undo, disabled: noDoc || !canUndo },
         { label: "ทำซ้ำ", shortcut: "Ctrl+Y", onClick: redo, disabled: noDoc || !canRedo },
+        { divider: true },
+        { label: "ค้นหาในเอกสาร...", shortcut: "Ctrl+F", onClick: openFind, disabled: noDoc },
       ],
     },
     {

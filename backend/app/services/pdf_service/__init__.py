@@ -91,3 +91,6 @@ from app.services.pdf_service.pii import (  # noqa: F401
     scan_pii,
     redact_pii,
 )
+from app.services.pdf_service.text_index import (  # noqa: F401
+    search_text,
+)

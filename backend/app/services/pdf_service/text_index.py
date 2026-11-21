@@ -151,3 +151,50 @@ def find(pt: PageText, pattern: re.Pattern) -> list[tuple[int, int]]:
     """ช่วง [start, end) ที่ตรงกับ pattern (ไม่นับผลว่าง/ผลที่มีแต่ช่องว่าง)"""
     return [(m.start(), m.end()) for m in pattern.finditer(pt.text)
             if m.end() > m.start() and pt.text[m.start():m.end()].strip()]
+
+
+MAX_SEARCH_MATCHES = 500
+
+
+def search_text(session, query: str, match_case: bool = False) -> dict:
+    """ค้นหาข้อความทุกหน้าในเอกสาร (Ctrl+F, v1.42.0) — คืนตำแหน่งพิกัด pt ของทุกจุดที่พบ
+    ใช้ page_text + keyword_pattern จึงค้นภาษาไทยที่ฟอนต์เก็บผิดรูป (PUA/สระอำ) เจอเหมือนระบบเซ็นเซอร์"""
+    from app.services.pdf_service.core import PDFError, require_unlocked
+
+    doc = require_unlocked(session)
+    q = (query or "").strip()
+    if not q:
+        raise PDFError("กรุณาพิมพ์คำที่ต้องการค้นหา")
+    try:
+        pattern = keyword_pattern(q, match_case=match_case, is_regex=False)
+    except ValueError as exc:
+        raise PDFError(str(exc)) from None
+
+    matches: list[dict] = []
+    truncated = False
+    for pno in range(doc.page_count):
+        pt = page_text(doc[pno])
+        for start, end in find(pt, pattern):
+            rects = rects_for(pt, start, end)
+            if not rects:
+                continue
+            if len(matches) >= MAX_SEARCH_MATCHES:
+                truncated = True
+                break
+            matches.append({
+                "index": len(matches),
+                "page": pno,
+                "rects": [
+                    {"x0": round(r.x0, 2), "y0": round(r.y0, 2), "x1": round(r.x1, 2), "y1": round(r.y1, 2)}
+                    for r in rects
+                ],
+            })
+        if truncated:
+            break
+
+    return {
+        "query": q,
+        "total": len(matches),
+        "truncated": truncated,
+        "matches": matches,
+    }

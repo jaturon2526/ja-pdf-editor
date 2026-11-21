@@ -298,3 +298,9 @@ export async function insertPages(sessionId, body) {
     body: JSON.stringify(body),
   }));
 }
+
+// ค้นหาข้อความทุกหน้าในเอกสาร (Ctrl+F, v1.42.0) → { query, total, truncated, matches: [{ index, page, rects }] }
+export async function searchPdfText(sessionId, query, { matchCase = false } = {}) {
+  const params = new URLSearchParams({ q: query, match_case: String(!!matchCase) });
+  return handle(await fetchWithAuth(`${BASE}/pdf/${sessionId}/search?${params.toString()}`));
+}

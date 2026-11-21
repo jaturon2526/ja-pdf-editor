@@ -502,3 +502,17 @@ class BarcodeObjectEditRequest(BaseModel):
     bbox: Rect
     target: Optional[Rect] = None
     delete: bool = False
+
+
+class SearchMatch(BaseModel):
+    """ผลค้นหาข้อความ 1 จุดในหน้า (v1.42.0, GET /pdf/{sid}/search)"""
+    index: int
+    page: int
+    rects: list[Rect]
+
+
+class SearchTextResponse(BaseModel):
+    query: str
+    total: int
+    truncated: bool = False
+    matches: list[SearchMatch]

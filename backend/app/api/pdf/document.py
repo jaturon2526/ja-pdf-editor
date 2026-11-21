@@ -4,7 +4,7 @@ import uuid
 from typing import Literal
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
@@ -20,6 +20,7 @@ from app.models.schemas import (
     PasswordChangeResponse,
     PDFInfoResponse,
     RenderPageResponse,
+    SearchTextResponse,
     SetBookmarksRequest,
     UndoRedoResponse,
     UnlockRequest,
@@ -109,6 +110,23 @@ def get_info(session_id: str, session: PDFSession = Depends(get_owned_session)):
         can_undo=can_undo,
         can_redo=can_redo,
     )
+
+
+@router.get("/{session_id}/search", response_model=SearchTextResponse)
+def search_document_text(
+    session_id: str,
+    q: str = Query(..., description="คำที่ต้องการค้นหา"),
+    match_case: bool = Query(False, description="ตรงตัวพิมพ์ใหญ่-เล็ก"),
+    session: PDFSession = Depends(get_owned_session),
+):
+    """ค้นหาข้อความทุกหน้าในเอกสาร (Ctrl+F, v1.42.0) — คืนตำแหน่งพิกัด pt ของทุกจุดที่พบ"""
+    try:
+        with session.lock:
+            result = pdf_service.search_text(session, q, match_case=match_case)
+    except PDFError as exc:
+        status = 423 if "ล็อก" in str(exc) or "รหัสผ่าน" in str(exc) else 400
+        raise HTTPException(status_code=status, detail=str(exc))
+    return SearchTextResponse(**result)
 
 
 @router.get("/{session_id}/page/{page_number}", response_model=RenderPageResponse)

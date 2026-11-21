@@ -67,6 +67,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   onResumeImageEdit,   // คลิกกล่องพรีวิวรูปที่ "ตกลง" ไปแล้ว (ทั้งรูปเดิมที่ย้าย/แทนที่ หรือรูปที่เพิ่งแทรกใหม่)
   pendingRedactions,   // รายการกรอบเซ็นเซอร์ที่รอการกดยืนยัน (สำหรับโหมด redact)
   piiHighlights,       // PDPA: [{id, rects, selected, active}] ของหน้านี้ — กรอบที่จะถูกปิด (ยังไม่ปิดจริง)
+  findMatches,         // ค้นหาในเอกสาร (Ctrl+F, v1.42.0): [{index, rects, active}] ของหน้านี้
   tableEdit,           // เครื่องมือแก้ตาราง (activeTool === "edit_table"): useTableEdit
   barcodeEdit,         // เครื่องมือย้าย/ลบบาร์โค้ด (activeTool === "edit_barcode"): useBarcodeEdit
   fontInspector,       // เครื่องมือตรวจฟอนต์ (activeTool === "inspect_font"): { spans, selected, setSelected }
@@ -748,6 +749,39 @@ const PDFCanvas = forwardRef(function PDFCanvas({
             style={pageWidthPt > 1 ? { width: pageWidthPt * zoom, height: "auto" } : undefined}
             draggable={false}
           />
+        )}
+
+        {/* ผลค้นหาข้อความ (Ctrl+F, v1.42.0) — จุดที่เลือกสีส้ม จุดอื่นสีเหลืองอ่อน */}
+        {findMatches?.flatMap((m) =>
+          (m.rects || []).map((r, ri) => (
+            <div
+              key={`find-${m.index}-${ri}`}
+              data-testid={m.active && ri === 0 ? "find-highlight-active" : "find-highlight"}
+              ref={
+                m.active && ri === 0
+                  ? (el) => {
+                      if (el) {
+                        try {
+                          el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+                        } catch {
+                          /* ignore */
+                        }
+                      }
+                    }
+                  : undefined
+              }
+              aria-hidden="true"
+              className={`absolute pointer-events-none rounded-[2px] ${
+                m.active ? "bg-orange-400/55 ring-2 ring-orange-500 z-[6]" : "bg-yellow-300/45 z-[5]"
+              }`}
+              style={{
+                left: r.x0 * zoom,
+                top: r.y0 * zoom,
+                width: Math.max(4, (r.x1 - r.x0) * zoom),
+                height: Math.max(4, (r.y1 - r.y0) * zoom),
+              }}
+            />
+          )),
         )}
 
         {/* เลเยอร์แสดง Pending Redactions (รอการกดยืนยัน) */}

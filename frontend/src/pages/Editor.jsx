@@ -19,6 +19,8 @@ import BarcodeEditPanel from "../components/editor/BarcodeEditPanel.jsx";
 import { useBarcodeEdit } from "../hooks/useBarcodeEdit.js";
 import FontInspectorPanel from "../components/editor/FontInspectorPanel.jsx";
 import { useFontInspector } from "../hooks/useFontInspector.js";
+import FindBar from "../components/editor/FindBar.jsx";
+import { useFindInDocument } from "../hooks/useFindInDocument.js";
 import AddPasswordModal from "../components/AddPasswordModal.jsx";
 import PropertiesPanel from "../components/PropertiesPanel.jsx";
 import ElectronicSignModal from "../components/ElectronicSignModal.jsx";
@@ -231,9 +233,16 @@ export default function Editor() {
     currentPageSizePt: sessionHook.currentPageSizePt,
   });
 
+  const findHook = useFindInDocument({
+    session,
+    currentPage,
+    goToPage: sessionHook.goToPage,
+  });
+
   // ======================== Esc: ปิดสิ่งที่อยู่บนสุดทีละชั้น ========================
   useEscapeStack([
-    // 1. modal
+    // 1. modal / floating bar
+    [findHook.open, findHook.closeFind],
     [showWatermarkModal, () => setShowWatermarkModal(false)],
     [showPageNumberModal, () => setShowPageNumberModal(false)],
     [showBarcodeModal, () => setShowBarcodeModal(false)],
@@ -345,6 +354,7 @@ export default function Editor() {
     saveToServer: handleAutoSaveToServer,
     print: handleAutoPrint,
     openFileDialog: () => pdfInputRef.current?.click(),
+    openFind: findHook.openFind,
     setZoom,
     undo: handleUndo,
     redo: handleRedo,
@@ -596,6 +606,7 @@ export default function Editor() {
     },
     undo: handleUndo,
     redo: handleRedo,
+    openFind: findHook.openFind,
     zoomIn,
     zoomOut,
     setZoom,
@@ -844,7 +855,10 @@ export default function Editor() {
         onRedo={handleRedo}
         canUndo={canUndo || hasLocalUndo}
         canRedo={canRedo}
+        findOpen={findHook.open}
+        onFindClick={() => (findHook.open ? findHook.closeFind() : findHook.openFind())}
       />
+      <FindBar find={findHook} />
 
       {/* แผง PDPA ลอยอยู่ด้านขวา — เว้นที่ให้หน้าเอกสาร (จอใหญ่) เพื่อไม่ให้กรอบไฮไลต์ถูกบัง */}
       <div className={`flex-1 flex overflow-hidden min-h-0 ${showPiiPanel ? "sm:pr-[396px]" : ""}`}>
@@ -903,6 +917,7 @@ export default function Editor() {
           onSelectImage={imageEditHook.handleSelectImage}
           pendingRedactions={redactHook.pendingRedactions}
           piiHighlights={piiHighlights.filter((h) => h.page === currentPage)}
+          findMatches={findHook.pageMatches}
           onAddRedactions={redactHook.addRedactions}
           onResumeImageEdit={imageEditHook.handleResumeImageEdit}
           draftEdit={textEditHook.draftEdit}

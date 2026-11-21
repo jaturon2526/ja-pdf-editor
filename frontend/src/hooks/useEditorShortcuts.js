@@ -14,19 +14,27 @@ export function useEditorShortcuts({
   saveToServer,
   print,
   openFileDialog,
+  openFind,
   setZoom,
   undo,
   redo,
 }) {
   useEffect(() => {
     function onKeyDown(e) {
+      const key = e.key.toLowerCase();
+      const mod = e.ctrlKey || e.metaKey;
+
+      // Ctrl+F / Cmd+F เปิดแถบค้นหาในเอกสารแม้ focus อยู่ในช่องพิมพ์
+      if (mod && !e.altKey && key === "f" && session && openFind) {
+        e.preventDefault();
+        openFind();
+        return;
+      }
+
       const active = document.activeElement;
       const isEditableFocus =
         active?.isContentEditable || active?.tagName === "TEXTAREA" || active?.tagName === "INPUT";
       if (isEditableFocus) return;
-
-      const key = e.key.toLowerCase();
-      const mod = e.ctrlKey || e.metaKey;
 
       // === No modifier required ===
       if (key === "pageup") {
