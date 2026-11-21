@@ -24,7 +24,7 @@ export default function StatusBar({
   }
 
   return (
-    <div className="flex items-center justify-between h-8 bg-slate-100 border-t border-slate-200 px-4 text-xs text-slate-600 shrink-0 z-10 shadow-[0_-1px_2px_rgba(0,0,0,0.02)]">
+    <div className="flex items-center justify-between h-8 bg-slate-100 border-t border-slate-200 px-4 text-xs text-slate-600 shrink-0 z-10 select-none shadow-[0_-1px_2px_rgba(0,0,0,0.02)]">
       <div className="flex items-center gap-1">
         <button 
           className="flex items-center justify-center w-6 h-6 rounded hover:bg-slate-200 disabled:opacity-40 disabled:hover:bg-transparent transition-colors font-bold" 

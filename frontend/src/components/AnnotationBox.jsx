@@ -65,6 +65,19 @@ export default function AnnotationBox({
   const [noteMenuOpen, setNoteMenuOpen] = useState(false); // เมนูคลิกขวาบนบันทึกย่อ (แก้ไข / ลบ)
   const textRef = useRef(null);
   const noteMenuRef = useRef(null);
+  const noteMarkerRef = useRef(null);
+
+  // กัน iOS Safari ขึ้นเคอร์เซอร์เลือกข้อความสีฟ้า (text-selection lollipop) ตอนกดค้างลากย้ายบันทึกย่อ
+  useEffect(() => {
+    const el = noteMarkerRef.current;
+    if (!el || annot.type !== "text_note" || editing) return undefined;
+    const onTouchStart = (e) => {
+      if (e.target?.closest?.(".annot-note-editor, [role='menu']")) return;
+      if (e.cancelable) e.preventDefault();
+    };
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    return () => el.removeEventListener("touchstart", onTouchStart);
+  }, [annot.type, editing]);
 
   useEffect(() => {
     if (!noteMenuOpen) return undefined;
@@ -173,6 +186,7 @@ export default function AnnotationBox({
       if (e.button === 2) return; // คลิกขวาปล่อยให้ onContextMenu เปิดเมนู
       e.stopPropagation();
       e.preventDefault();
+      window.getSelection?.()?.removeAllRanges?.();
       setNoteMenuOpen(false);
       const startX = e.clientX;
       const startY = e.clientY;
@@ -229,8 +243,8 @@ export default function AnnotationBox({
     else if (isDraggingNote) noteCursor = "grabbing";
 
     return (
-      <div role="presentation"
-        className={`annot-note-marker ${editing ? "selected" : ""} ${isDraggingNote ? "ring-2 ring-amber-500 bg-amber-300/40 rounded" : ""}`}
+      <div ref={noteMarkerRef} role="presentation"
+        className={`annot-note-marker select-none ${editing ? "selected" : ""} ${isDraggingNote ? "ring-2 ring-amber-500 bg-amber-300/40 rounded" : ""}`}
         style={{
           left: rect.x0 * zoom,
           top: rect.y0 * zoom,

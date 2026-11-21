@@ -1411,6 +1411,13 @@ select:focus-visible,
   position: absolute;
   cursor: var(--cursor-hand);
   border-radius: 3px;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.annot-note-marker textarea {
+  -webkit-user-select: text;
+  user-select: text;
 }
 .annot-note-marker:hover:not(.selected) {
   background: rgba(230, 145, 25, 0.18);
