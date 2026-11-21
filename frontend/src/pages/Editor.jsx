@@ -927,6 +927,7 @@ export default function Editor() {
           onAnnotationDraftFontSizeChange={annotationHook.handleAnnotationDraftFontSizeChange}
           onCommitAnnotationEdit={annotationHook.handleCommitAnnotationEdit}
           onCancelAnnotationEdit={annotationHook.handleCancelAnnotationEdit}
+          onMoveAnnotation={annotationHook.handleMoveAnnotation}
           onDeleteAnnotation={annotationHook.handleDeleteAnnotation}
           draftSignature={signatureHook.draftSignature}
           onDraftSignatureRectChange={signatureHook.handleDraftSignatureRectChange}

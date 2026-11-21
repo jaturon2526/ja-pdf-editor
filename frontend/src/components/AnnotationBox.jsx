@@ -56,13 +56,40 @@ export default function AnnotationBox({
   onDraftFontSizeChange,
   onCommit,
   onCancel,
+  onMove,
   onDelete,
 }) {
   const [hover, setHover] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [noteDragRect, setNoteDragRect] = useState(null); // ตำแหน่งชั่วคราวขณะลากย้ายบันทึกย่อ (ไม่เปิดกล่องแก้ไข)
+  const [noteMenuOpen, setNoteMenuOpen] = useState(false); // เมนูคลิกขวาบนบันทึกย่อ (แก้ไข / ลบ)
   const textRef = useRef(null);
+  const noteMenuRef = useRef(null);
 
-  const rect = editing ? draftRect : annot.rect;
+  useEffect(() => {
+    if (!noteMenuOpen) return undefined;
+    const onDocPointerDown = (e) => {
+      if (noteMenuRef.current && !noteMenuRef.current.contains(e.target)) {
+        setNoteMenuOpen(false);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setNoteMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onDocPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onDocPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [noteMenuOpen]);
+
+  let rect = annot.rect;
+  if (editing) {
+    rect = draftRect;
+  } else if (noteDragRect) {
+    rect = noteDragRect;
+  }
   const isNote = annot.type === "text_note";
   const isTextual = TEXTUAL_TYPES.includes(annot.type);
   const resizable = RESIZABLE_TYPES.includes(annot.type);
@@ -135,67 +162,119 @@ export default function AnnotationBox({
     window.addEventListener("pointerup", onUp);
   }
 
-  // ---------- โน้ต (text_note): ตำแหน่งเดียว — hover โชว์ balloon, คลิกเพื่อแก้ไข, ลากเพื่อย้าย ----------
+  // ---------- โน้ต (text_note): hover โชว์ balloon, ลากเพื่อย้ายทันทีไม่เด้งกล่องแก้, คลิกหรือคลิกขวาเพื่อแก้ไข/ลบ ----------
   if (isNote) {
     const hitW = Math.max(18, (rect.x1 - rect.x0) * zoom);
     const hitH = Math.max(18, (rect.y1 - rect.y0) * zoom);
+    const isDraggingNote = noteDragRect !== null;
 
     function startNoteMove(e) {
       if (editing) { e.stopPropagation(); return; }
+      if (e.button === 2) return; // คลิกขวาปล่อยให้ onContextMenu เปิดเมนู
       e.stopPropagation();
       e.preventDefault();
+      setNoteMenuOpen(false);
       const startX = e.clientX;
       const startY = e.clientY;
       const startRect = { ...annot.rect }; // เริ่มจากตำแหน่งจริง ไม่ใช่ draftRect
       const w = startRect.x1 - startRect.x0;
       const h = startRect.y1 - startRect.y0;
       let dragging = false;
+      let lastRect = startRect;
 
-      function onMove(ev) {
+      function onMovePointer(ev) {
         const px = Math.hypot(ev.clientX - startX, ev.clientY - startY);
         if (!dragging && px > 5) {
           dragging = true;
-          onSelect(annot); // เริ่ม draft → editing เปลี่ยนเป็น true + draftRect ถูก init
+          setHover(false);
         }
         if (dragging) {
           const dxPt = (ev.clientX - startX) / zoom;
           const dyPt = (ev.clientY - startY) / zoom;
           const x0 = startRect.x0 + dxPt;
           const y0 = startRect.y0 + dyPt;
-          onDraftRectChange({ x0, y0, x1: x0 + w, y1: y0 + h });
+          lastRect = { x0, y0, x1: x0 + w, y1: y0 + h };
+          setNoteDragRect(lastRect);
         }
       }
 
       function onUp() {
-        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointermove", onMovePointer);
         window.removeEventListener("pointerup", onUp);
-        if (!dragging) {
-          // เป็นแค่คลิกปกติ (ไม่ได้ลาก) → เปิด editor
+        window.removeEventListener("pointercancel", onUp);
+        if (dragging) {
+          setNoteDragRect(null);
+          if (onMove) void onMove(annot, lastRect);
+        } else {
+          // คลิก/แตะปกติ (ไม่ได้ลาก) → เปิดกล่องแก้ไขข้อความ
           onSelect(annot);
         }
-        // ถ้าลากแล้ว → editor เปิดอยู่ที่ตำแหน่งใหม่แล้ว กด "ตกลง" เพื่อบันทึก
       }
 
-      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointermove", onMovePointer);
       window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onUp);
     }
+
+    function handleNoteContextMenu(e) {
+      if (editing) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setHover(false);
+      setNoteMenuOpen(true);
+    }
+
+    let noteCursor = "grab";
+    if (editing) noteCursor = "default";
+    else if (isDraggingNote) noteCursor = "grabbing";
 
     return (
       <div role="presentation"
-        className={`annot-note-marker ${editing ? "selected" : ""}`}
+        className={`annot-note-marker ${editing ? "selected" : ""} ${isDraggingNote ? "ring-2 ring-amber-500 bg-amber-300/40 rounded" : ""}`}
         style={{
           left: rect.x0 * zoom,
           top: rect.y0 * zoom,
           width: hitW,
           height: hitH,
-          cursor: editing ? "default" : "grab",
+          cursor: noteCursor,
+          touchAction: "none",
         }}
-        onMouseEnter={() => setHover(true)}
+        onMouseEnter={() => { if (!isDraggingNote && !noteMenuOpen) setHover(true); }}
         onMouseLeave={() => setHover(false)}
         onPointerDown={startNoteMove}
-        title={editing ? undefined : "คลิกเพื่อแก้ไข / ลากเพื่อย้ายตำแหน่ง"}
+        onContextMenu={handleNoteContextMenu}
+        title={editing ? undefined : "ลากเพื่อย้ายตำแหน่ง / คลิกหรือคลิกขวาเพื่อแก้ไข"}
       >
-        {hover && !editing && annot.content && <div className="annot-note-balloon">{annot.content}</div>}
+        {hover && !editing && !isDraggingNote && !noteMenuOpen && annot.content && (
+          <div className="annot-note-balloon">{annot.content}</div>
+        )}
+        {noteMenuOpen && !editing && (
+          <div
+            ref={noteMenuRef}
+            role="menu"
+            aria-label="เมนูบันทึกย่อ"
+            className="absolute left-full top-0 ml-1.5 z-40 min-w-[148px] bg-white border border-slate-200 rounded-lg shadow-xl py-1 text-xs text-slate-800"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              role="menuitem"
+              className="w-full text-left px-3 py-1.5 hover:bg-sky-50 flex items-center gap-2 cursor-pointer"
+              onClick={() => { setNoteMenuOpen(false); onSelect(annot); }}
+            >
+              แก้ไขบันทึกย่อ
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="w-full text-left px-3 py-1.5 text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
+              onClick={() => { setNoteMenuOpen(false); void onDelete(annot); }}
+            >
+              ลบบันทึกย่อ
+            </button>
+          </div>
+        )}
         {editing && (
           <div role="presentation" className="annot-note-editor" onClick={(e) => e.stopPropagation()}>
             <textarea
@@ -219,7 +298,7 @@ export default function AnnotationBox({
                   <button className="secondary-btn annot-toolbar-btn" onClick={() => setConfirmDelete(false)}>
                     ยกเลิก
                   </button>
-                  <button className="annot-danger-btn annot-toolbar-btn" onClick={onDelete}>
+                  <button className="annot-danger-btn annot-toolbar-btn" onClick={() => void onDelete()}>
                     ใช่, ลบเลย
                   </button>
                 </>
@@ -231,7 +310,7 @@ export default function AnnotationBox({
                   <button className="annot-danger-btn annot-toolbar-btn" onClick={() => setConfirmDelete(true)}>
                     ลบ
                   </button>
-                  <button className="primary-btn annot-toolbar-btn" onClick={onCommit}>
+                  <button className="primary-btn annot-toolbar-btn" onClick={() => void onCommit()}>
                     ตกลง
                   </button>
                 </>

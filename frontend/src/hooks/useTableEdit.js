@@ -12,6 +12,7 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
   const [overlapWarning, setOverlapWarning] = useState("");
   const [applying, setApplying] = useState(false);
   const [lastResult, setLastResult] = useState(null);
+  const [expandMode, setExpandMode] = useState(false); // มือถือไม่มีปุ่ม Shift — เปิดสวิตช์นี้เพื่อให้ลากเส้นแบ่งแล้วช่องถัดไปเลื่อนตาม
 
   useEffect(() => {
     if (!active || !session) {
@@ -97,6 +98,6 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
 
   return {
     tables, selected, selectedId, select, draft, update, moveBy, reset, changed,
-    apply, applying, error, overlapWarning, lastResult,
+    apply, applying, error, overlapWarning, lastResult, expandMode, setExpandMode,
   };
 }

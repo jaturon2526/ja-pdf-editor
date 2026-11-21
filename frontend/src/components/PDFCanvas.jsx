@@ -97,6 +97,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   onAnnotationDraftFontSizeChange,
   onCommitAnnotationEdit,
   onCancelAnnotationEdit,
+  onMoveAnnotation,
   onDeleteAnnotation,
   onNavigatePage, // (delta: 1 | -1) — เลื่อนเมาส์ (wheel) เกินขอบบน/ล่างของหน้าปัจจุบันแล้วให้สลับหน้าเอง
   // ---------- เมนู Digital Signature (Electronic Sign / Digital Sign — ผู้ใช้แจ้งขอ) ----------
@@ -768,7 +769,8 @@ const PDFCanvas = forwardRef(function PDFCanvas({
         ))}
 
         {activeTool === "edit_table" && tableEdit && (
-          <TableEditLayer tables={tableEdit.tables} selected={tableEdit.selected} draft={tableEdit.draft} zoom={zoom}
+          <TableEditLayer tables={tableEdit.tables} selected={tableEdit.selected} draft={tableEdit.draft}
+            expandMode={tableEdit.expandMode} zoom={zoom}
             pageSrc={pageImage ? pageImageSrc(pageImage) : ""} pageWidthPt={pageWidthPt} pageHeightPt={pageHeightPt}
             onSelect={tableEdit.select} onUpdate={tableEdit.update} />
         )}
@@ -849,6 +851,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                 onDraftFontSizeChange={onAnnotationDraftFontSizeChange}
                 onCommit={onCommitAnnotationEdit}
                 onCancel={onCancelAnnotationEdit}
+                onMove={onMoveAnnotation}
                 onDelete={onDeleteAnnotation}
               />
             );

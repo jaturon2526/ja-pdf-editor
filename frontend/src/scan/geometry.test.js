@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { A4_LONG_PX, orderCorners, quadArea, scanFilename, smoothCorners, warpSize } from "./geometry.js";
+import { A4_LONG_PX, nearestCornerIndex, orderCorners, quadArea, scanFilename, shiftCorner, smoothCorners, warpSize } from "./geometry.js";
 
 describe("orderCorners", () => {
   it("เรียงเป็น บนซ้าย บนขวา ล่างขวา ล่างซ้าย ไม่ว่าลำดับเข้ามาเป็นอย่างไร", () => {
@@ -34,4 +34,22 @@ it("smoothCorners เข้าใกล้ค่าใหม่ตาม alpha",
 
 it("scanFilename ตามเวลาเครื่องแบบกล้องมือถือ", () => {
   expect(scanFilename(new Date(2026, 9, 25, 15, 21, 3))).toBe("Scan_20261025_152103");
+});
+
+describe("nearestCornerIndex & shiftCorner", () => {
+  const pts = [{ x: 28, y: 28 }, { x: 320, y: 28 }, { x: 320, y: 480 }, { x: 28, y: 480 }];
+
+  it("แตะถัดเข้ามาในจอห่างจากมุมบนซ้าย 60px ยังจับมุมบนซ้ายได้โดยไม่ต้องจิ้มตรงจุด", () => {
+    expect(nearestCornerIndex(pts, { x: 85, y: 45 }, 140)).toBe(0);
+    expect(nearestCornerIndex(pts, { x: 200, y: 250 }, 50)).toBe(-1);
+  });
+
+  it("shiftCorner เลื่อนมุมตามระยะนิ้วลากโดยไม่กระโดดไปตำแหน่งนิ้ว และจำกัดอยู่ใน 0..1", () => {
+    const layout = { ox: 28, oy: 28, w: 300, h: 400 };
+    const moved = shiftCorner({ x: 0.1, y: 0.1 }, { dx: -15, dy: 40 }, layout);
+    expect(moved.x).toBeCloseTo(0.05, 5);
+    expect(moved.y).toBeCloseTo(0.2, 5);
+    const clamped = shiftCorner({ x: 0.05, y: 0.95 }, { dx: -100, dy: 100 }, layout);
+    expect(clamped).toEqual({ x: 0, y: 1 });
+  });
 });

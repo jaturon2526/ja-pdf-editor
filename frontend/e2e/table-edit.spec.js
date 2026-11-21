@@ -62,3 +62,43 @@ test.describe("แก้ไขตาราง", () => {
     await expect(panel.locator("#tbl-top")).toHaveValue("75");
   });
 });
+
+test("มือถือ (390×844): ลากปุ่มจับสีฟ้าขยายคอลัมน์และแถว · ย่อแผงล่างแล้วกดตกลงได้", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  await page.goto("/dashboard");
+  await page.setInputFiles("input[type=file][accept*='.pdf']", TABLE_PDF);
+  await page.waitForURL("**/editor/**");
+  await expect(page.locator("img.page-image[src^='data:image/']")).toBeVisible();
+
+  await page.getByTitle("เมนูหลัก").click();
+  await page.getByRole("button", { name: /^แก้ไขตาราง .+/ }).click();
+  const panel = page.getByTestId("table-edit-panel");
+  await page.getByRole("button", { name: /เลือกตารางที่ 1/ }).click();
+  await expect(panel).toContainText("4 แถว × 4 คอลัมน์");
+
+  const col0Before = Number(await panel.locator("#tbl-col-0").inputValue());
+  const row0Before = Number(await panel.locator("#tbl-row-0").inputValue());
+
+  // ย่อแผงล่างเพื่อให้เห็นตารางชัด แล้วลากปุ่มจับสีฟ้าขยายคอลัมน์และแถว
+  await panel.getByRole("button", { name: "ย่อแผง" }).click();
+  const colKnob = page.locator("[data-handle='จับปรับคอลัมน์ที่ 1']");
+  const colBox = await colKnob.boundingBox();
+  await page.mouse.move(colBox.x + colBox.width / 2, colBox.y + colBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(colBox.x + colBox.width / 2 + 25, colBox.y + colBox.height / 2, { steps: 4 });
+  await page.mouse.up();
+
+  const rowKnob = page.locator("[data-handle='จับปรับแถวที่ 1']");
+  const rowBox = await rowKnob.boundingBox();
+  await page.mouse.move(rowBox.x + rowBox.width / 2, rowBox.y + rowBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(rowBox.x + rowBox.width / 2, rowBox.y + rowBox.height / 2 + 12, { steps: 4 });
+  await page.mouse.up();
+
+  await panel.getByRole("button", { name: "ขยายแผง" }).click();
+  await expect.poll(async () => Number(await panel.locator("#tbl-col-0").inputValue())).toBeGreaterThan(col0Before + 5);
+  await expect.poll(async () => Number(await panel.locator("#tbl-row-0").inputValue())).toBeGreaterThan(row0Before + 2);
+  await panel.getByRole("button", { name: "ตกลง" }).click();
+  await expect(panel.getByRole("status")).toContainText("แก้ตารางแล้ว");
+});

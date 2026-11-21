@@ -242,11 +242,28 @@ export function useAnnotation({ session, currentPage, editMode, zoom, fonts, set
     }
   }
 
-  async function handleDeleteAnnotation() {
-    if (!annotationDraft || !session) return;
+  async function handleMoveAnnotation(annot, rect) {
+    if (!annot || !session) return;
     try {
-      await api.deleteAnnotation(session.sessionId, annotationDraft.pageNumber, annotationDraft.xref);
-      setAnnotationDraft(null);
+      await api.updateAnnotation(session.sessionId, { page_number: annot.page_number, xref: annot.xref, rect });
+      const data = await api.renderPage(session.sessionId, currentPage, zoom);
+      _onPageRendered(data.image_base64, currentPage);
+      await refreshAnnotations();
+      _onHistoryChange(true, false);
+      setStatusMessage("ย้ายบันทึกย่อสำเร็จ");
+    } catch (err) {
+      setStatusMessage(`ย้ายบันทึกย่อไม่สำเร็จ: ${err.message}`);
+    }
+  }
+
+  async function handleDeleteAnnotation(target) {
+    const item = target && typeof target.xref === "number"
+      ? { pageNumber: target.page_number, xref: target.xref }
+      : annotationDraft;
+    if (!item || !session) return;
+    try {
+      await api.deleteAnnotation(session.sessionId, item.pageNumber, item.xref);
+      if (annotationDraft?.xref === item.xref) setAnnotationDraft(null);
       const data = await api.renderPage(session.sessionId, currentPage, zoom);
       _onPageRendered(data.image_base64, currentPage);
       await refreshAnnotations();
@@ -283,6 +300,7 @@ export function useAnnotation({ session, currentPage, editMode, zoom, fonts, set
     handleAnnotationDraftFontSizeChange,
     handleCommitAnnotationEdit,
     handleCancelAnnotationEdit,
+    handleMoveAnnotation,
     handleDeleteAnnotation,
     submitPendingAnnotation,
     refreshAnnotations,

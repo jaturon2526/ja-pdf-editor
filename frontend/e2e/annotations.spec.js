@@ -56,4 +56,44 @@ test.describe("คำอธิบายประกอบ", () => {
     await expect(page.locator(".annot-box-freetext.editing")).toHaveCount(0);
     expect(patched).toBe(0);
   });
+
+  test("บันทึกย่อ: ลากย้ายไม่ขึ้นกล่องแก้ไข · คลิกหรือคลิกขวาเปิดแก้ไข/ลบได้", async ({ page }) => {
+    await page.getByRole("button", { name: "บันทึกย่อ" }).click();
+    const p = await pagePoint(page, 260, 420);
+    await page.mouse.click(p.x, p.y);
+    await page.getByPlaceholder(/พิมพ์ข้อความ/).fill("โน้ตทดสอบ");
+    await page.getByRole("button", { name: "เพิ่ม", exact: true }).click();
+    await expect(page.getByText("เพิ่มบันทึกย่อสำเร็จ")).toBeVisible();
+    await page.getByRole("button", { name: "เลือก", exact: true }).click();
+
+    const note = page.locator(".annot-note-marker");
+    await expect(note).toHaveCount(1);
+    const before = await note.boundingBox();
+    // ลากย้าย → ไม่ขึ้นกล่องแก้ไข และบันทึกตำแหน่งใหม่ทันที
+    await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(before.x + before.width / 2 + 80, before.y + before.height / 2 + 60, { steps: 5 });
+    await expect(page.locator(".annot-note-editor")).toHaveCount(0);
+    await page.mouse.up();
+    await expect(page.getByText("ย้ายบันทึกย่อสำเร็จ")).toBeVisible();
+    await expect(page.locator(".annot-note-editor")).toHaveCount(0);
+    const after = await note.boundingBox();
+    expect(after.x).toBeGreaterThan(before.x + 40);
+
+    // คลิก 1 ครั้ง → เปิดกล่องแก้ไข
+    await note.click();
+    await expect(page.locator(".annot-note-editor")).toBeVisible();
+    await page.locator(".annot-note-editor").getByRole("button", { name: "ยกเลิก" }).click();
+    await expect(page.locator(".annot-note-editor")).toHaveCount(0);
+
+    // คลิกขวา → แก้ไขบันทึกย่อ และ ลบบันทึกย่อ
+    await note.click({ button: "right" });
+    await page.getByRole("menuitem", { name: "แก้ไขบันทึกย่อ" }).click();
+    await expect(page.locator(".annot-note-editor")).toBeVisible();
+    await page.locator(".annot-note-editor").getByRole("button", { name: "ยกเลิก" }).click();
+
+    await note.click({ button: "right" });
+    await page.getByRole("menuitem", { name: "ลบบันทึกย่อ" }).click();
+    await expect(note).toHaveCount(0);
+  });
 });

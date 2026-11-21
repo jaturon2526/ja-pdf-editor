@@ -422,7 +422,7 @@ export default function ScanPage() {
   const lastThumb = pages[pages.length - 1]?.thumbUrl;
 
   return (
-    <div className="fixed inset-0 bg-black text-white flex flex-col overflow-hidden" style={safe}>
+    <div className="fixed inset-0 bg-black text-white flex flex-col overflow-hidden overscroll-none" style={safe}>
       <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onSystemCamera} />
 
       {/* แถบบน */}
@@ -494,7 +494,7 @@ export default function ScanPage() {
           <div className="flex-1 relative bg-slate-950">
             <CornerEditor src={draft.sourceUrl} corners={draft.corners} onChange={(c) => setDraft((d) => ({ ...d, corners: c }))} />
           </div>
-          <p className="text-center text-xs text-slate-400 py-1">ลากจุดสีเขียวที่มุมให้ตรงขอบเอกสาร</p>
+          <p className="text-center text-xs text-slate-400 py-1 px-3">แตะบริเวณใกล้มุมแล้วลากเพื่อปรับกรอบเอกสาร (ไม่ต้องจิ้มตรงจุด)</p>
           <div className="flex flex-wrap justify-between gap-2 px-3 py-3 bg-black">
             <Btn className="bg-white/15" onClick={discardDraft}>{draft.id ? "ยกเลิก" : "ถ่ายใหม่"}</Btn>
             <Btn className="bg-white/15" onClick={() => setDraft((d) => ({ ...d, corners: FULL_FRAME }))}>ทั้งภาพ</Btn>

@@ -50,3 +50,26 @@ export function scanFilename(date = new Date()) {
   const p = (n) => String(n).padStart(2, "0");
   return `Scan_${date.getFullYear()}${p(date.getMonth() + 1)}${p(date.getDate())}_${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}`;
 }
+
+/** หามุมที่ใกล้ตำแหน่งแตะ (px) ที่สุดภายในรัศมี maxRadius — แตะข้างจุดมุมได้เลยไม่ต้องจิ้มตรงจุด (เลี่ยงขอบจอมือถือ) */
+export function nearestCornerIndex(ptsPx, pointPx, maxRadius = 140) {
+  if (!ptsPx?.length) return -1;
+  let best = -1;
+  let bestDist = maxRadius;
+  ptsPx.forEach((p, i) => {
+    const d = dist(p, pointPx);
+    if (d <= bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  });
+  return best;
+}
+
+/** เลื่อนมุมแบบสัมพัทธ์ตามระยะที่นิ้วลาก (delta px) จากตำแหน่งมุมเดิม — จับห่างจากจุดมุมได้โดยมุมไม่กระโดดเข้าหานิ้ว */
+export function shiftCorner(origCorner, deltaPx, layout) {
+  if (!layout || !layout.w || !layout.h) return origCorner;
+  const x = Math.min(1, Math.max(0, origCorner.x + deltaPx.dx / layout.w));
+  const y = Math.min(1, Math.max(0, origCorner.y + deltaPx.dy / layout.h));
+  return { x, y };
+}
