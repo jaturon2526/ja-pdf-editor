@@ -266,6 +266,7 @@ export default function AnnotationBox({
           <div
             ref={noteMenuRef}
             role="menu"
+            tabIndex={-1}
             aria-label="เมนูบันทึกย่อ"
             className="absolute left-full top-0 ml-1.5 z-40 min-w-[148px] bg-white border border-slate-200 rounded-lg shadow-xl py-1 text-xs text-slate-800"
             onPointerDown={(e) => e.stopPropagation()}
