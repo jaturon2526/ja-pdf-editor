@@ -29,6 +29,7 @@ import WatermarkModal from "../components/WatermarkModal.jsx";
 import PageNumberModal from "../components/PageNumberModal.jsx";
 import CompareStartModal from "../components/compare/CompareStartModal.jsx";
 import BarcodeModal from "../components/BarcodeModal.jsx";
+import StampModal from "../components/editor/StampModal.jsx";
 import SearchRedactModal from "../components/SearchRedactModal.jsx";
 import PiiPanel from "../components/pdpa/PiiPanel.jsx";
 import { saveBlob } from "../api/client.js";
@@ -82,6 +83,7 @@ export default function Editor() {
   const [showPageNumberModal, setShowPageNumberModal] = useState(false);
   const [compareFiles, setCompareFiles] = useState(null); // null = ปิด · [] = รายการไฟล์ของฉัน (หน้าต่างเปรียบเทียบ)
   const [showBarcodeModal, setShowBarcodeModal] = useState(false);
+  const [showStampModal, setShowStampModal] = useState(false);
   const [showSaveCopyModal, setShowSaveCopyModal] = useState(false);
   const [copyFilename, setCopyFilename] = useState("");
   const [copyPdfVersion, setCopyPdfVersion] = useState("");
@@ -246,6 +248,7 @@ export default function Editor() {
     [showWatermarkModal, () => setShowWatermarkModal(false)],
     [showPageNumberModal, () => setShowPageNumberModal(false)],
     [showBarcodeModal, () => setShowBarcodeModal(false)],
+    [showStampModal, () => setShowStampModal(false)],
     [showSaveCopyModal, () => setShowSaveCopyModal(false)],
     [showCompressModal, () => setShowCompressModal(false)],
     [showFlattenModal, () => setShowFlattenModal(false)],
@@ -640,6 +643,7 @@ export default function Editor() {
     openPageNumbers: () => setShowPageNumberModal(true),
     openInsertPages: () => setInsertPagesAt(currentPage + 1),
     openBarcode: () => setShowBarcodeModal(true),
+    openStamp: () => setShowStampModal(true),
     insertImage: () => imageEditHook.openImagePicker(),
     openCompress: () => setShowCompressModal(true),
     openFlatten: () => setShowFlattenModal(true),
@@ -1128,6 +1132,17 @@ export default function Editor() {
             setActiveTool("edit_image"); // โหมดแก้ไขรูป — กล่องบาร์โค้ดลากย้าย/ย่อขยายได้ แล้วกด "บันทึกการแก้ไข"
             imageEditHook.startBarcodeInsert(result);
             setStatusMessage('ลากบาร์โค้ดไปวางตำแหน่งที่ต้องการ แล้วกด "ตกลง" และ "บันทึกการแก้ไข"');
+          }}
+        />
+      )}
+
+      {showStampModal && (
+        <StampModal
+          onClose={() => setShowStampModal(false)}
+          onSubmit={(file, stampLabel) => {
+            setShowStampModal(false);
+            insertImageFile(file);
+            setStatusMessage(`ลากตราประทับ "${stampLabel}" ไปวางตำแหน่งที่ต้องการ แล้วกด "ตกลง" และ "บันทึกการแก้ไข"`);
           }}
         />
       )}

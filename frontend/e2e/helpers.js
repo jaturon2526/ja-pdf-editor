@@ -30,6 +30,6 @@ export async function login(page, email = EMAIL, password = PASSWORD) {
 export async function uploadSample(page) {
   await page.setInputFiles("input[type=file][accept*='.pdf']", SAMPLE_PDF);
   await page.waitForURL("**/editor/**");
-  await expect(page.locator("img[src^='data:image/']").first()).toBeVisible();
+  await expect(page.locator("img.page-image[src^='data:image/']")).toBeVisible();
   return page.url().split("/").pop();
 }
