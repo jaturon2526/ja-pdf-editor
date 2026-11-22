@@ -13,6 +13,7 @@ from app.models.domain import User
 from app.models.schemas import (
     BarcodeObjectEditRequest,
     TableEditRequest,
+    TableStructureRequest,
     FontFamilyResponse,
     FontInstallResponse,
     FontOptionResponse,
@@ -241,6 +242,35 @@ def edit_table(session_id: str, page_number: int, payload: TableEditRequest,
         with session.lock:
             result = tables.rebuild_table(session, page_number, payload.bbox.model_dump(), payload.xs, payload.ys,
                                           allow_overlap=payload.allow_overlap)
+            session.push_history()
+            return {"status": "ok", **result}
+    except tables.TableOverlapError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/{session_id}/page/{page_number}/table/structure")
+def edit_table_structure_api(session_id: str, page_number: int, payload: TableStructureRequest,
+                             session: PDFSession = Depends(get_owned_session)):
+    """แก้ไขโครงสร้างตาราง (v1.46.0): เพิ่ม/ลบแถว · เพิ่ม/ลบคอลัมน์ · รวมเซลล์ · แยกเซลล์"""
+    from app.services.edit_service import table_structure, tables
+
+    try:
+        with session.lock:
+            result = table_structure.edit_table_structure(
+                session,
+                page_number,
+                payload.bbox.model_dump(),
+                op=payload.op,
+                r0=payload.r0,
+                c0=payload.c0,
+                r1=payload.r1,
+                c1=payload.c1,
+                position=payload.position,
+                direction=payload.direction,
+                allow_overlap=payload.allow_overlap,
+            )
             session.push_history()
             return {"status": "ok", **result}
     except tables.TableOverlapError as exc:

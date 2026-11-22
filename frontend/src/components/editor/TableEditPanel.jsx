@@ -15,8 +15,34 @@ function MmInput({ id, label, valuePt, onChangePt }) {
 }
 
 export default function TableEditPanel({ hook, onClose }) {
-  const { tables, selected, draft, update, reset, changed, apply, applying, error, overlapWarning, lastResult, expandMode, setExpandMode } = hook;
+  const {
+    tables, selected, draft, update, reset, changed, apply, applying, error,
+    overlapWarning, lastResult, expandMode, setExpandMode,
+    cellSelection, multiSelectMode, setMultiSelectMode, runStructure, confirmOverlap,
+  } = hook;
   const [collapsed, setCollapsed] = useState(false); // มือถือ: ย่อแผ่นล่างให้เห็นตารางเต็มจอตอนใช้นิ้วลากจุดจับ
+
+  const activeCell = selected && cellSelection
+    ? selected.cells.find((c) => (
+      cellSelection.r0 >= c.r && cellSelection.r0 < c.r + c.rowspan
+      && cellSelection.c0 >= c.c && cellSelection.c0 < c.c + c.colspan
+    ))
+    : null;
+  const selRows = cellSelection ? cellSelection.r1 - cellSelection.r0 + 1 : 0;
+  const selCols = cellSelection ? cellSelection.c1 - cellSelection.c0 + 1 : 0;
+  const isMergedActive = !!(activeCell && (activeCell.rowspan > 1 || activeCell.colspan > 1));
+  const coveredCellsCount = selected && cellSelection
+    ? selected.cells.filter((c) => {
+      const cr1 = c.r + c.rowspan - 1;
+      const cc1 = c.c + c.colspan - 1;
+      return cr1 >= cellSelection.r0 && c.r <= cellSelection.r1
+        && cc1 >= cellSelection.c0 && c.c <= cellSelection.c1;
+    }).length
+    : 0;
+  const canMerge = coveredCellsCount >= 2;
+  const structDisabled = applying || changed || !cellSelection;
+  const rowCount = draft ? draft.ys.length - 1 : 0;
+  const colCount = draft ? draft.xs.length - 1 : 0;
   return (
     <aside aria-labelledby="table-edit-title" data-testid="table-edit-panel"
       className="bg-white border-slate-200 flex flex-col shrink-0
@@ -62,6 +88,91 @@ export default function TableEditPanel({ hook, onClose }) {
               <input type="checkbox" checked={!!expandMode} onChange={(e) => setExpandMode?.(e.target.checked)} className="rounded border-slate-300" />
               <span>ลากเส้นแบ่งแล้วเลื่อนช่องถัดไปตาม (ขยายตาราง)</span>
             </label>
+
+            {/* โครงสร้างตาราง (v1.46.0): เพิ่ม/ลบแถว · เพิ่ม/ลบคอลัมน์ · รวม/แยกเซลล์ */}
+            <section className="space-y-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200" aria-label="โครงสร้างตาราง">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-xs font-semibold text-slate-800">แถว · คอลัมน์ · เซลล์</h4>
+                {cellSelection && (
+                  <span className="text-[11px] font-medium text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                    {selRows > 1 || selCols > 1
+                      ? `เลือก ${selRows}×${selCols} ช่อง`
+                      : `แถว ${cellSelection.r0 + 1} · คอลัมน์ ${cellSelection.c0 + 1}`}
+                  </span>
+                )}
+              </div>
+              <label className="flex items-center gap-2 text-[11px] text-slate-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={!!multiSelectMode}
+                  onChange={(e) => setMultiSelectMode?.(e.target.checked)}
+                  className="rounded border-slate-300"
+                />
+                <span>เลือกหลายเซลล์เพื่อรวม (หรือ Shift+คลิก)</span>
+              </label>
+              {changed && (
+                <p className="text-[11px] text-amber-700">กด &quot;ตกลง&quot; หรือ &quot;รีเซ็ต&quot; ขนาดก่อนปรับแถว/คอลัมน์</p>
+              )}
+              <div className="grid grid-cols-3 gap-1">
+                <button type="button" disabled={structDisabled}
+                  onClick={() => void runStructure("insert_row", { position: "above" })}
+                  className="px-1.5 py-1.5 text-[11px] font-medium rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-45">
+                  + แถวบน
+                </button>
+                <button type="button" disabled={structDisabled}
+                  onClick={() => void runStructure("insert_row", { position: "below" })}
+                  className="px-1.5 py-1.5 text-[11px] font-medium rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-45">
+                  + แถวล่าง
+                </button>
+                <button type="button" disabled={structDisabled || rowCount <= 1}
+                  onClick={() => void runStructure("delete_row")}
+                  className="px-1.5 py-1.5 text-[11px] font-medium rounded border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:opacity-45">
+                  ลบแถว
+                </button>
+                <button type="button" disabled={structDisabled}
+                  onClick={() => void runStructure("insert_col", { position: "left" })}
+                  className="px-1.5 py-1.5 text-[11px] font-medium rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-45">
+                  + ซ้าย
+                </button>
+                <button type="button" disabled={structDisabled}
+                  onClick={() => void runStructure("insert_col", { position: "right" })}
+                  className="px-1.5 py-1.5 text-[11px] font-medium rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-45">
+                  + ขวา
+                </button>
+                <button type="button" disabled={structDisabled || colCount <= 1}
+                  onClick={() => void runStructure("delete_col")}
+                  className="px-1.5 py-1.5 text-[11px] font-medium rounded border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:opacity-45">
+                  ลบคอลัมน์
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <button type="button" disabled={structDisabled || !canMerge}
+                  onClick={() => void runStructure("merge_cells")}
+                  className="flex-1 px-2 py-1.5 text-[11px] font-medium rounded border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-45">
+                  รวมเซลล์
+                </button>
+                {isMergedActive ? (
+                  <button type="button" disabled={structDisabled}
+                    onClick={() => void runStructure("split_cell")}
+                    className="flex-1 px-2 py-1.5 text-[11px] font-medium rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-45">
+                    แยกเซลล์
+                  </button>
+                ) : (
+                  <>
+                    <button type="button" disabled={structDisabled || canMerge}
+                      onClick={() => void runStructure("split_cell", { direction: "cols" })}
+                      className="flex-1 px-2 py-1.5 text-[11px] font-medium rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-45">
+                      แยก 2 คอลัมน์
+                    </button>
+                    <button type="button" disabled={structDisabled || canMerge}
+                      onClick={() => void runStructure("split_cell", { direction: "rows" })}
+                      className="flex-1 px-2 py-1.5 text-[11px] font-medium rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-45">
+                      แยก 2 แถว
+                    </button>
+                  </>
+                )}
+              </div>
+            </section>
             <section className="space-y-1.5" aria-label="ตำแหน่ง">
               <h4 className="text-xs font-semibold text-slate-700">ตำแหน่ง (มม. จากมุมซ้ายบน)</h4>
               <MmInput id="tbl-left" label="ซ้าย" valuePt={draft.xs[0]} onChangePt={(v) => update((d) => ({ ...d, xs: translate(d.xs, v - d.xs[0]) }))} />
@@ -93,7 +204,7 @@ export default function TableEditPanel({ hook, onClose }) {
             {overlapWarning && (
               <div className="p-2 rounded bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-2" role="alert">
                 <p>{overlapWarning}</p>
-                <button type="button" onClick={() => void apply({ allowOverlap: true })} disabled={applying}
+                <button type="button" onClick={() => void confirmOverlap()} disabled={applying}
                   className="px-3 py-1.5 rounded bg-amber-600 text-white disabled:opacity-50">วางทับต่อ</button>
               </div>
             )}

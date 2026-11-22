@@ -61,6 +61,38 @@ test.describe("แก้ไขตาราง", () => {
     await expect(panel.getByRole("status")).toContainText("แก้ตารางแล้ว");
     await expect(panel.locator("#tbl-top")).toHaveValue("75");
   });
+
+  test("โครงสร้างตาราง: เพิ่มแถว · ลบแถว · รวมเซลล์ · แยกเซลล์ · Undo", async ({ page }) => {
+    const panel = page.getByTestId("table-edit-panel");
+
+    // เพิ่มแถวล่าง → 5 แถว × 4 คอลัมน์
+    await panel.getByRole("button", { name: "+ แถวล่าง", exact: true }).click();
+    await expect(panel).toContainText("5 แถว × 4 คอลัมน์", { timeout: 15_000 });
+
+    // ลบแถว → กลับเป็น 4 แถว × 4 คอลัมน์
+    await panel.getByRole("button", { name: "ลบแถว", exact: true }).click();
+    await expect(panel).toContainText("4 แถว × 4 คอลัมน์", { timeout: 15_000 });
+
+    // เปิดโหมดเลือกหลายเซลล์ แล้วคลิกเซลล์แถว 2 คอลัมน์ 2 เพื่อรวมช่วง 2×2
+    await panel.getByLabel(/เลือกหลายเซลล์เพื่อรวม/).check();
+    const move = page.locator("[data-handle='ย้ายตาราง']");
+    const box = await move.boundingBox();
+    // คอลัมน์ 0 กว้าง 50 pt จาก 475 pt (~10.5%), คอลัมน์ 1 อยู่ช่วง ~10.5%..50.5%; แถว 1 อยู่ช่วง ~25%..50%
+    await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.38);
+    await expect(panel).toContainText("เลือก 2×2 ช่อง");
+
+    // รวมเซลล์ → ปุ่ม "แยกเซลล์" แสดงขึ้นมาแทน
+    await panel.getByRole("button", { name: "รวมเซลล์", exact: true }).click();
+    await expect(panel.getByRole("button", { name: "แยกเซลล์", exact: true })).toBeVisible({ timeout: 15_000 });
+
+    // แยกเซลล์กลับ → ปุ่ม "แยก 2 คอลัมน์" กลับมา
+    await panel.getByRole("button", { name: "แยกเซลล์", exact: true }).click();
+    await expect(panel.getByRole("button", { name: "แยก 2 คอลัมน์", exact: true })).toBeVisible({ timeout: 15_000 });
+
+    // Undo → กลับไปเป็นเซลล์ที่ผสานไว้
+    await page.getByTitle("เลิกทำ (Ctrl+Z)").click();
+    await expect(panel.getByRole("button", { name: "แยกเซลล์", exact: true })).toBeVisible({ timeout: 15_000 });
+  });
 });
 
 test("มือถือ (390×844): ลากปุ่มจับสีฟ้าขยายคอลัมน์และแถว · ย่อแผงล่างแล้วกดตกลงได้", async ({ page }) => {

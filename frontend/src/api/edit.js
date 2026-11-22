@@ -225,6 +225,35 @@ export async function editTable(sessionId, pageNumber, { bbox, xs, ys, allowOver
   }));
 }
 
+// แก้โครงสร้างตาราง (v1.46.0): insert_row / delete_row / insert_col / delete_col / merge_cells / split_cell
+export async function editTableStructure(sessionId, pageNumber, {
+  bbox,
+  op,
+  r0,
+  c0,
+  r1 = null,
+  c1 = null,
+  position = "below",
+  direction = "cols",
+  allowOverlap = false,
+}) {
+  return handle(await fetchWithAuth(`${BASE}/edit/${sessionId}/page/${pageNumber}/table/structure`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      bbox,
+      op,
+      r0,
+      c0,
+      r1,
+      c1,
+      position,
+      direction,
+      allow_overlap: allowOverlap,
+    }),
+  }));
+}
+
 // ---------- ย้าย/ลบบาร์โค้ดที่มีอยู่ในหน้า (v1.41.0 — backend app/services/edit_service/barcodes.py) ----------
 export async function getBarcodes(sessionId, pageNumber) {
   const res = await fetchWithAuth(`${BASE}/edit/${sessionId}/page/${pageNumber}/barcodes?_t=${Date.now()}`, { cache: "no-store" });

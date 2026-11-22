@@ -506,6 +506,19 @@ class TableEditRequest(BaseModel):
     allow_overlap: bool = False
 
 
+class TableStructureRequest(BaseModel):
+    """แก้โครงสร้างตาราง (v1.46.0): เพิ่ม/ลบแถว · เพิ่ม/ลบคอลัมน์ · รวมเซลล์ · แยกเซลล์"""
+    bbox: Rect
+    op: Literal["insert_row", "delete_row", "insert_col", "delete_col", "merge_cells", "split_cell"]
+    r0: int = Field(..., ge=0)
+    c0: int = Field(..., ge=0)
+    r1: Optional[int] = Field(default=None, ge=0)
+    c1: Optional[int] = Field(default=None, ge=0)
+    position: Literal["above", "below", "left", "right"] = "below"
+    direction: Literal["cols", "rows"] = "cols"
+    allow_overlap: bool = False
+
+
 class BarcodeObjectEditRequest(BaseModel):
     """ย้าย/ลบบาร์โค้ดที่มีอยู่ในหน้า (v1.41.0): bbox เดิม (จาก GET .../barcodes) + กรอบใหม่ หรือ delete"""
     bbox: Rect

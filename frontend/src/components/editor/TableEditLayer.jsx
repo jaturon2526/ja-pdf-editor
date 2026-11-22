@@ -86,9 +86,61 @@ function activeSizeBadge(activeHandle, draft, zoom) {
   return { text: `${mm} มม.`, left: z(draft.xs[0]) + 14, top: z(draft.ys[index]) - 28 };
 }
 
-export default function TableEditLayer({ tables, selected, draft, expandMode = false, zoom, pageSrc, pageWidthPt, pageHeightPt, onSelect, onUpdate }) {
+export default function TableEditLayer({
+  tables,
+  selected,
+  draft,
+  cellSelection = null,
+  expandMode = false,
+  zoom,
+  pageSrc,
+  pageWidthPt,
+  pageHeightPt,
+  onSelect,
+  onCellClick,
+  onUpdate,
+}) {
   const [activeHandle, setActiveHandle] = useState(null);
-  const moveDrag = useDrag(zoom, () => draft, (start, dx, dy) => onUpdate(() => ({ xs: translate(start.xs, dx), ys: translate(start.ys, dy) })));
+  const moveRef = useRef(null);
+  const moveDrag = {
+    onPointerDown(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      moveRef.current = { x: e.clientX, y: e.clientY, start: draft, moved: false, shift: e.shiftKey };
+    },
+    onPointerMove(e) {
+      if (!moveRef.current) return;
+      e.stopPropagation();
+      const dxPx = e.clientX - moveRef.current.x;
+      const dyPx = e.clientY - moveRef.current.y;
+      if (!moveRef.current.moved && Math.hypot(dxPx, dyPx) < 4) return;
+      moveRef.current.moved = true;
+      onUpdate(() => ({
+        xs: translate(moveRef.current.start.xs, dxPx / zoom),
+        ys: translate(moveRef.current.start.ys, dyPx / zoom),
+      }));
+    },
+    onPointerUp(e) {
+      if (!moveRef.current) return;
+      e.stopPropagation();
+      const st = moveRef.current;
+      moveRef.current = null;
+      if (!st.moved && selected && draft && onCellClick) {
+        const box = e.currentTarget.getBoundingClientRect();
+        const xPt = draft.xs[0] + (e.clientX - box.left) / zoom;
+        const yPt = draft.ys[0] + (e.clientY - box.top) / zoom;
+        const hit = selected.cells.find((c) => (
+          xPt >= draft.xs[c.c] && xPt <= draft.xs[c.c + c.colspan]
+          && yPt >= draft.ys[c.r] && yPt <= draft.ys[c.r + c.rowspan]
+        ));
+        if (hit) onCellClick(hit, st.shift);
+      }
+    },
+    onPointerCancel() {
+      moveRef.current = null;
+    },
+  };
   if (!tables) return null;
   const z = (v) => v * zoom;
 
@@ -161,7 +213,20 @@ export default function TableEditLayer({ tables, selected, draft, expandMode = f
               <rect x={leftX - 3} y={topY - 3} width={rightX - leftX + 6} height={botY - topY + 6}
                 fill="none" stroke="#0284c7" strokeWidth="1.5" strokeDasharray="6 4" />
             </svg>
-            <div role="presentation" title="ลากเพื่อย้ายตาราง" data-handle="ย้ายตาราง" className="absolute z-10 cursor-move touch-none"
+            {cellSelection && !changed && cellSelection.r1 + 1 < ys.length && cellSelection.c1 + 1 < xs.length && (
+              <div
+                aria-hidden="true"
+                data-testid="table-cell-selection"
+                className="absolute pointer-events-none bg-blue-500/20 border-2 border-blue-600 rounded-[2px] z-[12]"
+                style={{
+                  left: z(xs[cellSelection.c0]),
+                  top: z(ys[cellSelection.r0]),
+                  width: z(xs[cellSelection.c1 + 1] - xs[cellSelection.c0]),
+                  height: z(ys[cellSelection.r1 + 1] - ys[cellSelection.r0]),
+                }}
+              />
+            )}
+            <div role="presentation" title="คลิกเพื่อเลือกเซลล์ หรือลากเพื่อย้ายตาราง" data-handle="ย้ายตาราง" className="absolute z-10 cursor-move touch-none"
               style={{ left: leftX, top: topY, width: rightX - leftX, height: botY - topY }} {...moveDrag} />
 
             {/* เส้นแบ่งคอลัมน์ด้านใน + ปุ่มจับสีฟ้าด้านบนตาราง (ใช้นิ้วลากขยายคอลัมน์ได้ง่ายบนมือถือ) */}

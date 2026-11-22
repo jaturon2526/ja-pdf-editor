@@ -808,9 +808,9 @@ const PDFCanvas = forwardRef(function PDFCanvas({
 
         {activeTool === "edit_table" && tableEdit && (
           <TableEditLayer tables={tableEdit.tables} selected={tableEdit.selected} draft={tableEdit.draft}
-            expandMode={tableEdit.expandMode} zoom={zoom}
+            cellSelection={tableEdit.cellSelection} expandMode={tableEdit.expandMode} zoom={zoom}
             pageSrc={pageImage ? pageImageSrc(pageImage) : ""} pageWidthPt={pageWidthPt} pageHeightPt={pageHeightPt}
-            onSelect={tableEdit.select} onUpdate={tableEdit.update} />
+            onSelect={tableEdit.select} onCellClick={tableEdit.selectCell} onUpdate={tableEdit.update} />
         )}
 
         {activeTool === "edit_barcode" && barcodeEdit && (

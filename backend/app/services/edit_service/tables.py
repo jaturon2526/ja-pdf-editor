@@ -180,6 +180,54 @@ def _redraw(page: fitz.Page, paths: list[dict], fx=None, fy=None) -> None:
 
 _NUM = rb"[-+]?(?:\d+\.?\d*|\.\d+)"
 _DEGENERATE_RE = re.compile(rb"(?<![\w.])" + _NUM + rb"\s+" + _NUM + rb"\s+(" + _NUM + rb")\s+(" + _NUM + rb")\s+re\b")
+_PAINT_OP_RE = re.compile(rb"(?:^|[\s\]\)])(Tj|TJ|S|s|f|F|f\*|B|B\*|b|b\*|sh|BI)\b")
+
+
+def _prune_empty_xobjects(doc: fitz.Document, page: fitz.Page) -> None:
+    """ลบ Form XObject ที่ว่างเปล่าหลัง apply_redactions ออกจาก content stream ของหน้า
+    กันการซ้อน XObject แบบทวีคูณ (O(N^k)) เมื่อแก้ไขตารางซ้ำหลายครั้งติดกัน (เช่น เพิ่มแถว → ลบแถว → รวม → แยก)"""
+    xobjs = page.get_xobjects()
+    if not xobjs:
+        return
+    children: dict[int, list[tuple[int, str]]] = {}
+    for xref, name, invoker, _bbox in xobjs:
+        children.setdefault(invoker, []).append((xref, name))
+
+    img_xrefs = {i[0] for i in page.get_images(full=True)}
+    memo: dict[int, bool] = {}
+
+    def is_alive(xref: int) -> bool:
+        if xref in memo:
+            return memo[xref]
+        if xref in img_xrefs:
+            memo[xref] = True
+            return True
+        memo[xref] = False
+        try:
+            stream = doc.xref_stream(xref) or b""
+        except Exception:  # noqa: BLE001
+            memo[xref] = True
+            return True
+        if _PAINT_OP_RE.search(stream):
+            memo[xref] = True
+            return True
+        for cxref, _cname in children.get(xref, []):
+            if is_alive(cxref):
+                memo[xref] = True
+                return True
+        return False
+
+    dead_names = [name for xref, name in children.get(0, []) if not is_alive(xref)]
+    if not dead_names:
+        return
+    pat = re.compile(rb"/(?:" + b"|".join(re.escape(n.encode()) for n in dead_names) + rb")\s+Do\b")
+    for cxref in page.get_contents():
+        data = doc.xref_stream(cxref)
+        if data:
+            new_data = pat.sub(b"", data)
+            if new_data != data:
+                doc.update_stream(cxref, new_data)
+    page.clean_contents(sanitize=True)
 
 
 def _drop_degenerate_rects(doc: fitz.Document, page: fitz.Page) -> None:
@@ -331,6 +379,7 @@ def rebuild_table(session: PDFSession, page_number: int, bbox: dict, xs_new: lis
         # graphics: ลบรูปทรงทุกชิ้นที่ไม่อยู่ในเซลล์ทั้งชิ้น — ไม่งั้นรูปทรงทั้งหน้า (เช่น บาร์โค้ด) ติดไปในทุกเซลล์
         # (มองไม่เห็นเพราะ clip แต่ไฟล์บวมและ find_tables รอบถัดไปเห็นเป็นเส้นตาราง)
         sp.apply_redactions(images=fitz.PDF_REDACT_IMAGE_PIXELS, graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
+        _prune_empty_xobjects(src, sp)
         contents.append(_cell_content(sp, rect))
 
     # ตัดบรรทัด/ขยายแถว: ความสูงที่แต่ละแถวต้องมีอย่างน้อย (เฉพาะเซลล์ที่ไม่ผสานแถว)
@@ -390,6 +439,7 @@ def rebuild_table(session: PDFSession, page_number: int, bbox: dict, xs_new: lis
     # ไม่ระบายสีทับ: สุ่มสีจากมุมกรอบได้สีเส้นตาราง (ทดลองได้กล่องสีเทาเข้ม) · พื้นสีของเซลล์ถูกวาดคืนจากรูปทรงเดิมอยู่แล้ว
     page.add_redact_annot(area, fill=False)
     page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_PIXELS, graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
+    _prune_empty_xobjects(doc, page)
     _redraw(page, crossing)
     _redraw(page, inside, _mapper(xs, nx), _mapper(ys, ny))
 
