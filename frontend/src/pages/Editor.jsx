@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import MenuBar from "../components/MenuBar.jsx";
 import Toolbar from "../components/Toolbar.jsx";
 import Sidebar from "../components/Sidebar.jsx";
@@ -34,6 +34,7 @@ import PageNumberModal from "../components/PageNumberModal.jsx";
 import CompareStartModal from "../components/compare/CompareStartModal.jsx";
 import BarcodeModal from "../components/BarcodeModal.jsx";
 import StampModal from "../components/editor/StampModal.jsx";
+import CreateBlankPdfModal from "../components/CreateBlankPdfModal.jsx";
 import SearchRedactModal from "../components/SearchRedactModal.jsx";
 import PiiPanel from "../components/pdpa/PiiPanel.jsx";
 import { saveBlob } from "../api/client.js";
@@ -88,6 +89,7 @@ export default function Editor() {
   const [compareFiles, setCompareFiles] = useState(null); // null = ปิด · [] = รายการไฟล์ของฉัน (หน้าต่างเปรียบเทียบ)
   const [showBarcodeModal, setShowBarcodeModal] = useState(false);
   const [showStampModal, setShowStampModal] = useState(false);
+  const [showCreateBlankModal, setShowCreateBlankModal] = useState(false);
   const [showSaveCopyModal, setShowSaveCopyModal] = useState(false);
   const [copyFilename, setCopyFilename] = useState("");
   const [copyPdfVersion, setCopyPdfVersion] = useState("");
@@ -118,6 +120,7 @@ export default function Editor() {
 
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const fontsHook = useFonts({ setStatusMessage });
 
@@ -253,6 +256,7 @@ export default function Editor() {
     [showPageNumberModal, () => setShowPageNumberModal(false)],
     [showBarcodeModal, () => setShowBarcodeModal(false)],
     [showStampModal, () => setShowStampModal(false)],
+    [showCreateBlankModal, () => setShowCreateBlankModal(false)],
     [showSaveCopyModal, () => setShowSaveCopyModal(false)],
     [showCompressModal, () => setShowCompressModal(false)],
     [showFlattenModal, () => setShowFlattenModal(false)],
@@ -321,6 +325,18 @@ export default function Editor() {
     active: activeTool === "fill_form",
     runDocumentChange,
   });
+
+  // รองรับลิงก์ ?tool=fill_form&mode=design เมื่อสร้างเอกสารเปล่าเพื่อออกแบบแบบฟอร์มจากหน้าแรก
+  useEffect(() => {
+    const toolParam = searchParams.get("tool");
+    const modeParam = searchParams.get("mode");
+    if (!toolParam || !session) return;
+    if (toolParam === "fill_form") {
+      setActiveTool("fill_form");
+      if (modeParam === "design") formFill.setMode("design");
+    }
+    setSearchParams({}, { replace: true });
+  }, [session?.sessionId, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
   // ลูกศรขยับตาราง/บาร์โค้ดที่เลือก 1 pt (Shift = 10 pt) — ไม่แย่งปุ่มลูกศรตอนพิมพ์ในช่องตัวเลข
   let arrowTarget = null;
   if (activeTool === "edit_table" && tableEdit.selected) {
@@ -607,6 +623,7 @@ export default function Editor() {
     isSidebarOpen,
     setIsSidebarOpen,
     goToDashboard,
+    openCreateBlank: () => setShowCreateBlankModal(true),
     openOfficeDialog: () => officeInputRef.current?.click(),
     openFileDialog: () => pdfInputRef.current?.click(),
     saveToServer: handleAutoSaveToServer,
@@ -1177,6 +1194,17 @@ export default function Editor() {
             setShowStampModal(false);
             insertImageFile(file);
             setStatusMessage(`ลากตราประทับ "${stampLabel}" ไปวางตำแหน่งที่ต้องการ แล้วกด "ตกลง" และ "บันทึกการแก้ไข"`);
+          }}
+        />
+      )}
+
+      {showCreateBlankModal && (
+        <CreateBlankPdfModal
+          onClose={() => setShowCreateBlankModal(false)}
+          onCreated={(res, { openFormBuilder }) => {
+            setShowCreateBlankModal(false);
+            const suffix = openFormBuilder ? "?tool=fill_form&mode=design" : "";
+            void navigate(`/editor/${res.session_id}${suffix}`);
           }}
         />
       )}

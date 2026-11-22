@@ -574,3 +574,22 @@ class FormFieldUpdate(BaseModel):
 
 class FillFormRequest(BaseModel):
     updates: list[FormFieldUpdate] = Field(..., max_length=500)
+
+
+class CreateBlankPdfRequest(BaseModel):
+    """สร้างเอกสาร PDF หน้าเปล่า (v1.47.0)"""
+    filename: str = Field("แบบฟอร์มใหม่.pdf", min_length=1, max_length=200)
+    width: float = Field(595.0, ge=72.0, le=14400.0)
+    height: float = Field(842.0, ge=72.0, le=14400.0)
+    page_count: int = Field(1, ge=1, le=50)
+
+
+class AddFormFieldRequest(BaseModel):
+    """เพิ่มช่องกรอกแบบฟอร์ม AcroForm ใหม่ลงหน้าเอกสาร (v1.47.0)"""
+    page: int = Field(..., ge=0)
+    type: Literal["text", "checkbox", "radio", "dropdown"]
+    name: str = Field("", max_length=120)
+    label: str = Field("", max_length=200)
+    rect: Rect
+    multiline: bool = False
+    options: list[str] = Field(default=[], max_length=100)

@@ -333,3 +333,33 @@ export async function fillFormFields(sessionId, updates) {
     body: JSON.stringify({ updates }),
   }));
 }
+
+// สร้างเอกสาร PDF หน้าเปล่า (v1.47.0) → UploadResponse ({ session_id, filename, page_count, page_sizes })
+export async function createBlankPdf({ filename, width = 595, height = 842, pageCount = 1 }) {
+  return handle(await fetchWithAuth(`${BASE}/pdf/blank`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      filename,
+      width,
+      height,
+      page_count: pageCount,
+    }),
+  }));
+}
+
+// เพิ่มช่องกรอกแบบฟอร์ม AcroForm ใหม่ลงหน้าเอกสาร (v1.47.0) → { status, field }
+export async function addFormField(sessionId, { page, type, name = "", label = "", rect, multiline = false, options = [] }) {
+  return handle(await fetchWithAuth(`${BASE}/pdf/${sessionId}/forms/fields`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ page, type, name, label, rect, multiline, options }),
+  }));
+}
+
+// ลบช่องกรอกแบบฟอร์ม AcroForm (v1.47.0) → { status }
+export async function deleteFormField(sessionId, xref, page = 0) {
+  return handle(await fetchWithAuth(`${BASE}/pdf/${sessionId}/forms/fields/${xref}?page=${page}`, {
+    method: "DELETE",
+  }));
+}

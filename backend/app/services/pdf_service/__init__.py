@@ -98,4 +98,6 @@ from app.services.pdf_service.text_index import (  # noqa: F401
 from app.services.pdf_service.forms import (  # noqa: F401
     list_form_fields,
     fill_form_fields,
+    add_form_field,
+    delete_form_field,
 )

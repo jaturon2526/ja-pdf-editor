@@ -21,7 +21,7 @@ from app.core.config import settings
 from app.core.session import PDFSession, session_manager
 from app.db.database import get_db
 from app.models.domain import ConversionTask, FileRecord, PlanConfig, User
-from app.models.schemas import DocumentPropertiesResponse, PageNumberRequest, UploadResponse, WatermarkRequest
+from app.models.schemas import CreateBlankPdfRequest, DocumentPropertiesResponse, PageNumberRequest, UploadResponse, WatermarkRequest
 from app.services import edit_service, file_storage, pdf_service
 from app.services.pdf_service import PDFError
 from app.services.pdf_service.core import has_digital_signatures
@@ -326,6 +326,29 @@ async def merge_pdf_files(
         raise HTTPException(status_code=400, detail=f"รวมไฟล์ไม่สำเร็จ: {exc}")
     check_storage_quota(db, current_user, len(merged))
     return _store_pdf(merged, filename, db, current_user)
+
+
+@router.post("/blank", response_model=UploadResponse)
+def create_blank_pdf(
+    payload: CreateBlankPdfRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """สร้างไฟล์ PDF หน้าเปล่า (1–50 หน้า) บันทึกในเอกสารของฉันแล้วเปิด session ทันที (v1.47.0)"""
+    clean = re.sub(r'[\\/:*?"<>|\x00-\x1f]', "_", payload.filename.strip()) or "แบบฟอร์มใหม่"
+    if not clean.lower().endswith(".pdf"):
+        clean += ".pdf"
+
+    doc = fitz.open()
+    try:
+        for _ in range(payload.page_count):
+            doc.new_page(width=payload.width, height=payload.height)
+        content = doc.tobytes()
+    finally:
+        doc.close()
+
+    check_storage_quota(db, current_user, len(content))
+    return _store_pdf(content, clean, db, current_user)
 
 
 @router.post("/insert-source")

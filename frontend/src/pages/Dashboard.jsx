@@ -11,6 +11,7 @@ import UserAvatar from "../components/UserAvatar.jsx";
 import PasswordModal from '../components/PasswordModal.jsx';
 import AutoGenModal from '../components/AutoGenModal.jsx';
 import MergeModal from '../components/MergeModal.jsx';
+import CreateBlankPdfModal from '../components/CreateBlankPdfModal.jsx';
 import RenameModal from '../components/RenameModal.jsx';
 import InstallFontModal from '../components/InstallFontModal.jsx';
 import TermsModal from '../components/TermsModal.jsx';
@@ -164,6 +165,7 @@ export default function Dashboard() {
   }, []);
   const [showAutoGenModal, setShowAutoGenModal] = useState(false);
   const [showMergeModal, setShowMergeModal] = useState(false);
+  const [showCreateBlankModal, setShowCreateBlankModal] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' }); // {type: 'error' | 'success', text: ''}
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null); // {current, total, name} ระหว่างอัปโหลดหลายไฟล์
@@ -619,6 +621,14 @@ export default function Dashboard() {
               description="หาจุดต่างของ 2 ไฟล์ ข้อความและภาพ"
               onClick={() => setCompareStart({})}
               icon={<><path d="M9 4H5a1 1 0 00-1 1v14a1 1 0 001 1h4M15 4h4a1 1 0 011 1v14a1 1 0 01-1 1h-4" /><path d="M12 2v20" /><path d="M7 9h2M7 13h2M15 9h2M15 13h2" /></>}
+            />
+            <ToolCard
+              color="teal"
+              testId="tool-card-create-blank"
+              title="สร้างเอกสารเปล่า / แบบฟอร์ม"
+              description="สร้างหน้าเปล่าและวางช่องแบบฟอร์ม PDF"
+              onClick={() => setShowCreateBlankModal(true)}
+              icon={<><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /><path d="M12 18v-6M9 15h6" /></>}
             />
             <ToolCard
               color="purple"
@@ -1189,6 +1199,17 @@ export default function Dashboard() {
         onRename={handleRenameSubmit}
         initialName={renameTarget?.filename || ''}
       />
+
+      {showCreateBlankModal && (
+        <CreateBlankPdfModal
+          onClose={() => setShowCreateBlankModal(false)}
+          onCreated={(res, { openFormBuilder }) => {
+            setShowCreateBlankModal(false);
+            const suffix = openFormBuilder ? "?tool=fill_form&mode=design" : "";
+            void navigate(`/editor/${res.session_id}${suffix}`);
+          }}
+        />
+      )}
 
       {user && user.accepted_tos === false && (
         <TermsModal 

@@ -7,6 +7,7 @@ from app.db.database import get_db
 from app.core.session import PDFSession
 from app.models.domain import User
 from app.models.schemas import (
+    AddFormFieldRequest,
     CompressPdfRequest,
     CropPagesRequest,
     DeletePagesRequest,
@@ -189,5 +190,38 @@ def fill_form_fields(session_id: str, payload: FillFormRequest, session: PDFSess
             if updated > 0:
                 session.push_history()
             return {"status": "ok" if updated > 0 else "no_change", "updated": updated}
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/{session_id}/forms/fields")
+def add_form_field_api(session_id: str, payload: AddFormFieldRequest, session: PDFSession = Depends(get_owned_session)):
+    """สร้างช่องกรอกแบบฟอร์ม AcroForm ใหม่ลงหน้าเอกสาร (v1.47.0 · รองรับ Undo/Redo)"""
+    try:
+        with session.lock:
+            field = pdf_service.add_form_field(
+                session,
+                page_number=payload.page,
+                field_type=payload.type,
+                rect=payload.rect.model_dump(),
+                name=payload.name,
+                label=payload.label,
+                multiline=payload.multiline,
+                options=payload.options,
+            )
+            session.push_history()
+            return {"status": "ok", "field": field}
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.delete("/{session_id}/forms/fields/{xref}")
+def delete_form_field_api(session_id: str, xref: int, page: int = 0, session: PDFSession = Depends(get_owned_session)):
+    """ลบช่องกรอกแบบฟอร์ม AcroForm (v1.47.0 · รองรับ Undo/Redo)"""
+    try:
+        with session.lock:
+            pdf_service.delete_form_field(session, page_number=page, xref=xref)
+            session.push_history()
+            return {"status": "ok"}
     except PDFError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

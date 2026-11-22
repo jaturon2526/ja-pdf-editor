@@ -1,23 +1,115 @@
 import React from "react";
 
+function DraftFieldBox({ draftField, zoom, pageWidthPt, pageHeightPt, onRectChange, onConfirm, onCancel }) {
+  const { rect, label } = draftField;
+  const left = rect.x0 * zoom;
+  const top = rect.y0 * zoom;
+  const width = Math.max(16, (rect.x1 - rect.x0) * zoom);
+  const height = Math.max(16, (rect.y1 - rect.y0) * zoom);
+
+  function startPointer(kind, e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startRect = { ...rect };
+    const pointerId = e.pointerId;
+
+    function onMove(ev) {
+      if (ev.pointerId !== pointerId) return;
+      const dx = (ev.clientX - startX) / zoom;
+      const dy = (ev.clientY - startY) / zoom;
+      if (kind === "move") {
+        const w = startRect.x1 - startRect.x0;
+        const h = startRect.y1 - startRect.y0;
+        const nx0 = Math.max(0, Math.min(pageWidthPt - w, startRect.x0 + dx));
+        const ny0 = Math.max(0, Math.min(pageHeightPt - h, startRect.y0 + dy));
+        onRectChange({ x0: Math.round(nx0), y0: Math.round(ny0), x1: Math.round(nx0 + w), y1: Math.round(ny0 + h) });
+      } else {
+        const nx1 = Math.max(startRect.x0 + 16, Math.min(pageWidthPt, startRect.x1 + dx));
+        const ny1 = Math.max(startRect.y0 + 16, Math.min(pageHeightPt, startRect.y1 + dy));
+        onRectChange({ ...startRect, x1: Math.round(nx1), y1: Math.round(ny1) });
+      }
+    }
+
+    function onUp(ev) {
+      if (ev.pointerId !== pointerId) return;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    }
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  }
+
+  return (
+    <div
+      data-testid="form-draft-box"
+      className="absolute pointer-events-auto border-2 border-dashed border-blue-600 bg-blue-100/70 rounded cursor-move touch-none select-none z-40"
+      style={{ left, top, width, height }}
+      onPointerDown={(e) => startPointer("move", e)}
+    >
+      <span className="block px-1.5 py-0.5 text-[11px] font-medium text-blue-900 truncate pointer-events-none">
+        {label}
+      </span>
+      {/* มุมขวาล่างสำหรับดึงปรับขนาด */}
+      <div
+        role="presentation"
+        title="ลากเพื่อปรับขนาดช่องฟอร์ม"
+        onPointerDown={(e) => startPointer("resize", e)}
+        className="absolute -right-2 -bottom-2 w-4 h-4 rounded-full bg-blue-600 border-2 border-white cursor-nwse-resize touch-none shadow"
+      />
+      {/* ปุ่มยืนยัน/ยกเลิกลอยใต้กรอบ */}
+      <div
+        className="absolute left-0 flex items-center gap-1 mt-1"
+        style={{ top: "100%" }}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => void onConfirm()}
+          className="px-2 py-0.5 text-[11px] font-medium bg-blue-600 hover:bg-blue-700 text-white rounded shadow whitespace-nowrap"
+        >
+          วางช่อง
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-2 py-0.5 text-[11px] font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded shadow whitespace-nowrap"
+        >
+          ยกเลิก
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /**
  * ชั้นช่องกรอกแบบฟอร์ม AcroForm ซ้อนตรงตำแหน่งฟิลด์จริงบน PDFCanvas
- * รองรับ Text (บรรทัดเดียว/หลายบรรทัด), Checkbox, Radio, Dropdown/Listbox
+ * รองรับทั้งโหมดกรอกฟอร์ม (v1.45.0) และกล่องลากวางช่องฟอร์มใหม่ในโหมดออกแบบ (v1.47.0)
  */
 export default function FormFillLayer({
   fields,
   draftValues,
+  draftField = null,
   zoom,
+  pageWidthPt = 595,
+  pageHeightPt = 842,
   onChange,
+  onDraftRectChange,
+  onCommitDraftField,
+  onCancelDraftField,
 }) {
-  if (!fields || fields.length === 0) return null;
+  if ((!fields || fields.length === 0) && !draftField) return null;
 
   return (
     <div
       className="absolute inset-0 z-30 pointer-events-none"
       data-testid="form-fill-layer"
     >
-      {fields.map((field) => {
+      {(fields || []).map((field) => {
         const left = field.rect.x0 * zoom;
         const top = field.rect.y0 * zoom;
         const width = Math.max(16, (field.rect.x1 - field.rect.x0) * zoom);
@@ -108,6 +200,18 @@ export default function FormFillLayer({
           />
         );
       })}
+
+      {draftField && (
+        <DraftFieldBox
+          draftField={draftField}
+          zoom={zoom}
+          pageWidthPt={pageWidthPt}
+          pageHeightPt={pageHeightPt}
+          onRectChange={onDraftRectChange}
+          onConfirm={onCommitDraftField}
+          onCancel={onCancelDraftField}
+        />
+      )}
     </div>
   );
 }
