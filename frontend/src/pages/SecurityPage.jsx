@@ -4,6 +4,7 @@ import { changePassword } from "../api";
 import { validatePassword } from "../utils/password";
 import PasskeySection from "../components/security/PasskeySection.jsx";
 import CertificatesSection from "../components/security/CertificatesSection.jsx";
+import SavedSignaturesSection from "../components/security/SavedSignaturesSection.jsx";
 import LineSection from "../components/security/LineSection.jsx";
 import LineLoginSection from "../components/security/LineLoginSection.jsx";
 
@@ -15,6 +16,7 @@ export default function SecurityPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [passkeyVersion, setPasskeyVersion] = useState(0);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -55,9 +57,11 @@ export default function SecurityPage() {
           <h1 className="text-2xl font-bold">ความปลอดภัย</h1>
         </div>
 
-        <PasskeySection />
+        <PasskeySection onChanged={() => setPasskeyVersion((v) => v + 1)} />
 
         <CertificatesSection />
+
+        <SavedSignaturesSection passkeyVersion={passkeyVersion} />
 
         <LineLoginSection />
 

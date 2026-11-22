@@ -363,3 +363,20 @@ class CertificatePasskey(Base):
     wrapped = Column(String(512), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     passkey = relationship("Passkey", lazy="joined")
+
+
+class UserSignature(Base):
+    """รูปลายเซ็นที่ผู้ใช้บันทึกไว้แบบ Zero-Knowledge (v1.48.0 — app/services/signature_store.py)
+
+    - encrypted_png : IV 12 ไบต์ + AES-GCM ciphertext ของ PNG ที่เข้ารหัสในเบราว์เซอร์ด้วยค่าลับจาก Passkey (WebAuthn PRF)
+    - server ไม่เคยเห็นรูปลายเซ็นจริง · ลบอัตโนมัติเมื่อลบ Passkey ที่ผูกไว้หรือลบบัญชีผู้ใช้"""
+    __tablename__ = "user_signatures"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    passkey_id = Column(Integer, ForeignKey("passkeys.id", ondelete="CASCADE"), nullable=False, index=True)
+    label = Column(String(100), nullable=False)
+    prf_salt = Column(String(64), nullable=False)
+    encrypted_png = deferred(Column(LargeBinary, nullable=False))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    passkey = relationship("Passkey", lazy="joined")

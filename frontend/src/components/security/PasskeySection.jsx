@@ -23,7 +23,7 @@ function KeyIcon({ className = "w-5 h-5" }) {
   );
 }
 
-export default function PasskeySection() {
+export default function PasskeySection({ onChanged } = {}) {
   const supported = browserSupportsWebAuthn();
   const [items, setItems] = useState(null);
   const [error, setError] = useState("");
@@ -63,6 +63,7 @@ export default function PasskeySection() {
       setSuccess(`เพิ่ม passkey "${pk.name}" แล้ว — ครั้งหน้าเข้าสู่ระบบด้วย passkey ได้เลย`);
       setAdding(false);
       await reload();
+      onChanged?.();
     } catch (err) {
       const msg = passkeyErrorMessage(err, { registering: true });
       if (msg) setError(msg);
@@ -98,6 +99,7 @@ export default function PasskeySection() {
       setConfirmDelete(null);
       setSuccess(`ลบ passkey "${pk.name}" แล้ว`);
       await reload();
+      onChanged?.();
     } catch (err) {
       setError(err.message || "ลบไม่สำเร็จ");
     } finally {

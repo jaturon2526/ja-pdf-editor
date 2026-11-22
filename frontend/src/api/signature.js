@@ -90,3 +90,31 @@ export async function bindCertificatePasskey(id, payload) {
 export async function unbindCertificatePasskey(id, bindingId) {
   return handle(await fetchWithAuth(`${BASE}/signature/certificates/${id}/passkeys/${bindingId}`, { method: "DELETE" }));
 }
+
+// ---------- รูปลายเซ็นที่บันทึกไว้และปลดล็อกด้วย Passkey (v1.48.0 — Zero-Knowledge AES-GCM + WebAuthn PRF) ----------
+export async function listSavedSignatures() {
+  return handle(await fetchWithAuth(`${BASE}/signature/saved`));
+}
+
+export async function getSavedSignatureBlob(id) {
+  return handle(await fetchWithAuth(`${BASE}/signature/saved/${id}/blob`));
+}
+
+export async function prepareSavedSignatureOptions() {
+  const res = await fetchWithAuth(`${BASE}/signature/saved/options`, { method: "POST" });
+  return { ...(await handle(res)), at: Date.now() };
+}
+
+export async function saveEncryptedSignature(payload) {
+  return handle(await fetchWithAuth(`${BASE}/signature/saved`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }));
+}
+
+export async function deleteSavedSignature(id) {
+  const res = await fetchWithAuth(`${BASE}/signature/saved/${id}`, { method: "DELETE" });
+  if (res.status === 204) return;
+  return handle(res);
+}

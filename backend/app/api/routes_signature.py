@@ -35,7 +35,7 @@ from fastapi import Body, Depends, APIRouter, File, Form, HTTPException, UploadF
 from sqlalchemy.orm import Session
 
 from app.models.schemas import ElectronicSignRequest, Rect, SignatureStatusResponse
-from app.services import certificate_store, signature_service
+from app.services import certificate_store, signature_service, signature_store
 from app.services.pdf_service import PDFError
 
 router = APIRouter(prefix="/signature", tags=["signature"])
@@ -160,6 +160,66 @@ def unbind_certificate_passkey(certificate_id: int, binding_id: int,
         return certificate_store.unbind_passkey(db, current_user, certificate_id, binding_id)
     except certificate_store.CertificateError as exc:
         raise _cert_http(exc)
+
+
+# ---------- รูปลายเซ็นที่บันทึกไว้และปลดล็อกด้วย Passkey (v1.48.0 — app/services/signature_store.py) ----------
+
+def _sig_store_http(exc: signature_store.SignatureStoreError) -> HTTPException:
+    return HTTPException(status_code=exc.status_code, detail=str(exc))
+
+
+@router.get("/saved")
+def list_saved_signatures(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    """รายการรูปลายเซ็นที่บันทึกไว้ (เฉพาะ metadata — ไม่ส่งข้อมูลรูปจนกว่าจะกดปลดล็อก)"""
+    return signature_store.list_for(db, current_user)
+
+
+@router.get("/saved/{sig_id}/blob")
+def get_saved_signature_blob(sig_id: int, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    """คืน ciphertext ของรูปลายเซ็น (เข้ารหัสด้วย AES-GCM จาก Passkey PRF — ต้องปลดล็อกในเบราว์เซอร์)"""
+    try:
+        return signature_store.get_blob(db, current_user, sig_id)
+    except signature_store.SignatureStoreError as exc:
+        raise _sig_store_http(exc)
+
+
+@router.post("/saved/options")
+def saved_signature_options(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    """challenge สำหรับยืนยันตัวตนด้วย Passkey ก่อนบันทึกรูปลายเซ็น (ขอไว้ก่อนกดปุ่ม — รองรับ Safari)"""
+    try:
+        return signature_store.save_options(db, current_user)
+    except signature_store.SignatureStoreError as exc:
+        raise _sig_store_http(exc)
+
+
+@router.post("/saved", status_code=201)
+def create_saved_signature(payload: dict = Body(...), current_user: User = Depends(get_current_active_user),
+                           db: Session = Depends(get_db)):
+    """บันทึกรูปลายเซ็นที่เข้ารหัสแล้วจากเบราว์เซอร์: {label, prf_salt, encrypted_png_b64, flow_id, credential}"""
+    credential = payload.get("credential")
+    if not isinstance(credential, dict):
+        raise HTTPException(status_code=400, detail="ข้อมูล passkey ไม่ถูกต้อง")
+    try:
+        return signature_store.add(
+            db,
+            current_user,
+            label=str(payload.get("label") or ""),
+            prf_salt=str(payload.get("prf_salt") or ""),
+            encrypted_png_b64=str(payload.get("encrypted_png_b64") or ""),
+            flow_id=str(payload.get("flow_id") or ""),
+            credential=credential,
+        )
+    except signature_store.SignatureStoreError as exc:
+        raise _sig_store_http(exc)
+
+
+@router.delete("/saved/{sig_id}", status_code=204)
+def delete_saved_signature(sig_id: int, current_user: User = Depends(get_current_active_user),
+                           db: Session = Depends(get_db)):
+    try:
+        signature_store.delete(db, current_user, sig_id)
+    except signature_store.SignatureStoreError as exc:
+        raise _sig_store_http(exc)
 
 
 @router.post("/check-certificate")

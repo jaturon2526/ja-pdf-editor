@@ -1,8 +1,14 @@
-// สร้างรูปลายเซ็น 3 วิธี (ใช้ร่วมกันทั้งลายเซ็นอิเล็กทรอนิกส์และลายเซ็นดิจิทัล):
-// พิมพ์ข้อความ · ใส่รูปภาพ (ลบพื้นขาวให้อัตโนมัติ) · เซ็นสดด้วยนิ้ว/ปากกา/เมาส์
+// สร้างรูปลายเซ็น 4 วิธี (ใช้ร่วมกันทั้งลายเซ็นอิเล็กทรอนิกส์และลายเซ็นดิจิทัล):
+// ลายเซ็นที่บันทึกไว้ (ปลดล็อกด้วย Passkey) · พิมพ์ข้อความ · ใส่รูปภาพ (ลบพื้นขาวให้อัตโนมัติ) · เซ็นสดด้วยนิ้ว/ปากกา/เมาส์
 // optional=true: เพิ่มแท็บ "ไม่ใส่รูป" (ลายเซ็นดิจิทัลแสดงเป็นข้อความได้)
 // ref.getDataUrl() → PNG data URL หรือ null · onReadyChange(boolean) บอกว่ากด "ตกลง" ได้หรือยัง
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { getSavedSignatureBlob, listSavedSignatures } from "../../api/signature.js";
+import {
+  sigPasskeyErrorMessage,
+  supportsWebAuthn,
+  unlockSignatureWithPasskey,
+} from "../../utils/sigPasskey.js";
 import SignaturePad from "./SignaturePad.jsx";
 
 export const SIGN_COLOR_PRESETS = [
@@ -20,7 +26,7 @@ const TEXT_FONTS = [
 const isTouch = () => typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
 
 // รูปถ่ายลายเซ็นบนกระดาษ: ทำพื้นสีขาว/เทาอ่อนให้โปร่งใส แล้วครอปให้พอดี
-async function cleanSignatureImage(dataUrl, removeBackground) {
+export async function cleanSignatureImage(dataUrl, removeBackground) {
   const img = await new Promise((resolve, reject) => {
     const el = new Image();
     el.onload = () => resolve(el);
@@ -107,14 +113,29 @@ function ColorPicker({ value, onChange }) {
   );
 }
 
+function initialTab(optional) {
+  if (optional) return "none";
+  return isTouch() ? "draw" : "text";
+}
+
 const SignatureCreator = forwardRef(function SignatureCreator({ optional = false, onReadyChange }, ref) {
+  // ลายเซ็นที่บันทึกไว้ (เข้ารหัสด้วย Passkey)
+  const [savedList, setSavedList] = useState([]);
+  const [selectedSavedId, setSelectedSavedId] = useState(null);
+  const [savedBlob, setSavedBlob] = useState(null);
+  const [blobLoading, setBlobLoading] = useState(false);
+  const [unlockedUrl, setUnlockedUrl] = useState(null);
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockError, setUnlockError] = useState("");
+
   const tabs = [
     ...(optional ? [{ key: "none", label: "ไม่ใส่รูป" }] : []),
+    ...(savedList.length > 0 ? [{ key: "saved", label: "ที่บันทึกไว้" }] : []),
     { key: "draw", label: "เซ็นสด" },
     { key: "text", label: "พิมพ์" },
     { key: "image", label: "รูปภาพ" },
   ];
-  const [tab, setTab] = useState(() => (optional ? "none" : isTouch() ? "draw" : "text"));
+  const [tab, setTab] = useState(() => initialTab(optional));
   const [color, setColor] = useState(SIGN_COLOR_PRESETS[0].value);
 
   // พิมพ์ข้อความ
@@ -132,7 +153,67 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
   const padRef = useRef(null);
   const [hasInk, setHasInk] = useState(false);
 
-  const ready = tab === "none" || (tab === "text" && text.trim().length > 0) || (tab === "image" && !!imageUrl) || (tab === "draw" && hasInk);
+  // โหลดรายการลายเซ็นที่บันทึกไว้ (ถ้าไม่ได้ล็อกอินจะข้ามเงียบๆ)
+  useEffect(() => {
+    let cancelled = false;
+    listSavedSignatures()
+      .then((res) => {
+        if (cancelled) return;
+        const items = Array.isArray(res) ? res : [];
+        setSavedList(items);
+        if (items.length > 0) setSelectedSavedId(items[0].id);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  // โหลด ciphertext blob ล่วงหน้าเมื่อเปลี่ยนลายเซ็นที่เลือก เพื่อให้การกด "ปลดล็อกด้วย Passkey"
+  // เรียก navigator.credentials.get() ได้ทันทีภายใน user gesture (รองรับ Safari)
+  useEffect(() => {
+    if (!selectedSavedId) {
+      setSavedBlob(null);
+      return;
+    }
+    let cancelled = false;
+    setUnlockedUrl(null);
+    setUnlockError("");
+    setBlobLoading(true);
+    getSavedSignatureBlob(selectedSavedId)
+      .then((blob) => {
+        if (!cancelled) setSavedBlob(blob);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSavedBlob(null);
+          setUnlockError("โหลดข้อมูลลายเซ็นไม่สำเร็จ กรุณาลองใหม่");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setBlobLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [selectedSavedId]);
+
+  const handleUnlockSaved = async () => {
+    if (!savedBlob || unlocking) return;
+    setUnlockError("");
+    setUnlocking(true);
+    try {
+      const dataUrl = await unlockSignatureWithPasskey(savedBlob);
+      setUnlockedUrl(dataUrl);
+    } catch (e) {
+      setUnlockError(sigPasskeyErrorMessage(e));
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
+  const ready =
+    tab === "none" ||
+    (tab === "saved" && !!unlockedUrl) ||
+    (tab === "text" && text.trim().length > 0) ||
+    (tab === "image" && !!imageUrl) ||
+    (tab === "draw" && hasInk);
   useEffect(() => {
     onReadyChange?.(ready);
   }, [ready, onReadyChange]);
@@ -177,6 +258,7 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
   useImperativeHandle(ref, () => ({
     getDataUrl() {
       if (tab === "none") return null;
+      if (tab === "saved") return unlockedUrl;
       if (tab === "text") return text.trim() ? textCanvasRef.current.toDataURL("image/png") : null;
       if (tab === "image") return imageUrl;
       return padRef.current?.toDataURL() || null;
@@ -205,6 +287,67 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
         <p className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-600">
           ไม่ใส่รูปลายเซ็น — ในเอกสารจะแสดงเป็นข้อความชื่อผู้ลงนามและเวลา
         </p>
+      )}
+
+      {tab === "saved" && (
+        <div className="space-y-3">
+          <div className="space-y-1.5" role="radiogroup" aria-label="เลือกลายเซ็นที่บันทึกไว้">
+            {savedList.map((s) => {
+              const selected = s.id === selectedSavedId;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setSelectedSavedId(s.id)}
+                  className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border text-left transition ${
+                    selected
+                      ? "border-sky-500 bg-sky-50 text-sky-900"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{s.label}</div>
+                    <div className="text-xs text-slate-500 truncate">
+                      ปลดล็อกด้วย Passkey: {s.passkey_name || "Passkey"}
+                    </div>
+                  </div>
+                  <span className="text-xs shrink-0 px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-600">
+                    {selected && unlockedUrl ? "ปลดล็อกแล้ว" : "ล็อกอยู่"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {!unlockedUrl && (
+            <button
+              type="button"
+              disabled={!supportsWebAuthn() || blobLoading || !savedBlob || unlocking}
+              onClick={() => void handleUnlockSaved()}
+              className="w-full py-2.5 px-4 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium disabled:opacity-50 transition"
+            >
+              {unlocking ? "กำลังยืนยันตัวตนด้วย Passkey..." : "ปลดล็อกด้วย Passkey"}
+            </button>
+          )}
+
+          {unlockError && (
+            <p className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700" role="alert">
+              {unlockError}
+            </p>
+          )}
+
+          <div className="flex items-center justify-center min-h-[140px] rounded-xl border-2 border-dashed border-slate-300 bg-[repeating-conic-gradient(#f1f5f9_0%_25%,#fff_0%_50%)] bg-[length:16px_16px]">
+            {unlockedUrl ? (
+              <img src={unlockedUrl} alt="พรีวิวลายเซ็นที่ปลดล็อกแล้ว" className="max-h-56 max-w-full object-contain p-2" />
+            ) : (
+              <span className="text-sm text-slate-400 px-4 text-center">
+                กด &ldquo;ปลดล็อกด้วย Passkey&rdquo; เพื่อถอดรหัสและแสดงรูปลายเซ็น
+              </span>
+            )}
+          </div>
+        </div>
       )}
 
       {tab === "draw" && (
