@@ -558,3 +558,75 @@ def insert_blank_pages(session: PDFSession, count: int, position: int, width: fl
     _shift_text_edits(session, position, count)
     session.mark_dirty()
     return {"inserted": count, "position": position, "flattened_fields": 0}
+
+
+CROP_MIN_SIZE_PT = 36.0  # ขนาดหน้าขั้นต่ำหลังตัดขอบ (0.5 นิ้ว ≈ 12.7 มม.)
+
+
+def crop_pages(
+    session: PDFSession,
+    page_numbers: list[int],
+    left_pt: float,
+    top_pt: float,
+    right_pt: float,
+    bottom_pt: float,
+) -> int:
+    """ตัดขอบหน้ากระดาษ (ปรับ CropBox) ตามระยะที่ตัดจากทั้ง 4 ด้านของหน้าที่มองเห็นจริง (pt)
+
+    รองรับหน้าที่หมุนแล้ว (0/90/180/270°) และหน้าที่เคยตัดขอบมาก่อนแล้ว
+    คืนจำนวนหน้าที่ถูกตัดขอบ (0 = no-op ไม่ต้อง push_history)
+    """
+    if session.signed_pdf_bytes is not None:
+        raise PDFError(
+            "เอกสารนี้มีลายเซ็นดิจิทัล (PAdES) ฝังอยู่แล้ว ไม่สามารถตัดขอบหน้ากระดาษได้ "
+            "เพราะจะทำให้ลายเซ็นดิจิทัลใช้งานไม่ได้"
+        )
+    doc = require_unlocked(session)
+    if has_digital_signatures(doc):
+        raise PDFError(
+            "เอกสารนี้มีลายเซ็นดิจิทัล (PAdES) ฝังอยู่แล้ว ไม่สามารถตัดขอบหน้ากระดาษได้ "
+            "เพราะจะทำให้ลายเซ็นดิจิทัลใช้งานไม่ได้"
+        )
+
+    targets = sorted(set(page_numbers))
+    if not targets:
+        raise PDFError("ไม่ได้เลือกหน้าที่จะตัดขอบ")
+    n = doc.page_count
+    for p in targets:
+        if not (0 <= p < n):
+            raise PDFError(f"เลขหน้า {p + 1} อยู่นอกช่วง (มีทั้งหมด {n} หน้า)")
+
+    if max(left_pt, top_pt, right_pt, bottom_pt) < 0.5:
+        return 0
+
+    # ตรวจสอบขนาดหลังตัดของทุกหน้าก่อนแก้จริง (atomic — ไม่ครอปค้างครึ่งเดียว)
+    planned: list[tuple[int, fitz.Rect]] = []
+    for p in targets:
+        page = doc[p]
+        vis = page.rect
+        new_w = vis.width - left_pt - right_pt
+        new_h = vis.height - top_pt - bottom_pt
+        if new_w < CROP_MIN_SIZE_PT or new_h < CROP_MIN_SIZE_PT:
+            raise PDFError(
+                f"หน้า {p + 1} มีขนาดหลังตัดขอบเล็กเกินไป (ต้องกว้างและสูงอย่างน้อย 13 มม.)"
+            )
+        vis_rect = fitz.Rect(left_pt, top_pt, vis.width - right_pt, vis.height - bottom_pt)
+        derot = vis_rect * page.derotation_matrix
+        cb = page.cropbox
+        new_crop = fitz.Rect(
+            derot.x0 + cb.x0,
+            derot.y0 + cb.y0,
+            derot.x1 + cb.x0,
+            derot.y1 + cb.y0,
+        ) & page.mediabox
+        if new_crop.width < CROP_MIN_SIZE_PT or new_crop.height < CROP_MIN_SIZE_PT:
+            raise PDFError(f"หน้า {p + 1} มีขนาดหลังตัดขอบเล็กเกินไป")
+        planned.append((p, new_crop))
+
+    for p, new_crop in planned:
+        doc[p].set_cropbox(new_crop)
+        session.text_edits.pop(p, None)
+
+    session.mark_dirty()
+    _flush_mupdf_warnings(f"crop_pages session={session.session_id}")
+    return len(planned)

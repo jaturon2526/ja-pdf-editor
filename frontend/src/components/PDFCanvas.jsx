@@ -2,6 +2,7 @@ import React, { forwardRef, useEffect, useLayoutEffect, useRef, useState } from 
 import FontInspectorLayer from "./editor/FontInspectorLayer.jsx";
 import TableEditLayer from "./editor/TableEditLayer.jsx";
 import BarcodeEditLayer from "./editor/BarcodeEditLayer.jsx";
+import CropPageLayer from "./editor/CropPageLayer.jsx";
 import { pageImageSrc } from "../utils/pageImage.js";
 import CanvasContextMenu from "./CanvasContextMenu.jsx";
 import EditableTextBox from "./EditableTextBox.jsx";
@@ -111,6 +112,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   onDraftSignatureRectChange,
   onCommitSignature,
   onCancelSignature,
+  cropPage,
 }, canvasAreaRef) {
   const imgRef = useRef(null);
   const pageSheetRef = useRef(null);
@@ -813,6 +815,16 @@ const PDFCanvas = forwardRef(function PDFCanvas({
           <BarcodeEditLayer barcodes={barcodeEdit.barcodes} selected={barcodeEdit.selected} draft={barcodeEdit.draft}
             zoom={zoom} pageSrc={pageImage ? pageImageSrc(pageImage) : ""} pageWidthPt={pageWidthPt} pageHeightPt={pageHeightPt}
             onSelect={barcodeEdit.select} onMoveTo={barcodeEdit.moveTo} />
+        )}
+
+        {activeTool === "crop_page" && cropPage && (
+          <CropPageLayer
+            margins={cropPage.margins}
+            zoom={zoom}
+            pageWidthPt={pageWidthPt}
+            pageHeightPt={pageHeightPt}
+            onChange={cropPage.updateMargins}
+          />
         )}
 
         {activeTool === "inspect_font" && fontInspector && (

@@ -304,3 +304,18 @@ export async function searchPdfText(sessionId, query, { matchCase = false } = {}
   const params = new URLSearchParams({ q: query, match_case: String(!!matchCase) });
   return handle(await fetchWithAuth(`${BASE}/pdf/${sessionId}/search?${params.toString()}`));
 }
+
+// ตัดขอบหน้ากระดาษ (Crop Page, v1.44.0) → { status: "ok" | "no_change", cropped_pages }
+export async function cropPages(sessionId, { pageNumbers, leftPt, topPt, rightPt, bottomPt }) {
+  return handle(await fetchWithAuth(`${BASE}/pdf/${sessionId}/pages/crop`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      page_numbers: pageNumbers,
+      left_pt: leftPt,
+      top_pt: topPt,
+      right_pt: rightPt,
+      bottom_pt: bottomPt,
+    }),
+  }));
+}

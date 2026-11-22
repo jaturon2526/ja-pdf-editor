@@ -123,6 +123,7 @@ export function buildEditorMenus({
         { label: "แก้ไขรูปภาพ", onClick: toggleTool("edit_image"), disabled: noDoc },
         { label: "แก้ไขตาราง", hint: "ย้าย ขนาด คอลัมน์ แถว", onClick: toggleTool("edit_table"), disabled: noDoc },
         { label: "ย้าย / ลบบาร์โค้ด", hint: "บาร์โค้ดและ QR ในหน้า", onClick: toggleTool("edit_barcode"), disabled: noDoc },
+        { label: "ตัดขอบหน้ากระดาษ...", hint: "ครอปขอบขาว · หน้านี้ / ทุกหน้า", onClick: toggleTool("crop_page"), disabled: noDoc },
         { label: "เซ็นเซอร์", onClick: toggleTool("redact"), disabled: noDoc },
         { label: "ตรวจฟอนต์", hint: "ชื่อฟอนต์ ขนาด การฝัง", onClick: toggleTool("inspect_font"), disabled: noDoc },
         { label: "เซ็นเซอร์ด้วยคำค้นหา...", onClick: openRedactSearch, disabled: noDoc },

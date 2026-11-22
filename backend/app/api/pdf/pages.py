@@ -8,6 +8,7 @@ from app.core.session import PDFSession
 from app.models.domain import User
 from app.models.schemas import (
     CompressPdfRequest,
+    CropPagesRequest,
     DeletePagesRequest,
     InsertPagesRequest,
     Rect,
@@ -82,6 +83,25 @@ def rotate_pages(session_id: str, payload: RotatePagesRequest, session: PDFSessi
             if changed:
                 session.push_history()
             return {"status": "ok" if changed else "no_change"}
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/{session_id}/pages/crop")
+def crop_pages(session_id: str, payload: CropPagesRequest, session: PDFSession = Depends(get_owned_session)):
+    try:
+        with session.lock:
+            cropped = pdf_service.crop_pages(
+                session,
+                payload.page_numbers,
+                payload.left_pt,
+                payload.top_pt,
+                payload.right_pt,
+                payload.bottom_pt,
+            )
+            if cropped > 0:
+                session.push_history()
+            return {"status": "ok" if cropped > 0 else "no_change", "cropped_pages": cropped}
     except PDFError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 

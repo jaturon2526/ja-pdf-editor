@@ -131,6 +131,15 @@ class RotatePagesRequest(BaseModel):
     page_numbers: list[int]
     angle: int = 90  # 90 for clockwise, -90 for counter-clockwise
 
+
+class CropPagesRequest(BaseModel):
+    """ตัดขอบหน้ากระดาษ (Crop Page, v1.44.0): ระยะตัดขอบทั้ง 4 ด้านในพิกัดหน้าที่มองเห็น (pt)"""
+    page_numbers: list[int] = Field(..., min_length=1)
+    left_pt: float = Field(0.0, ge=0.0, le=14400.0)
+    top_pt: float = Field(0.0, ge=0.0, le=14400.0)
+    right_pt: float = Field(0.0, ge=0.0, le=14400.0)
+    bottom_pt: float = Field(0.0, ge=0.0, le=14400.0)
+
 class CompressPdfRequest(BaseModel):
     profile: Literal["screen", "ebook", "printer", "prepress"] = "screen"
 
