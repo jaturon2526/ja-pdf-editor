@@ -10,6 +10,10 @@ test("สร้างเอกสารเปล่าจากหน้าแ�
   await expect(dialog).toBeVisible();
 
   await dialog.getByLabel("ชื่อไฟล์").fill("ใบสมัคร E2E.pdf");
+  // เลือกแนวนอนและทดสอบสลับกำหนดขนาดเอง
+  await dialog.getByLabel("ขนาดกระดาษ").selectOption("custom");
+  await dialog.getByLabel("ความกว้าง (มม.)").fill("200");
+  await dialog.getByLabel("ความสูง (มม.)").fill("150");
   await dialog.getByRole("button", { name: "สร้างเอกสาร", exact: true }).click();
 
   await page.waitForURL("**/editor/**");

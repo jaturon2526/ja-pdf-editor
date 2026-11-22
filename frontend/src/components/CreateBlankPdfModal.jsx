@@ -1,30 +1,78 @@
 import React, { useState } from "react";
 import * as api from "../api.js";
 
+const PT_PER_MM = 72 / 25.4;
+const MIN_MM = 26; // ≈ 73.7 pt (backend >= 72 pt)
+const MAX_MM = 5000; // ≈ 14,173 pt (backend <= 14,400 pt)
+
 const PAPER_SIZES = [
-  { id: "a4_portrait", label: "A4 แนวตั้ง (210 × 297 มม.)", width: 595, height: 842 },
-  { id: "a4_landscape", label: "A4 แนวนอน (297 × 210 มม.)", width: 842, height: 595 },
-  { id: "letter", label: "Letter แนวตั้ง (216 × 279 มม.)", width: 612, height: 792 },
-  { id: "a5", label: "A5 แนวตั้ง (148 × 210 มม.)", width: 420, height: 595 },
+  { id: "a4", label: "A4 (210 × 297 มม.)", widthMm: 210, heightMm: 297 },
+  { id: "letter", label: "Letter (216 × 279 มม.)", widthMm: 215.9, heightMm: 279.4 },
+  { id: "a5", label: "A5 (148 × 210 มม.)", widthMm: 148, heightMm: 210 },
+  { id: "a3", label: "A3 (297 × 420 มม.)", widthMm: 297, heightMm: 420 },
+  { id: "custom", label: "กำหนดเอง (มม.)", widthMm: 210, heightMm: 297 },
 ];
 
 /**
- * หน้าต่างสร้างเอกสาร PDF หน้าเปล่า (v1.47.0)
- * ใช้สร้างเอกสารเปล่าเพื่อออกแบบแบบฟอร์ม PDF หรือวางข้อความ/รูปภาพใหม่ได้ทันที
+ * หน้าต่างสร้างเอกสาร PDF หน้าเปล่า (v1.47.0, รองรับกำหนดขนาดเอง + แนวตั้ง/แนวนอน v1.47.1)
  */
 export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFormBuilder = true }) {
   const [filename, setFilename] = useState("แบบฟอร์มใหม่.pdf");
-  const [sizeId, setSizeId] = useState("a4_portrait");
+  const [sizeId, setSizeId] = useState("a4");
+  const [orientation, setOrientation] = useState("portrait"); // "portrait" | "landscape"
+  const [customW, setCustomW] = useState("210");
+  const [customH, setCustomH] = useState("297");
   const [pageCount, setPageCount] = useState(1);
   const [openFormBuilder, setOpenFormBuilder] = useState(defaultOpenFormBuilder);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  function handleSelectOrientation(nextOrient) {
+    if (nextOrient === orientation) return;
+    setOrientation(nextOrient);
+    if (sizeId === "custom") {
+      const w = Number(customW);
+      const h = Number(customH);
+      if (Number.isFinite(w) && Number.isFinite(h)) {
+        const shouldSwap = (nextOrient === "landscape" && w < h) || (nextOrient === "portrait" && w > h);
+        if (shouldSwap) {
+          setCustomW(String(h));
+          setCustomH(String(w));
+        }
+      }
+    }
+  }
+
+  function resolveDimensionsPt() {
+    if (sizeId === "custom") {
+      const wMm = Number(customW);
+      const hMm = Number(customH);
+      if (!Number.isFinite(wMm) || !Number.isFinite(hMm) || wMm < MIN_MM || hMm < MIN_MM || wMm > MAX_MM || hMm > MAX_MM) {
+        return { error: `กรุณาระบุความกว้างและความสูงระหว่าง ${MIN_MM}–${MAX_MM} มม.` };
+      }
+      return {
+        width: Math.round(wMm * PT_PER_MM * 100) / 100,
+        height: Math.round(hMm * PT_PER_MM * 100) / 100,
+      };
+    }
+    const preset = PAPER_SIZES.find((s) => s.id === sizeId) || PAPER_SIZES[0];
+    const wMm = orientation === "landscape" ? preset.heightMm : preset.widthMm;
+    const hMm = orientation === "landscape" ? preset.widthMm : preset.heightMm;
+    return {
+      width: Math.round(wMm * PT_PER_MM * 100) / 100,
+      height: Math.round(hMm * PT_PER_MM * 100) / 100,
+    };
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (submitting) return;
+    const dims = resolveDimensionsPt();
+    if (dims.error) {
+      setError(dims.error);
+      return;
+    }
     const cleanName = filename.trim() || "แบบฟอร์มใหม่.pdf";
-    const size = PAPER_SIZES.find((s) => s.id === sizeId) || PAPER_SIZES[0];
     const pages = Math.max(1, Math.min(50, Number(pageCount) || 1));
 
     setSubmitting(true);
@@ -32,8 +80,8 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
     try {
       const res = await api.createBlankPdf({
         filename: cleanName,
-        width: size.width,
-        height: size.height,
+        width: dims.width,
+        height: dims.height,
         pageCount: pages,
       });
       onCreated(res, { openFormBuilder });
@@ -41,6 +89,14 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
       setError(err?.message || "สร้างเอกสารเปล่าไม่สำเร็จ");
       setSubmitting(false);
     }
+  }
+
+  const preset = PAPER_SIZES.find((s) => s.id === sizeId) || PAPER_SIZES[0];
+  let previewW = orientation === "landscape" ? preset.heightMm : preset.widthMm;
+  let previewH = orientation === "landscape" ? preset.widthMm : preset.heightMm;
+  if (sizeId === "custom") {
+    previewW = customW || "?";
+    previewH = customH || "?";
   }
 
   return (
@@ -78,11 +134,11 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
               maxLength={200}
               onChange={(e) => setFilename(e.target.value)}
               placeholder="เช่น ใบสมัครงาน.pdf"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3 items-end">
             <div className="col-span-2">
               <label htmlFor="blank-pdf-size" className="block text-xs font-medium text-slate-600 mb-1">
                 ขนาดกระดาษ
@@ -90,8 +146,11 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
               <select
                 id="blank-pdf-size"
                 value={sizeId}
-                onChange={(e) => setSizeId(e.target.value)}
-                className="w-full px-2.5 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => {
+                  setSizeId(e.target.value);
+                  setError("");
+                }}
+                className="w-full h-10 px-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {PAPER_SIZES.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -111,10 +170,88 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
                 max={50}
                 value={pageCount}
                 onChange={(e) => setPageCount(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
+
+          {/* แนวตั้ง / แนวนอน */}
+          <div>
+            <div className="flex items-center justify-between text-xs font-medium text-slate-600 mb-1">
+              <span>แนวกระดาษ</span>
+              <span className="text-[11px] font-normal text-slate-500">
+                {previewW} × {previewH} มม.
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                aria-pressed={orientation === "portrait"}
+                onClick={() => handleSelectOrientation("portrait")}
+                className={`h-9 rounded-lg border text-xs font-medium transition ${
+                  orientation === "portrait"
+                    ? "bg-blue-50 border-blue-500 text-blue-700"
+                    : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                แนวตั้ง (Portrait)
+              </button>
+              <button
+                type="button"
+                aria-pressed={orientation === "landscape"}
+                onClick={() => handleSelectOrientation("landscape")}
+                className={`h-9 rounded-lg border text-xs font-medium transition ${
+                  orientation === "landscape"
+                    ? "bg-blue-50 border-blue-500 text-blue-700"
+                    : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                แนวนอน (Landscape)
+              </button>
+            </div>
+          </div>
+
+          {/* ขนาดกำหนดเอง (มม.) */}
+          {sizeId === "custom" && (
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
+              <div>
+                <label htmlFor="blank-pdf-custom-w" className="block text-xs font-medium text-slate-600 mb-1">
+                  ความกว้าง (มม.)
+                </label>
+                <input
+                  id="blank-pdf-custom-w"
+                  type="number"
+                  min={MIN_MM}
+                  max={MAX_MM}
+                  step="1"
+                  value={customW}
+                  onChange={(e) => {
+                    setCustomW(e.target.value);
+                    setError("");
+                  }}
+                  className="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="blank-pdf-custom-h" className="block text-xs font-medium text-slate-600 mb-1">
+                  ความสูง (มม.)
+                </label>
+                <input
+                  id="blank-pdf-custom-h"
+                  type="number"
+                  min={MIN_MM}
+                  max={MAX_MM}
+                  step="1"
+                  value={customH}
+                  onChange={(e) => {
+                    setCustomH(e.target.value);
+                    setError("");
+                  }}
+                  className="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          )}
 
           <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer select-none pt-1">
             <input
