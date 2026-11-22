@@ -307,3 +307,31 @@ def delete_form_field(session: PDFSession, page_number: int, xref: int) -> bool:
     session.mark_dirty()
     _flush_mupdf_warnings(f"delete_form_field session={session.session_id}")
     return True
+
+
+def update_form_field(
+    session: PDFSession,
+    page_number: int,
+    xref: int,
+    rect: dict,
+    label: str | None = None,
+) -> dict:
+    """ย้ายตำแหน่งหรือปรับขนาดช่องกรอกแบบฟอร์ม AcroForm ที่วางไว้แล้ว (v1.47.3)"""
+    doc = _guard_form_edit(session)
+    if not (0 <= page_number < doc.page_count):
+        raise PDFError(f"เลขหน้า {page_number + 1} อยู่นอกช่วง (มีทั้งหมด {doc.page_count} หน้า)")
+    page = doc[page_number]
+    target = next((w for w in (page.widgets() or []) if int(w.xref) == int(xref)), None)
+    if target is None:
+        raise PDFError("ไม่พบช่องแบบฟอร์มที่ต้องการย้ายหรือปรับขนาด")
+    target.rect = _unrotated_rect(page, rect)
+    if label is not None and label.strip():
+        target.field_label = label.strip()
+    target.update()
+    session.mark_dirty()
+    _flush_mupdf_warnings(f"update_form_field session={session.session_id}")
+
+    for f in list_form_fields(session):
+        if f["page"] == page_number and f["xref"] == int(xref):
+            return f
+    raise PDFError("อัปเดตตำแหน่งช่องแบบฟอร์มไม่สำเร็จ")

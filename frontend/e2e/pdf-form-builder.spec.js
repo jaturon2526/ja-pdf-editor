@@ -31,6 +31,16 @@ test("สร้างเอกสารเปล่าจากหน้าแ�
   await panel.getByRole("button", { name: "ยืนยันวางช่อง", exact: true }).click();
   await expect(panel).toContainText("1 ช่อง", { timeout: 15_000 });
 
+  // ย้ายตำแหน่งช่องที่วางไปแล้วในโหมดออกแบบฟอร์ม
+  const placedBox = page.locator("[data-testid^='form-design-field-']").first();
+  await expect(placedBox).toBeVisible();
+  const boxBefore = await placedBox.boundingBox();
+  await page.mouse.move(boxBefore.x + boxBefore.width / 2, boxBefore.y + boxBefore.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(boxBefore.x + boxBefore.width / 2 + 40, boxBefore.y + boxBefore.height / 2 + 30, { steps: 4 });
+  await page.mouse.up();
+  await expect.poll(async () => (await placedBox.boundingBox())?.x ?? 0, { timeout: 10_000 }).toBeGreaterThan(boxBefore.x + 25);
+
   // สลับไปแท็บ "กรอกฟอร์ม" → กรอกข้อความไทยและบันทึก
   await panel.getByRole("button", { name: "กรอกฟอร์ม", exact: true }).click();
   await panel.getByLabel("ชื่อ-นามสกุล").fill("สมชาย ทดสอบ");

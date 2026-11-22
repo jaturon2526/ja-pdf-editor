@@ -357,6 +357,16 @@ export async function addFormField(sessionId, { page, type, name = "", label = "
   }));
 }
 
+// ย้ายตำแหน่งหรือปรับขนาดช่องกรอกแบบฟอร์ม AcroForm ที่วางไว้แล้ว (v1.47.3) → { status, field }
+export async function updateFormField(sessionId, xref, { page, rect, label = null }) {
+  const body = label ? { page, rect, label } : { page, rect };
+  return handle(await fetchWithAuth(`${BASE}/pdf/${sessionId}/forms/fields/${xref}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }));
+}
+
 // ลบช่องกรอกแบบฟอร์ม AcroForm (v1.47.0) → { status }
 export async function deleteFormField(sessionId, xref, page = 0) {
   return handle(await fetchWithAuth(`${BASE}/pdf/${sessionId}/forms/fields/${xref}?page=${page}`, {

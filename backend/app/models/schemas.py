@@ -593,3 +593,10 @@ class AddFormFieldRequest(BaseModel):
     rect: Rect
     multiline: bool = False
     options: list[str] = Field(default=[], max_length=100)
+
+
+class UpdateFormFieldRequest(BaseModel):
+    """ย้ายตำแหน่งหรือปรับขนาดช่องกรอกแบบฟอร์ม AcroForm ที่วางไว้แล้ว (v1.47.3)"""
+    page: int = Field(..., ge=0)
+    rect: Rect
+    label: Optional[str] = Field(default=None, max_length=200)

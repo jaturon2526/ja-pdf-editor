@@ -208,6 +208,35 @@ export function useFormFill({
     [session, saving, runDocumentChange, reload],
   );
 
+  const moveField = useCallback(
+    async (field, rect) => {
+      if (!session || saving) return;
+      // อัปเดตตำแหน่งใน state ทันทีไม่ให้กระพริบกลับตำแหน่งเดิมระหว่างรอเซิร์ฟเวอร์
+      setFields((prev) => prev.map((f) => (f.xref === field.xref && f.page === field.page ? { ...f, rect } : f)));
+      setSaving(true);
+      setError("");
+      try {
+        await runDocumentChange(
+          (sid) => api.updateFormField(sid, field.xref, { page: field.page, rect }),
+          {
+            busy: "กำลังย้ายตำแหน่งช่องแบบฟอร์ม...",
+            success: `ปรับตำแหน่งช่อง "${field.label}" แล้ว`,
+            failure: "ย้ายตำแหน่งช่องแบบฟอร์มไม่สำเร็จ",
+            keepTool: true,
+            rethrow: true,
+          },
+        );
+        await reload();
+      } catch (err) {
+        setError(err?.message || "ย้ายตำแหน่งช่องแบบฟอร์มไม่สำเร็จ");
+        await reload();
+      } finally {
+        setSaving(false);
+      }
+    },
+    [session, saving, runDocumentChange, reload],
+  );
+
   return {
     fields,
     pageFields,
@@ -221,6 +250,7 @@ export function useFormFill({
     updateDraftRect,
     cancelDraftField,
     commitDraftField,
+    moveField,
     deleteField,
     loading,
     saving,

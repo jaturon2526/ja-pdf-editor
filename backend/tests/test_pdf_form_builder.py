@@ -71,7 +71,23 @@ def test_create_blank_pdf_and_build_form_fields_with_undo(client, make_user):
     assert r_fill.status_code == 200, r_fill.text
     assert r_fill.json() == {"status": "ok", "updated": 1}
 
-    # 5) Delete checkbox field → 2 fields left
+    # 5) Move & resize the text field → verify updated rect and Undo restores old rect
+    r_move = client.patch(
+        f"/pdf/{sid}/forms/fields/{f_text['xref']}",
+        json={"page": 0, "rect": {"x0": 150, "y0": 260, "x1": 450, "y1": 300}},
+        headers=h,
+    )
+    assert r_move.status_code == 200, r_move.text
+    moved = r_move.json()["field"]
+    assert abs(moved["rect"]["x0"] - 150.0) < 0.5
+    assert abs(moved["rect"]["y0"] - 260.0) < 0.5
+    assert abs(moved["rect"]["x1"] - 450.0) < 0.5
+
+    client.post(f"/pdf/{sid}/undo", headers=h)
+    reverted = next(f for f in client.get(f"/pdf/{sid}/forms", headers=h).json()["fields"] if f["xref"] == f_text["xref"])
+    assert abs(reverted["rect"]["x0"] - 72.0) < 0.5
+
+    # 6) Delete checkbox field → 2 fields left
     r_del = client.delete(f"/pdf/{sid}/forms/fields/{f_cb['xref']}?page=0", headers=h)
     assert r_del.status_code == 200, r_del.text
     assert client.get(f"/pdf/{sid}/forms", headers=h).json()["total"] == 2

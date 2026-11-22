@@ -99,5 +99,6 @@ from app.services.pdf_service.forms import (  # noqa: F401
     list_form_fields,
     fill_form_fields,
     add_form_field,
+    update_form_field,
     delete_form_field,
 )

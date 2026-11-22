@@ -833,11 +833,13 @@ const PDFCanvas = forwardRef(function PDFCanvas({
           <FormFillLayer
             fields={formFill.pageFields}
             draftValues={formFill.draftValues}
+            mode={formFill.mode}
             draftField={formFill.draftField}
             zoom={zoom}
             pageWidthPt={pageWidthPt}
             pageHeightPt={pageHeightPt}
             onChange={formFill.setFieldValue}
+            onMoveField={formFill.moveField}
             onDraftRectChange={formFill.updateDraftRect}
             onCommitDraftField={formFill.commitDraftField}
             onCancelDraftField={formFill.cancelDraftField}

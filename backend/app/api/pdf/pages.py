@@ -18,6 +18,7 @@ from app.models.schemas import (
     ReorderPagesRequest,
     ReorderPagesResponse,
     RotatePagesRequest,
+    UpdateFormFieldRequest,
 )
 from app.services import pdf_service
 from app.services.pdf_service import PDFError
@@ -208,6 +209,24 @@ def add_form_field_api(session_id: str, payload: AddFormFieldRequest, session: P
                 label=payload.label,
                 multiline=payload.multiline,
                 options=payload.options,
+            )
+            session.push_history()
+            return {"status": "ok", "field": field}
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.patch("/{session_id}/forms/fields/{xref}")
+def update_form_field_api(session_id: str, xref: int, payload: UpdateFormFieldRequest, session: PDFSession = Depends(get_owned_session)):
+    """ย้ายตำแหน่งหรือปรับขนาดช่องกรอกแบบฟอร์ม AcroForm ที่วางไว้แล้ว (v1.47.3 · รองรับ Undo/Redo)"""
+    try:
+        with session.lock:
+            field = pdf_service.update_form_field(
+                session,
+                page_number=payload.page,
+                xref=xref,
+                rect=payload.rect.model_dump(),
+                label=payload.label,
             )
             session.push_history()
             return {"status": "ok", "field": field}
