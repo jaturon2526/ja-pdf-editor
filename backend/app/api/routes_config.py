@@ -16,10 +16,13 @@ router = APIRouter(tags=["config"])
 def public_config(db: Session = Depends(get_db)):
     from app.services import donation_service
 
-    try:
-        donations = donation_service.public_info(db)["enabled"]
-    except Exception:  # noqa: BLE001 — ตารางยังไม่ migrate ฯลฯ ไม่ควรทำให้หน้า login พัง
+    if settings.DEPLOYMENT_PROFILE == "onprem":
         donations = False
+    else:
+        try:
+            donations = donation_service.public_info(db)["enabled"]
+        except Exception:  # noqa: BLE001 — ตารางยังไม่ migrate ฯลฯ ไม่ควรทำให้หน้า login พัง
+            donations = False
     return {
         "app_name": settings.APP_NAME,
         "profile": settings.DEPLOYMENT_PROFILE,

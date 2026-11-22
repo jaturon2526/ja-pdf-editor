@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMe, getAdminStats, getAdminUsers, updateAdminUserPlan, updateAdminUserStatus, getAdminPlans, updateAdminPlanConfig } from "../api";
+import { getPublicConfig } from "../api/config.js";
 import QuotaPanel from "../components/admin/QuotaPanel.jsx";
 import DonationsPanel from "../components/admin/DonationsPanel.jsx";
 
@@ -22,6 +23,13 @@ export default function AdminDashboard() {
   const [editPlan, setEditPlan] = useState("free");
   const [plans, setPlans] = useState([]);
   const [showPlanConfig, setShowPlanConfig] = useState(false);
+  const [isOnprem, setIsOnprem] = useState(false);
+
+  useEffect(() => {
+    getPublicConfig()
+      .then((cfg) => setIsOnprem(cfg?.profile === "onprem"))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     async function init() {
@@ -154,7 +162,7 @@ export default function AdminDashboard() {
         )}
 
         {user?.is_admin && <QuotaPanel />}
-        {user?.is_admin && <DonationsPanel />}
+        {user?.is_admin && !isOnprem && <DonationsPanel />}
 
         <div className="mb-6">
           <div className="relative max-w-md">
