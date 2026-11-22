@@ -5,7 +5,7 @@ import * as api from "../api.js";
 import { reorderedPages } from "../utils/pageOrder.js";
 
 // เครื่องมือที่ไม่มี draft ค้าง (อ่านข้อมูลใหม่จากหน้าเอง) — undo/redo แล้วยังเปิดอยู่ แก้/ดูต่อได้
-const TOOLS_KEPT_ON_HISTORY = new Set(["edit_table", "edit_barcode", "inspect_font"]);
+const TOOLS_KEPT_ON_HISTORY = new Set(["edit_table", "edit_barcode", "inspect_font", "fill_form"]);
 
 export function useDocumentHistory({
   session,

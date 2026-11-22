@@ -19,6 +19,8 @@ import BarcodeEditPanel from "../components/editor/BarcodeEditPanel.jsx";
 import { useBarcodeEdit } from "../hooks/useBarcodeEdit.js";
 import CropPagePanel from "../components/editor/CropPagePanel.jsx";
 import { useCropPage } from "../hooks/useCropPage.js";
+import FormFillPanel from "../components/editor/FormFillPanel.jsx";
+import { useFormFill } from "../hooks/useFormFill.js";
 import FontInspectorPanel from "../components/editor/FontInspectorPanel.jsx";
 import { useFontInspector } from "../hooks/useFontInspector.js";
 import FindBar from "../components/editor/FindBar.jsx";
@@ -311,6 +313,13 @@ export default function Editor() {
     active: activeTool === "crop_page",
     runDocumentChange,
     onDone: () => setActiveTool(null),
+  });
+  const formFill = useFormFill({
+    session,
+    currentPage,
+    pageImage: sessionHook.pageImage,
+    active: activeTool === "fill_form",
+    runDocumentChange,
   });
   // ลูกศรขยับตาราง/บาร์โค้ดที่เลือก 1 pt (Shift = 10 pt) — ไม่แย่งปุ่มลูกศรตอนพิมพ์ในช่องตัวเลข
   let arrowTarget = null;
@@ -909,6 +918,7 @@ export default function Editor() {
           tableEdit={tableEdit}
           barcodeEdit={barcodeEdit}
           cropPage={cropPage}
+          formFill={formFill}
           pageWidthPt={session?.pageSizes?.[currentPage]?.[0] || 1}
           pageHeightPt={session?.pageSizes?.[currentPage]?.[1] || 1}
           zoom={zoom}
@@ -981,6 +991,16 @@ export default function Editor() {
 
         {activeTool === "crop_page" && session && (
           <CropPagePanel hook={cropPage} onClose={() => setActiveTool(null)} />
+        )}
+
+        {activeTool === "fill_form" && session && (
+          <FormFillPanel
+            hook={formFill}
+            currentPage={currentPage}
+            onSelectPage={sessionHook.goToPage}
+            onSwitchToInsertText={() => setActiveTool("insert_text")}
+            onClose={() => setActiveTool(null)}
+          />
         )}
 
         {activeTool === "inspect_font" && session && (

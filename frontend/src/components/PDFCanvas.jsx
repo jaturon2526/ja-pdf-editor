@@ -3,6 +3,7 @@ import FontInspectorLayer from "./editor/FontInspectorLayer.jsx";
 import TableEditLayer from "./editor/TableEditLayer.jsx";
 import BarcodeEditLayer from "./editor/BarcodeEditLayer.jsx";
 import CropPageLayer from "./editor/CropPageLayer.jsx";
+import FormFillLayer from "./editor/FormFillLayer.jsx";
 import { pageImageSrc } from "../utils/pageImage.js";
 import CanvasContextMenu from "./CanvasContextMenu.jsx";
 import EditableTextBox from "./EditableTextBox.jsx";
@@ -113,6 +114,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   onCommitSignature,
   onCancelSignature,
   cropPage,
+  formFill,
 }, canvasAreaRef) {
   const imgRef = useRef(null);
   const pageSheetRef = useRef(null);
@@ -824,6 +826,15 @@ const PDFCanvas = forwardRef(function PDFCanvas({
             pageWidthPt={pageWidthPt}
             pageHeightPt={pageHeightPt}
             onChange={cropPage.updateMargins}
+          />
+        )}
+
+        {activeTool === "fill_form" && formFill && (
+          <FormFillLayer
+            fields={formFill.pageFields}
+            draftValues={formFill.draftValues}
+            zoom={zoom}
+            onChange={formFill.setFieldValue}
           />
         )}
 

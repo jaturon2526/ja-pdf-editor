@@ -319,3 +319,17 @@ export async function cropPages(sessionId, { pageNumbers, leftPt, topPt, rightPt
     }),
   }));
 }
+
+// กรอกแบบฟอร์ม PDF (AcroForm, v1.45.0) → { total, fields: [...] }
+export async function getFormFields(sessionId) {
+  return handle(await fetchWithAuth(`${BASE}/pdf/${sessionId}/forms`));
+}
+
+// บันทึกค่าลงช่องแบบฟอร์ม AcroForm → { status: "ok" | "no_change", updated }
+export async function fillFormFields(sessionId, updates) {
+  return handle(await fetchWithAuth(`${BASE}/pdf/${sessionId}/forms/fill`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ updates }),
+  }));
+}

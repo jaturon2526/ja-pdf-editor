@@ -95,3 +95,7 @@ from app.services.pdf_service.pii import (  # noqa: F401
 from app.services.pdf_service.text_index import (  # noqa: F401
     search_text,
 )
+from app.services.pdf_service.forms import (  # noqa: F401
+    list_form_fields,
+    fill_form_fields,
+)

@@ -10,6 +10,8 @@ from app.models.schemas import (
     CompressPdfRequest,
     CropPagesRequest,
     DeletePagesRequest,
+    FillFormRequest,
+    FormFieldsResponse,
     InsertPagesRequest,
     Rect,
     ReorderPagesRequest,
@@ -162,5 +164,30 @@ def extract_text_ocr_api(session_id: str, payload: OcrRequest, current_user: Use
         with session.lock:
             text = pdf_service.extract_text_ocr(session, payload.page_number, payload.rect, user=current_user)
         return OcrResponse(text=text)
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/{session_id}/forms", response_model=FormFieldsResponse)
+def get_form_fields(session_id: str, session: PDFSession = Depends(get_owned_session)):
+    """คืนรายการช่องกรอกแบบฟอร์ม AcroForm ทั้งหมดในเอกสาร"""
+    try:
+        with session.lock:
+            fields = pdf_service.list_form_fields(session)
+        return FormFieldsResponse(total=len(fields), fields=fields)
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/{session_id}/forms/fill")
+def fill_form_fields(session_id: str, payload: FillFormRequest, session: PDFSession = Depends(get_owned_session)):
+    """บันทึกค่าลงช่องกรอกแบบฟอร์ม AcroForm (รองรับ Undo/Redo)"""
+    try:
+        with session.lock:
+            updates = [u.model_dump() for u in payload.updates]
+            updated = pdf_service.fill_form_fields(session, updates)
+            if updated > 0:
+                session.push_history()
+            return {"status": "ok" if updated > 0 else "no_change", "updated": updated}
     except PDFError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

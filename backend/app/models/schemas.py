@@ -525,3 +525,39 @@ class SearchTextResponse(BaseModel):
     total: int
     truncated: bool = False
     matches: list[SearchMatch]
+
+
+class FormOption(BaseModel):
+    value: str
+    label: str
+
+
+class FormFieldInfo(BaseModel):
+    """ข้อมูลช่องกรอกแบบฟอร์ม AcroForm (v1.45.0)"""
+    xref: int
+    page: int
+    name: str
+    label: str
+    type: Literal["text", "checkbox", "radio", "dropdown", "listbox"]
+    rect: Rect
+    value: str | bool
+    multiline: bool = False
+    read_only: bool = False
+    max_len: Optional[int] = None
+    options: list[FormOption] = []
+    on_state: Optional[str] = None
+
+
+class FormFieldsResponse(BaseModel):
+    total: int
+    fields: list[FormFieldInfo]
+
+
+class FormFieldUpdate(BaseModel):
+    xref: int
+    page: int = Field(..., ge=0)
+    value: str | bool = ""
+
+
+class FillFormRequest(BaseModel):
+    updates: list[FormFieldUpdate] = Field(..., max_length=500)
