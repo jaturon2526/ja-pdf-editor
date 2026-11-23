@@ -16,9 +16,8 @@ from app.services.edit_service.tables import (
     MIN_CELL_PT,
     TableOverlapError,
     _align,
-    _cell_content,
     _content_page,
-    _drop_degenerate_rects,
+    _extract_isolated_cells,
     _match,
     _place,
     _prune_empty_xobjects,
@@ -131,9 +130,16 @@ def _plan_insert_row(
     if not (0 <= r0 < n_rows):
         raise PDFError("ตำแหน่งแถวไม่อยู่ในตาราง")
     insert_at = r0 if position == "above" else r0 + 1
-    row_h = max(MIN_CELL_PT, ys[r0 + 1] - ys[r0])
+    row_heights = [ys[i + 1] - ys[i] for i in range(n_rows)]
+    selected_h = row_heights[r0]
+    # ถ้าเลือกแถวหัวตาราง (r0 == 0) ที่สูงกว่าแถวข้อมูลอื่น ให้ใช้ความสูงของแถวข้อมูลปกติเพื่อไม่ให้ขยายลงไปชนข้อความท้ายตารางโดยไม่จำเป็น
+    if r0 == 0 and n_rows > 1:
+        other_min = min(row_heights[1:])
+        row_h = max(MIN_CELL_PT, min(selected_h, other_min))
+    else:
+        row_h = max(MIN_CELL_PT, selected_h)
 
-    ny = list(ys[:insert_at]) + [ys[insert_at]] + [y + row_h for y in ys[insert_at:]]
+    ny = list(ys[:insert_at]) + [ys[insert_at]] + [round(y + row_h, 2) for y in ys[insert_at:]]
     new_cells: list[dict] = []
     moves: list[tuple[int, dict, bool]] = []
     covered_cols: set[int] = set()
@@ -204,9 +210,26 @@ def _plan_insert_col(
     if not (0 <= c0 < n_cols):
         raise PDFError("ตำแหน่งคอลัมน์ไม่อยู่ในตาราง")
     insert_at = c0 if position == "left" else c0 + 1
-    col_w = max(MIN_CELL_PT, xs[c0 + 1] - xs[c0])
 
-    nx = list(xs[:insert_at]) + [xs[insert_at]] + [x + col_w for x in xs[insert_at:]]
+    # ย่อความกว้างคอลัมน์เดิมอัตโนมัติเพื่อให้มีพื้นที่สำหรับคอลัมน์ใหม่ (คอลัมน์ใหม่กว้าง ~10% ของตาราง)
+    # ทำให้เพิ่มคอลัมน์ได้ทันทีแม้ตารางจะกว้างเต็มหน้ากระดาษอยู่แล้วโดยไม่ล้นขอบ
+    total_w = xs[-1] - xs[0]
+    new_col_w = max(MIN_CELL_PT, round(total_w * 0.10, 2))
+    old_widths = [xs[i + 1] - xs[i] for i in range(n_cols)]
+    target_old_sum = max(n_cols * MIN_CELL_PT, total_w - new_col_w)
+    scale = target_old_sum / total_w if total_w > 0 else 1.0
+    scaled_widths = [max(MIN_CELL_PT, round(w * scale, 2)) for w in old_widths]
+    diff = round((total_w - new_col_w) - sum(scaled_widths), 2)
+    if abs(diff) >= 0.01 and scaled_widths:
+        widest_idx = max(range(len(scaled_widths)), key=lambda i: scaled_widths[i])
+        if scaled_widths[widest_idx] + diff >= MIN_CELL_PT:
+            scaled_widths[widest_idx] = round(scaled_widths[widest_idx] + diff, 2)
+
+    all_widths = scaled_widths[:insert_at] + [new_col_w] + scaled_widths[insert_at:]
+    nx = [round(xs[0], 2)]
+    for w in all_widths:
+        nx.append(round(nx[-1] + w, 2))
+
     new_cells: list[dict] = []
     moves: list[tuple[int, dict, bool]] = []
     covered_rows: set[int] = set()
@@ -440,6 +463,27 @@ def _compute_plan(
     raise PDFError(f"ไม่รองรับคำสั่งโครงสร้างตาราง: {op}")
 
 
+def _fit_lines_within(lines: list[float], min_pos: float, max_pos: float) -> list[float]:
+    """ถ้าระยะเส้นแบ่งล้นขอบหน้ากระดาษ ให้ย่อช่องลงตามสัดส่วน (ไม่ต่ำกว่า MIN_CELL_PT) เพื่อให้อยู่ในหน้า"""
+    if not lines:
+        return lines
+    start = max(min_pos, lines[0])
+    total = lines[-1] - lines[0]
+    avail = max_pos - start
+    if lines[-1] <= max_pos and lines[0] >= min_pos:
+        return lines
+    n = len(lines) - 1
+    if avail < n * MIN_CELL_PT or total <= 0:
+        return lines
+    widths = [lines[i + 1] - lines[i] for i in range(n)]
+    scale = avail / total
+    scaled = [max(MIN_CELL_PT, round(w * scale, 2)) for w in widths]
+    out = [round(start, 2)]
+    for w in scaled:
+        out.append(round(out[-1] + w, 2))
+    return out
+
+
 def edit_table_structure(
     session: PDFSession,
     page_number: int,
@@ -467,6 +511,9 @@ def edit_table_structure(
         xs, ys, cells, op, r0, c0, r0 if r1 is None else r1, c0 if c1 is None else c1, position, direction
     )
 
+    nx = _fit_lines_within(nx, page.rect.x0 + 2.0, page.rect.x1 - 2.0)
+    ny = _fit_lines_within(ny, page.rect.y0 + 2.0, page.rect.y1 - 2.0)
+
     new_box = fitz.Rect(nx[0], ny[0], nx[-1], ny[-1])
     if not page.rect.contains(new_box + (1, 1, -1, -1)):
         raise PDFError("ตารางเกินขอบกระดาษ — ลองย่อขนาดตารางก่อนเพิ่มแถวหรือคอลัมน์")
@@ -492,50 +539,13 @@ def edit_table_structure(
 
     border_color, border_width, old_fills = _detect_table_style(inside, xs, ys, cells)
 
-    # เตรียมสำเนาหน้าต้นทางสำหรับตัดเนื้อหาแต่ละเซลล์ที่ยังคงอยู่
-    src = fitz.open()
-    src.insert_pdf(doc, from_page=page_number, to_page=page_number, annots=False)
-    base = src[0]
-    base.clean_contents()
-    _drop_degenerate_rects(src, base)
-    pw, ph = base.rect.width, base.rect.height
-    for rr in (
-        fitz.Rect(0, 0, pw, area.y0),
-        fitz.Rect(0, area.y1, pw, ph),
-        fitz.Rect(0, area.y0, area.x0, area.y1),
-        fitz.Rect(area.x1, area.y0, pw, area.y1),
-    ):
-        if rr.width > 0 and rr.height > 0:
-            base.add_redact_annot(rr)
-    base.apply_redactions(images=fitz.PDF_REDACT_IMAGE_REMOVE, graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
-    base.add_redact_annot(area)
-    base.apply_redactions(
-        images=fitz.PDF_REDACT_IMAGE_NONE,
-        graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED,
-        text=fitz.PDF_REDACT_TEXT_NONE,
-    )
-
-    for _ in moves[1:]:
-        src.fullcopy_page(0)
-
     def old_rect_of(c: dict) -> fitz.Rect:
         return fitz.Rect(xs[c["c"]], ys[c["r"]], xs[c["c"] + c["colspan"]], ys[c["r"] + c["rowspan"]])
 
-    contents: list[dict] = []
-    for k, (old_idx, _target_cell, _preserve_pos) in enumerate(moves):
-        sp = src[k]
-        rect = old_rect_of(cells[old_idx])
-        for rr in (
-            fitz.Rect(0, 0, pw, rect.y0),
-            fitz.Rect(0, rect.y1, pw, ph),
-            fitz.Rect(0, rect.y0, rect.x0, rect.y1),
-            fitz.Rect(rect.x1, rect.y0, pw, rect.y1),
-        ):
-            if rr.width > 0 and rr.height > 0:
-                sp.add_redact_annot(rr)
-        sp.apply_redactions(images=fitz.PDF_REDACT_IMAGE_PIXELS, graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
-        _prune_empty_xobjects(src, sp)
-        contents.append(_cell_content(sp, rect))
+    # เตรียมสำเนาหน้าต้นทางแยกอิสระต่อเซลล์ (กัน Form XObject แชร์กันจนข้อความหายเมื่อแก้ซ้ำ)
+    src, contents = _extract_isolated_cells(
+        doc, page_number, area, [old_rect_of(cells[old_idx]) for old_idx, _tc, _pp in moves]
+    )
 
     # Map background fills to new cells
     new_fills: dict[tuple[int, int], tuple[float, ...]] = {}
@@ -601,4 +611,61 @@ def edit_table_structure(
         "ys": ny,
         "cells": new_cells,
         "overlaps_content": overlaps,
+    }
+
+
+def create_table(
+    session: PDFSession,
+    page_number: int,
+    rows: int,
+    cols: int,
+    bbox: dict | None = None,
+) -> dict:
+    """สร้างตารางใหม่บนหน้ากระดาษ (v1.49.0): กำหนดจำนวนแถวและคอลัมน์เริ่มต้นได้"""
+    doc = require_unlocked(session)
+    if not (0 <= page_number < doc.page_count):
+        raise PDFError(f"page_number {page_number} อยู่นอกช่วง")
+    page = doc[page_number]
+    if page.rotation:
+        raise PDFError("ยังแทรกตารางในหน้าที่หมุนไม่ได้ — หมุนหน้ากลับเป็นแนวเดิมก่อน")
+    if not (1 <= rows <= 50 and 1 <= cols <= 30):
+        raise PDFError("จำนวนแถวต้องอยู่ระหว่าง 1–50 และจำนวนคอลัมน์ 1–30")
+
+    pw, ph = page.rect.width, page.rect.height
+    if bbox:
+        x0 = max(2.0, float(bbox["x0"]))
+        y0 = max(2.0, float(bbox["y0"]))
+        x1 = min(pw - 2.0, float(bbox["x1"]))
+        y1 = min(ph - 2.0, float(bbox["y1"]))
+    else:
+        margin_x = max(24.0, round(pw * 0.08, 2))
+        x0 = margin_x
+        x1 = round(pw - margin_x, 2)
+        default_row_h = min(26.0, max(16.0, round((ph * 0.55) / rows, 2)))
+        total_h = min(ph - 48.0, rows * default_row_h)
+        y0 = max(24.0, round((ph - total_h) * 0.4, 2))
+        y1 = round(y0 + total_h, 2)
+
+    if (x1 - x0) < cols * MIN_CELL_PT or (y1 - y0) < rows * MIN_CELL_PT:
+        raise PDFError("พื้นที่ตารางเล็กเกินไปสำหรับจำนวนแถวและคอลัมน์ที่ระบุ")
+
+    col_step = (x1 - x0) / cols
+    row_step = (y1 - y0) / rows
+    xs = [round(x0 + i * col_step, 2) for i in range(cols)] + [round(x1, 2)]
+    ys = [round(y0 + i * row_step, 2) for i in range(rows)] + [round(y1, 2)]
+    cells = [{"r": r, "c": c, "rowspan": 1, "colspan": 1} for r in range(rows) for c in range(cols)]
+
+    _draw_table_grid(page, xs, ys, cells, (0.0, 0.0, 0.0), 0.75, {})
+
+    table_key = f"table-{uuid.uuid4().hex[:10]}"
+    page_edits = session.text_edits.setdefault(page_number, {})
+    page_edits[table_key] = {"kind": "table", "xs": xs, "ys": ys, "cells": cells}
+    session.mark_dirty()
+
+    return {
+        "id": table_key,
+        "bbox": {"x0": xs[0], "y0": ys[0], "x1": xs[-1], "y1": ys[-1]},
+        "xs": xs,
+        "ys": ys,
+        "cells": cells,
     }

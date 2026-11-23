@@ -254,6 +254,15 @@ export async function editTableStructure(sessionId, pageNumber, {
   }));
 }
 
+// สร้างตารางใหม่บนหน้ากระดาษ (v1.49.0): กำหนดจำนวนแถวและคอลัมน์เริ่มต้นได้
+export async function createTable(sessionId, pageNumber, { rows = 3, cols = 4, bbox = null } = {}) {
+  return handle(await fetchWithAuth(`${BASE}/edit/${sessionId}/page/${pageNumber}/table/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(bbox ? { rows, cols, bbox } : { rows, cols }),
+  }));
+}
+
 // ---------- ย้าย/ลบบาร์โค้ดที่มีอยู่ในหน้า (v1.41.0 — backend app/services/edit_service/barcodes.py) ----------
 export async function getBarcodes(sessionId, pageNumber) {
   const res = await fetchWithAuth(`${BASE}/edit/${sessionId}/page/${pageNumber}/barcodes?_t=${Date.now()}`, { cache: "no-store" });

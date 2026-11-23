@@ -90,8 +90,14 @@ test.describe("แก้ไขตาราง", () => {
     await expect(panel.getByRole("button", { name: "แยก 2 คอลัมน์", exact: true })).toBeVisible({ timeout: 15_000 });
 
     // Undo → กลับไปเป็นเซลล์ที่ผสานไว้
-    await page.getByTitle("เลิกทำ (Ctrl+Z)").click();
+    await page.getByTitle("เลิกทำ (Ctrl+Z)").first().click();
     await expect(panel.getByRole("button", { name: "แยกเซลล์", exact: true })).toBeVisible({ timeout: 15_000 });
+
+    // ปุ่มขยายเต็มความกว้าง (ซ้าย–ขวา) → ซ้ายปรับเป็น 7.1 มม. (20 pt)
+    await panel.getByRole("button", { name: "↔ เต็มซ้าย–ขวา" }).click();
+    await expect(panel.locator("#tbl-left")).toHaveValue("7.1");
+    await panel.getByRole("button", { name: "ตกลง" }).click();
+    await expect(panel.getByRole("status")).toContainText("แก้ตารางแล้ว");
   });
 });
 

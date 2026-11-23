@@ -180,7 +180,7 @@ def _redraw(page: fitz.Page, paths: list[dict], fx=None, fy=None) -> None:
 
 _NUM = rb"[-+]?(?:\d+\.?\d*|\.\d+)"
 _DEGENERATE_RE = re.compile(rb"(?<![\w.])" + _NUM + rb"\s+" + _NUM + rb"\s+(" + _NUM + rb")\s+(" + _NUM + rb")\s+re\b")
-_PAINT_OP_RE = re.compile(rb"(?:^|[\s\]\)])(Tj|TJ|S|s|f|F|f\*|B|B\*|b|b\*|sh|BI)\b")
+_PAINT_OP_RE = re.compile(rb"(?:^|[\s\]\)>])(Tj|TJ|'|\"|S|s|f|F|f\*|B|B\*|b|b\*|sh|BI)\b")
 
 
 def _prune_empty_xobjects(doc: fitz.Document, page: fitz.Page) -> None:
@@ -217,17 +217,25 @@ def _prune_empty_xobjects(doc: fitz.Document, page: fitz.Page) -> None:
                 return True
         return False
 
-    dead_names = [name for xref, name in children.get(0, []) if not is_alive(xref)]
-    if not dead_names:
-        return
-    pat = re.compile(rb"/(?:" + b"|".join(re.escape(n.encode()) for n in dead_names) + rb")\s+Do\b")
-    for cxref in page.get_contents():
-        data = doc.xref_stream(cxref)
-        if data:
-            new_data = pat.sub(b"", data)
-            if new_data != data:
-                doc.update_stream(cxref, new_data)
-    page.clean_contents(sanitize=True)
+    modified = False
+    for invoker, items in children.items():
+        dead_names = [name for xref, name in items if not is_alive(xref)]
+        if not dead_names:
+            continue
+        pat = re.compile(rb"/(?:" + b"|".join(re.escape(n.encode()) for n in dead_names) + rb")\s+Do\b")
+        target_xrefs = page.get_contents() if invoker == 0 else [invoker]
+        for cxref in target_xrefs:
+            try:
+                data = doc.xref_stream(cxref)
+            except Exception:  # noqa: BLE001
+                continue
+            if data:
+                new_data = pat.sub(b"", data)
+                if new_data != data:
+                    doc.update_stream(cxref, new_data)
+                    modified = True
+    if modified:
+        page.clean_contents(sanitize=True)
 
 
 def _drop_degenerate_rects(doc: fitz.Document, page: fitz.Page) -> None:
@@ -328,6 +336,61 @@ def _validate(old: list[float], new: list[float], label: str) -> list[float]:
     return new
 
 
+def _extract_isolated_cells(
+    doc: fitz.Document,
+    page_number: int,
+    area: fitz.Rect,
+    cell_rects: list[fitz.Rect],
+) -> tuple[fitz.Document, list[dict]]:
+    """เตรียมเอกสารสำเนา 1 หน้าต่อ 1 เซลล์แบบแยก XObject อิสระจากกัน
+    (ห้ามใช้ src.fullcopy_page(0) เพราะจะแชร์ Form XObject xrefs ข้ามหน้า ทำให้การ redact เซลล์แรก
+    ไปลบข้อความใน XObject ของเซลล์อื่นทั้งหมดเมื่อแก้ตารางครั้งที่ 2)"""
+    base_doc = fitz.open()
+    base_doc.insert_pdf(doc, from_page=page_number, to_page=page_number, annots=False)
+    base = base_doc[0]
+    base.clean_contents()
+    _drop_degenerate_rects(base_doc, base)
+    pw, ph = base.rect.width, base.rect.height
+    for rr in (
+        fitz.Rect(0, 0, pw, area.y0),
+        fitz.Rect(0, area.y1, pw, ph),
+        fitz.Rect(0, area.y0, area.x0, area.y1),
+        fitz.Rect(area.x1, area.y0, pw, area.y1),
+    ):
+        if rr.width > 0 and rr.height > 0:
+            base.add_redact_annot(rr)
+    base.apply_redactions(images=fitz.PDF_REDACT_IMAGE_REMOVE, graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
+    base.add_redact_annot(area)
+    base.apply_redactions(
+        images=fitz.PDF_REDACT_IMAGE_NONE,
+        graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED,
+        text=fitz.PDF_REDACT_TEXT_NONE,
+    )
+    _prune_empty_xobjects(base_doc, base)
+    base_bytes = base_doc.tobytes(garbage=3)
+    base_doc.close()
+
+    src = fitz.open()
+    contents: list[dict] = []
+    for rect in cell_rects:
+        cell_doc = fitz.open("pdf", base_bytes)
+        sp = cell_doc[0]
+        for rr in (
+            fitz.Rect(0, 0, pw, rect.y0),
+            fitz.Rect(0, rect.y1, pw, ph),
+            fitz.Rect(0, rect.y0, rect.x0, rect.y1),
+            fitz.Rect(rect.x1, rect.y0, pw, rect.y1),
+        ):
+            if rr.width > 0 and rr.height > 0:
+                sp.add_redact_annot(rr)
+        sp.apply_redactions(images=fitz.PDF_REDACT_IMAGE_PIXELS, graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
+        _prune_empty_xobjects(cell_doc, sp)
+        contents.append(_cell_content(sp, rect))
+        src.insert_pdf(cell_doc, from_page=0, to_page=0)
+        cell_doc.close()
+    return src, contents
+
+
 def rebuild_table(session: PDFSession, page_number: int, bbox: dict, xs_new: list[float], ys_new: list[float],
                   allow_overlap: bool = False) -> dict:
     """วาดตารางใหม่ตามเส้นแบ่งใหม่ — คืน {xs, ys (หลังขยายแถวอัตโนมัติ), adjusted_rows, wrapped_cells}"""
@@ -343,44 +406,12 @@ def rebuild_table(session: PDFSession, page_number: int, bbox: dict, xs_new: lis
     ny = _validate(ys, ys_new, "แถว")
     old_box = fitz.Rect(xs[0], ys[0], xs[-1], ys[-1])
     area = old_box + (-2, -2, 2, 2)
-
-    # ต้นทาง: สำเนาหน้า (ไม่มี annotation) ที่ลบเส้น/พื้นในกรอบตารางออก แล้วทำสำเนาหนึ่งหน้าต่อเซลล์ (ใช้ทรัพยากรร่วมกัน)
-    src = fitz.open()
-    src.insert_pdf(doc, from_page=page_number, to_page=page_number, annots=False)
-    base = src[0]
-    base.clean_contents()
-    _drop_degenerate_rects(src, base)
-    pw, ph = base.rect.width, base.rect.height
-    # 1) ทุกอย่างนอกกรอบตาราง (ข้อความ รูป รูปทรง เช่น บาร์โค้ด) ไม่ต้องอยู่ในต้นทาง
-    for rr in (fitz.Rect(0, 0, pw, area.y0), fitz.Rect(0, area.y1, pw, ph),
-               fitz.Rect(0, area.y0, area.x0, area.y1), fitz.Rect(area.x1, area.y0, pw, area.y1)):
-        if rr.width > 0 and rr.height > 0:
-            base.add_redact_annot(rr)
-    base.apply_redactions(images=fitz.PDF_REDACT_IMAGE_REMOVE, graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
-    # 2) เส้น/พื้นของตาราง (วาดใหม่ทีหลัง) — เก็บข้อความ/รูปในเซลล์ไว้
-    base.add_redact_annot(area)
-    base.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED,
-                          text=fitz.PDF_REDACT_TEXT_NONE)
     cells = table["cells"]
-    for _ in cells[1:]:
-        src.fullcopy_page(0)
-    width, height = src[0].rect.width, src[0].rect.height
 
     def old_rect(c):
         return fitz.Rect(xs[c["c"]], ys[c["r"]], xs[c["c"] + c["colspan"]], ys[c["r"] + c["rowspan"]])
 
-    contents = []
-    for k, c in enumerate(cells):
-        sp, rect = src[k], old_rect(c)
-        for rr in (fitz.Rect(0, 0, width, rect.y0), fitz.Rect(0, rect.y1, width, height),
-                   fitz.Rect(0, rect.y0, rect.x0, rect.y1), fitz.Rect(rect.x1, rect.y0, width, rect.y1)):
-            if rr.width > 0 and rr.height > 0:
-                sp.add_redact_annot(rr)
-        # graphics: ลบรูปทรงทุกชิ้นที่ไม่อยู่ในเซลล์ทั้งชิ้น — ไม่งั้นรูปทรงทั้งหน้า (เช่น บาร์โค้ด) ติดไปในทุกเซลล์
-        # (มองไม่เห็นเพราะ clip แต่ไฟล์บวมและ find_tables รอบถัดไปเห็นเป็นเส้นตาราง)
-        sp.apply_redactions(images=fitz.PDF_REDACT_IMAGE_PIXELS, graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
-        _prune_empty_xobjects(src, sp)
-        contents.append(_cell_content(sp, rect))
+    src, contents = _extract_isolated_cells(doc, page_number, area, [old_rect(c) for c in cells])
 
     # ตัดบรรทัด/ขยายแถว: ความสูงที่แต่ละแถวต้องมีอย่างน้อย (เฉพาะเซลล์ที่ไม่ผสานแถว)
     wraps: dict[int, dict] = {}

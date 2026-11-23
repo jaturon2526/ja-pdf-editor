@@ -519,6 +519,13 @@ class TableStructureRequest(BaseModel):
     allow_overlap: bool = False
 
 
+class TableCreateRequest(BaseModel):
+    """สร้างตารางใหม่บนหน้ากระดาษ (v1.49.0): กำหนดจำนวนแถวและคอลัมน์เริ่มต้นได้"""
+    rows: int = Field(default=3, ge=1, le=50)
+    cols: int = Field(default=4, ge=1, le=30)
+    bbox: Optional[Rect] = None
+
+
 class BarcodeObjectEditRequest(BaseModel):
     """ย้าย/ลบบาร์โค้ดที่มีอยู่ในหน้า (v1.41.0): bbox เดิม (จาก GET .../barcodes) + กรอบใหม่ หรือ delete"""
     bbox: Rect

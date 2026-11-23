@@ -28,6 +28,7 @@ export function useImageEdit({
   const [images, setImages] = useState([]);
   const [draftImageEdit, setDraftImageEdit] = useState(null);
   const [pendingImageEdits, setPendingImageEdits] = useState({});
+  const [copiedImage, setCopiedImage] = useState(null); // { file, width, height, x0, y0 }
 
   // computed
   const imagePendingCount = Object.values(pendingImageEdits).reduce(
@@ -98,7 +99,7 @@ export function useImageEdit({
 
   // วางรูปใหม่เป็น draft — point {xPt,yPt} = จุดกึ่งกลางรูป (ไม่ระบุ = กลางหน้า) · มี draft ค้างอยู่ → ยืนยันอันเดิมก่อน
   // ขนาดเริ่มต้น: ด้านยาว 200pt (ไม่เกิน 60% ของหน้า) ตามสัดส่วนรูปจริง · ไม่ให้ล้นขอบหน้า
-  async function placeNewImage(file, point = null) {
+  async function placeNewImage(file, point = null, customBox = null) {
     if (!file || !session) return;
     if (!/^image\//.test(file.type || "")) {
       setStatusMessage("ไฟล์นี้ไม่ใช่รูปภาพ — ใช้ได้เฉพาะ JPG, PNG, WebP ฯลฯ");
@@ -106,20 +107,31 @@ export function useImageEdit({
     }
     const [pw, ph] = session.pageSizes?.[currentPage] || [595, 842];
     const previewUrl = URL.createObjectURL(file);
-    const maxSide = Math.min(200, pw * 0.6, ph * 0.6);
-    let width = maxSide;
-    let height = maxSide;
-    try {
-      const dims = await loadImageDimensions(previewUrl);
-      if (dims.width >= dims.height) height = Math.max(8, Math.round((dims.height / dims.width) * maxSide));
-      else width = Math.max(8, Math.round((dims.width / dims.height) * maxSide));
-    } catch {
-      /* อ่านขนาดไม่ได้ — ใช้กล่องจัตุรัส */
+    let width;
+    let height;
+    let x0;
+    let y0;
+    if (customBox && customBox.width > 0 && customBox.height > 0) {
+      width = Math.min(customBox.width, pw);
+      height = Math.min(customBox.height, ph);
+      x0 = Math.min(Math.max(0, customBox.x0 ?? (pw - width) / 2), Math.max(0, pw - width));
+      y0 = Math.min(Math.max(0, customBox.y0 ?? (ph - height) / 2), Math.max(0, ph - height));
+    } else {
+      const maxSide = Math.min(200, pw * 0.6, ph * 0.6);
+      width = maxSide;
+      height = maxSide;
+      try {
+        const dims = await loadImageDimensions(previewUrl);
+        if (dims.width >= dims.height) height = Math.max(8, Math.round((dims.height / dims.width) * maxSide));
+        else width = Math.max(8, Math.round((dims.width / dims.height) * maxSide));
+      } catch {
+        /* อ่านขนาดไม่ได้ — ใช้กล่องจัตุรัส */
+      }
+      const cx = point ? point.xPt : pw / 2;
+      const cy = point ? point.yPt : ph / 2;
+      x0 = Math.min(Math.max(0, cx - width / 2), Math.max(0, pw - width));
+      y0 = Math.min(Math.max(0, cy - height / 2), Math.max(0, ph - height));
     }
-    const cx = point ? point.xPt : pw / 2;
-    const cy = point ? point.yPt : ph / 2;
-    const x0 = Math.min(Math.max(0, cx - width / 2), Math.max(0, pw - width));
-    const y0 = Math.min(Math.max(0, cy - height / 2), Math.max(0, ph - height));
     const draft = {
       key: genLocalId("img-new"),
       kind: "insert",
@@ -137,6 +149,57 @@ export function useImageEdit({
     if (editModeRef.current === "image") setDraftImageEdit(draft);
     else queuedDraftRef.current = draft; // effect ด้านบนวางให้หลังเปลี่ยนเป็นโหมดแก้ไขรูป
     setStatusMessage('ลากรูปเพื่อย้าย ลากมุมเพื่อปรับขนาด แล้วกด "ตกลง" และ "บันทึกการแก้ไข"');
+  }
+
+  // คัดลอกรูปภาพที่กำลังเลือกอยู่ไปยังคลิปบอร์ด (ทั้งในแอปและ System Clipboard ถ้ารองรับ)
+  async function copySelectedImage() {
+    const cur = draftRef.current;
+    if (!cur || !session) return false;
+    try {
+      let blob = cur.file;
+      if (!blob && cur.previewUrl) {
+        const res = await fetch(cur.previewUrl);
+        blob = await res.blob();
+      }
+      if (!blob) return false;
+      const ext = (blob.type && blob.type.split("/")[1]) || "png";
+      const file = new File([blob], `copied-image.${ext}`, { type: blob.type || "image/png" });
+      const width = Math.max(12, cur.rect.x1 - cur.rect.x0);
+      const height = Math.max(12, cur.rect.y1 - cur.rect.y0);
+      setCopiedImage({ file, width, height, x0: cur.rect.x0, y0: cur.rect.y0 });
+
+      if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined" && file.type === "image/png") {
+        navigator.clipboard.write([new ClipboardItem({ "image/png": file })]).catch(() => {});
+      }
+      setStatusMessage('คัดลอกรูปภาพแล้ว — กด Ctrl+V หรือปุ่ม "วางรูป" เพื่อวาง');
+      return true;
+    } catch (err) {
+      setStatusMessage(`คัดลอกรูปภาพไม่สำเร็จ: ${err.message}`);
+      return false;
+    }
+  }
+
+  // วางรูปภาพจากคลิปบอร์ดระบบ (externalFile) หรือรูปที่เพิ่งกดคัดลอกไว้ในแอป (copiedImage)
+  async function pasteImage(externalFile = null) {
+    if (!session) return false;
+    if (copiedImage && (!externalFile || externalFile.size === copiedImage.file.size)) {
+      const nextX0 = copiedImage.x0 + 18;
+      const nextY0 = copiedImage.y0 + 18;
+      setCopiedImage((prev) => (prev ? { ...prev, x0: nextX0, y0: nextY0 } : prev));
+      await placeNewImage(copiedImage.file, null, {
+        width: copiedImage.width,
+        height: copiedImage.height,
+        x0: nextX0,
+        y0: nextY0,
+      });
+      setStatusMessage('วางรูปภาพที่คัดลอกแล้ว — ลากจัดตำแหน่งแล้วกด "ตกลง" และ "บันทึกการแก้ไข"');
+      return true;
+    }
+    if (externalFile) {
+      await placeNewImage(externalFile);
+      return true;
+    }
+    return false;
   }
 
   // แทรกบาร์โค้ด (เมนูแทรก › บาร์โค้ด): วางกล่องกลางหน้าให้ลากย้าย/ย่อขยายได้เหมือนรูป — บันทึกจริงเป็นเวกเตอร์
@@ -313,6 +376,9 @@ export function useImageEdit({
     // handlers
     openImagePicker,
     placeNewImage,
+    copySelectedImage,
+    pasteImage,
+    copiedImage,
     startBarcodeInsert,
     handleSelectImage,
     handleResumeImageEdit,

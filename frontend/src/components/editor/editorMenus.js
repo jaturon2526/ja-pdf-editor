@@ -100,6 +100,7 @@ export function buildEditorMenus({
       items: [
         { label: "แทรกข้อความ", onClick: toggleTool("insert_text"), disabled: noDoc },
         { label: "แทรกรูปภาพ", onClick: insertImage, disabled: noDoc },
+        { label: "แทรกตาราง...", hint: "กำหนดแถวและคอลัมน์เริ่มต้น", onClick: toggleTool("edit_table"), disabled: noDoc },
         { label: "ตราประทับ...", hint: "สำเนาถูกต้อง · อนุมัติแล้ว · ลับ", onClick: openStamp, disabled: noDoc },
         { label: "บาร์โค้ด / QR Code...", onClick: openBarcode, disabled: noDoc },
         { label: "ย้าย / ลบบาร์โค้ดในหน้า", onClick: toggleTool("edit_barcode"), disabled: noDoc },

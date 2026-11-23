@@ -107,7 +107,11 @@ def open_existing_file(session_id: str, db: Session = Depends(get_db), current_u
     session = session_manager.get(session_id)
     if session:
         ensure_session_owner(session, current_user, db)
-        status = "password_required" if pdf_service.is_locked(session) else "ok"
+        locked = pdf_service.is_locked(session)
+        if not locked and not session.history:
+            with session.lock:
+                session.push_history()
+        status = "password_required" if locked else "ok"
         return {"session_id": session_id, "filename": file_record.filename, "status": status}
 
     pdf_path = file_storage.resolve_stored_pdf(file_record)  # เวอร์ชันที่บันทึกล่าสุด
@@ -119,6 +123,9 @@ def open_existing_file(session_id: str, db: Session = Depends(get_db), current_u
         new_session, needs_password = pdf_service.create_session_from_upload(
             content, file_record.filename, user_id=current_user.id
         )
+        if not needs_password:
+            with new_session.lock:
+                new_session.push_history()  # baseline แรกของ undo/redo stack เมื่อเปิดไฟล์จากเอกสารของฉัน
         old_storage = file_record.storage_path
         file_record.storage_path = new_session.session_id
         db.commit()

@@ -359,6 +359,25 @@ export default function Editor() {
     return () => window.removeEventListener("keydown", onKey);
   }, [arrowTarget]);
 
+  // วางรูปภาพจากคลิปบอร์ด (Ctrl+V / Cmd+V) ทั้งรูปที่คัดลอกจากในโหมดแก้ไขรูปภาพ และรูปจากคลิปบอร์ดระบบ
+  useEffect(() => {
+    if (!session) return undefined;
+    const onPaste = (e) => {
+      const tag = e.target?.tagName;
+      if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
+      const items = Array.from(e.clipboardData?.items || []);
+      const imgItem = items.find((it) => it.type && it.type.startsWith("image/"));
+      const clipFile = imgItem ? imgItem.getAsFile() : null;
+      if (clipFile || (editMode === "image" && imageEditHook.copiedImage)) {
+        e.preventDefault();
+        if (activeTool !== "edit_image") setActiveTool("edit_image");
+        void imageEditHook.pasteImage(clipFile);
+      }
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [session, editMode, activeTool, imageEditHook]);
+
   // ตั้ง callbacks ให้ annotationHook ใช้ refresh pageImage และ undo/redo state
   // (annotation CRUD ต้องการ re-render หน้า ซึ่ง setPageImage อยู่ใน sessionHook)
   useEffect(() => {
@@ -973,6 +992,9 @@ export default function Editor() {
             imageEditHook.setDraftImageEdit((d) => (d ? { ...d, rect } : d))
           }
           onImageReplaceFile={imageEditHook.handleImageReplaceFile}
+          onCopyImageEdit={imageEditHook.copySelectedImage}
+          onPasteImageEdit={() => imageEditHook.pasteImage()}
+          canPasteImage={!!imageEditHook.copiedImage}
           onCommitImageEdit={imageEditHook.handleCommitImageEdit}
           onCancelImageEdit={imageEditHook.handleCancelImageEdit}
           onDeleteImageEdit={imageEditHook.handleDeleteImageEdit}
@@ -998,7 +1020,14 @@ export default function Editor() {
         />
 
         {activeTool === "edit_table" && session && (
-          <TableEditPanel hook={tableEdit} onClose={() => setActiveTool(null)} />
+          <TableEditPanel
+            hook={tableEdit}
+            onClose={() => setActiveTool(null)}
+            canUndo={canUndo || hasLocalUndo}
+            canRedo={canRedo}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+          />
         )}
 
         {activeTool === "edit_barcode" && session && (

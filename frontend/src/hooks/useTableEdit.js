@@ -111,10 +111,63 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
     if (selected) setDraft({ xs: [...selected.xs], ys: [...selected.ys] });
     setOverlapWarning("");
     setPendingOverlapOp(null);
+    setError("");
   }, [selected]);
+
+  // ขยายตารางให้เต็มพื้นที่หน้ากระดาษ: "width" (ซ้าย-ขวา) · "height" (บน-ล่าง) · "full" (เต็มหน้า)
+  const fitTableToPage = useCallback((mode) => {
+    if (!session) return;
+    const [pw, ph] = session.pageSizes?.[currentPage] || [595, 842];
+    const margin = 20;
+    const fitLines = (lines, minPos, maxPos) => {
+      if (!lines || lines.length < 2) return lines;
+      const oldSpan = lines.at(-1) - lines[0];
+      const newSpan = Math.max((lines.length - 1) * 6, maxPos - minPos);
+      if (oldSpan <= 0) return lines;
+      return lines.map((v) => Math.round((minPos + ((v - lines[0]) / oldSpan) * newSpan) * 100) / 100);
+    };
+    update((d) => ({
+      xs: mode === "width" || mode === "full" ? fitLines(d.xs, margin, pw - margin) : d.xs,
+      ys: mode === "height" || mode === "full" ? fitLines(d.ys, margin, ph - margin) : d.ys,
+    }));
+  }, [session, currentPage, update]);
 
   const changed = !!(selected && draft && (draft.xs.some((v, i) => Math.abs(v - selected.xs[i]) > 0.05)
     || draft.ys.some((v, i) => Math.abs(v - selected.ys[i]) > 0.05)));
+
+  async function createNewTable({ rows = 3, cols = 4 } = {}) {
+    if (!session || applying) return null;
+    const cleanRows = Math.max(1, Math.min(50, Number.parseInt(rows, 10) || 3));
+    const cleanCols = Math.max(1, Math.min(30, Number.parseInt(cols, 10) || 4));
+    setApplying(true);
+    setError("");
+    try {
+      let result = null;
+      await runDocumentChange(async (sid) => {
+        result = await api.createTable(sid, currentPage, { rows: cleanRows, cols: cleanCols });
+        return result;
+      }, {
+        nextPage: currentPage,
+        success: `สร้างตาราง ${cleanRows} แถว × ${cleanCols} คอลัมน์แล้ว`,
+        failure: "สร้างตารางไม่สำเร็จ",
+        rethrow: true,
+        keepTool: true,
+      });
+      setLastResult(result);
+      setOverlapWarning("");
+      setPendingOverlapOp(null);
+      if (result?.id) {
+        setSelectedId(result.id);
+        setCellSelection({ r0: 0, c0: 0, r1: 0, c1: 0 });
+      }
+      return result;
+    } catch (e) {
+      setError(e.message || "สร้างตารางไม่สำเร็จ");
+      return null;
+    } finally {
+      setApplying(false);
+    }
+  }
 
   async function apply({ allowOverlap = false } = {}) {
     if (!selected || !draft || !changed || applying) return;
@@ -157,21 +210,35 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
     if (!selected || !cellSelection || applying) return;
     setApplying(true);
     setError("");
-    const payload = {
-      bbox: selected.bbox,
-      op,
-      r0: cellSelection.r0,
-      c0: cellSelection.c0,
-      r1: cellSelection.r1,
-      c1: cellSelection.c1,
-      position: opts.position || "below",
-      direction: opts.direction || "cols",
-      allowOverlap: !!opts.allowOverlap,
-    };
     try {
       let result = null;
       await runDocumentChange(async (sid) => {
-        result = await api.editTableStructure(sid, currentPage, payload);
+        let baseBbox = selected.bbox;
+        if (changed && draft) {
+          const resized = await api.editTable(sid, currentPage, {
+            bbox: selected.bbox,
+            xs: draft.xs,
+            ys: draft.ys,
+            allowOverlap: !!opts.allowOverlap,
+          });
+          baseBbox = {
+            x0: resized.xs[0],
+            y0: resized.ys[0],
+            x1: resized.xs.at(-1),
+            y1: resized.ys.at(-1),
+          };
+        }
+        result = await api.editTableStructure(sid, currentPage, {
+          bbox: baseBbox,
+          op,
+          r0: cellSelection.r0,
+          c0: cellSelection.c0,
+          r1: cellSelection.r1,
+          c1: cellSelection.c1,
+          position: opts.position || "below",
+          direction: opts.direction || "cols",
+          allowOverlap: !!opts.allowOverlap,
+        });
         return result;
       }, {
         nextPage: currentPage,
@@ -209,6 +276,7 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
 
   return {
     tables, selected, selectedId, select, draft, update, moveBy, reset, changed,
+    fitTableToPage, createNewTable,
     cellSelection, selectCell, multiSelectMode, setMultiSelectMode, runStructure, confirmOverlap,
     apply, applying, error, overlapWarning, lastResult, expandMode, setExpandMode,
   };

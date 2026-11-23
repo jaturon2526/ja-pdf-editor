@@ -33,6 +33,9 @@ export default function ImageEditBox({
   canReplace = true, // false สำหรับรูปที่เพิ่งแทรกใหม่ยังไม่เคยมี xref จริง (ไม่มีอะไรให้ "แทนที่" อีก)
   onRectChange,
   onReplaceFile,
+  onCopy,
+  onPaste,
+  canPaste = false,
   onConfirm,
   onCancel,
   onDelete,
@@ -153,10 +156,14 @@ export default function ImageEditBox({
         e.preventDefault();
         onDelete?.();
       }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c" && onCopy) {
+        e.preventDefault();
+        onCopy();
+      }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onCancel, onDelete]);
+  }, [onCancel, onDelete, onCopy]);
 
   return (
     <div role="presentation"
@@ -220,15 +227,35 @@ export default function ImageEditBox({
                 e.target.value = "";
               }}
             />
-            <button className="secondary-btn image-edit-toolbar-btn" onClick={() => fileInputRef.current?.click()}>
+            <button type="button" className="secondary-btn image-edit-toolbar-btn" onClick={() => fileInputRef.current?.click()}>
               แทนที่รูปภาพ
             </button>
           </>
         )}
-        <button className="secondary-btn image-edit-toolbar-btn" onClick={onCancel}>
+        {onCopy && (
+          <button
+            type="button"
+            className="secondary-btn image-edit-toolbar-btn"
+            title="คัดลอกรูปภาพ (Ctrl+C)"
+            onClick={() => void onCopy()}
+          >
+            คัดลอก
+          </button>
+        )}
+        {onPaste && canPaste && (
+          <button
+            type="button"
+            className="secondary-btn image-edit-toolbar-btn"
+            title="วางรูปที่คัดลอกไว้ (Ctrl+V)"
+            onClick={() => void onPaste()}
+          >
+            วางรูป
+          </button>
+        )}
+        <button type="button" className="secondary-btn image-edit-toolbar-btn" onClick={onCancel}>
           ยกเลิก
         </button>
-        <button className="primary-btn image-edit-toolbar-btn" onClick={onConfirm}>
+        <button type="button" className="primary-btn image-edit-toolbar-btn" onClick={onConfirm}>
           ตกลง
         </button>
       </div>

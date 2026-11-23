@@ -141,3 +141,94 @@ def test_table_structure_validation_guards(client, make_user, upload):
         headers=h,
     )
     assert r_single.status_code == 400
+
+
+def test_insert_col_on_full_width_table_and_preserve_text_across_deletes(client, make_user, upload):
+    """Full-width tables can insert a 10%-width column without overflowing, and consecutive deletes preserve cell text."""
+    doc = fitz.open()
+    page = doc.new_page(width=595, height=842)
+    xs = [12.0, 200.0, 390.0, 583.0]
+    ys = [100.0, 140.0, 180.0]
+    shape = page.new_shape()
+    for r in range(2):
+        for c in range(3):
+            shape.draw_rect(fitz.Rect(xs[c], ys[r], xs[c + 1], ys[r + 1]))
+    shape.finish(color=(0, 0, 0), width=1.0)
+    shape.commit()
+    for r in range(2):
+        for c in range(3):
+            page.insert_text((xs[c] + 10, ys[r] + 24), f"CELL_{r + 1}_{c + 1}", fontsize=11)
+    pdf_bytes = doc.tobytes()
+    doc.close()
+
+    _, h = make_user()
+    sid = upload(h, pdf_bytes)
+    t0 = _get_first_table(client, sid, h)
+    total_w = t0["xs"][-1] - t0["xs"][0]
+
+    # Insert column on a full-width table → succeeds, new column is ~10% of total width
+    r_ins = client.post(
+        f"/edit/{sid}/page/0/table/structure",
+        json={"bbox": t0["bbox"], "op": "insert_col", "r0": 0, "c0": 0, "position": "right"},
+        headers=h,
+    )
+    assert r_ins.status_code == 200, r_ins.text
+    nx = r_ins.json()["xs"]
+    assert len(nx) == 5
+    new_col_w = nx[2] - nx[1]
+    assert abs(new_col_w - total_w * 0.10) < 1.5
+
+    # Consecutive deletes (delete inserted col 1, then delete col 0) → remaining text in col 2 & 3 must stay intact
+    t1 = _get_first_table(client, sid, h)
+    r_del1 = client.post(
+        f"/edit/{sid}/page/0/table/structure",
+        json={"bbox": t1["bbox"], "op": "delete_col", "r0": 0, "c0": 1},
+        headers=h,
+    )
+    assert r_del1.status_code == 200, r_del1.text
+
+    t2 = _get_first_table(client, sid, h)
+    r_del2 = client.post(
+        f"/edit/{sid}/page/0/table/structure",
+        json={"bbox": t2["bbox"], "op": "delete_col", "r0": 0, "c0": 0},
+        headers=h,
+    )
+    assert r_del2.status_code == 200, r_del2.text
+
+    dl = client.get(f"/pdf/{sid}/download", headers=h)
+    assert dl.status_code == 200
+    out_doc = fitz.open("pdf", dl.content)
+    page_text = out_doc[0].get_text("text")
+    out_doc.close()
+    assert "CELL_1_2" in page_text
+    assert "CELL_2_3" in page_text
+
+
+def test_create_new_table_and_undo(client, make_user):
+    _, h = make_user()
+    r_blank = client.post(
+        "/pdf/blank",
+        json={"filename": "table-new.pdf", "page_count": 1, "width": 595, "height": 842},
+        headers=h,
+    )
+    assert r_blank.status_code == 200, r_blank.text
+    sid = r_blank.json()["session_id"]
+
+    r_create = client.post(
+        f"/edit/{sid}/page/0/table/create",
+        json={"rows": 3, "cols": 4},
+        headers=h,
+    )
+    assert r_create.status_code == 200, r_create.text
+    body = r_create.json()
+    assert len(body["ys"]) == 4
+    assert len(body["xs"]) == 5
+    assert len(body["cells"]) == 12
+
+    info = client.get(f"/pdf/{sid}/info", headers=h).json()
+    assert info["can_undo"] is True
+
+    r_undo = client.post(f"/pdf/{sid}/undo", headers=h)
+    assert r_undo.status_code == 200
+    tables_after_undo = client.get(f"/edit/{sid}/page/0/tables", headers=h).json()["tables"]
+    assert tables_after_undo == []

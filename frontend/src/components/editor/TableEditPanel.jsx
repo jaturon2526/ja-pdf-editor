@@ -14,13 +14,16 @@ function MmInput({ id, label, valuePt, onChangePt }) {
   );
 }
 
-export default function TableEditPanel({ hook, onClose }) {
+export default function TableEditPanel({ hook, onClose, canUndo = false, canRedo = false, onUndo, onRedo }) {
   const {
     tables, selected, draft, update, reset, changed, apply, applying, error,
     overlapWarning, lastResult, expandMode, setExpandMode,
+    fitTableToPage, createNewTable,
     cellSelection, multiSelectMode, setMultiSelectMode, runStructure, confirmOverlap,
   } = hook;
   const [collapsed, setCollapsed] = useState(false); // มือถือ: ย่อแผ่นล่างให้เห็นตารางเต็มจอตอนใช้นิ้วลากจุดจับ
+  const [newRows, setNewRows] = useState(3);
+  const [newCols, setNewCols] = useState(4);
 
   const activeCell = selected && cellSelection
     ? selected.cells.find((c) => (
@@ -40,7 +43,7 @@ export default function TableEditPanel({ hook, onClose }) {
     }).length
     : 0;
   const canMerge = coveredCellsCount >= 2;
-  const structDisabled = applying || changed || !cellSelection;
+  const structDisabled = applying || !cellSelection;
   const rowCount = draft ? draft.ys.length - 1 : 0;
   const colCount = draft ? draft.xs.length - 1 : 0;
   return (
@@ -51,6 +54,28 @@ export default function TableEditPanel({ hook, onClose }) {
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-200">
         <h3 id="table-edit-title" className="text-sm font-semibold text-slate-900">แก้ไขตาราง</h3>
         <div className="flex items-center gap-1">
+          {onUndo && (
+            <button
+              type="button"
+              onClick={() => void onUndo()}
+              disabled={!canUndo || applying}
+              title="เลิกทำ (Ctrl+Z)"
+              className="px-2 py-1 text-xs rounded border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              ↶ เลิกทำ
+            </button>
+          )}
+          {onRedo && canRedo && (
+            <button
+              type="button"
+              onClick={() => void onRedo()}
+              disabled={applying}
+              title="ทำซ้ำ (Ctrl+Y)"
+              className="px-2 py-1 text-xs rounded border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              ↷
+            </button>
+          )}
           {selected && (
             <button type="button" onClick={() => setCollapsed((v) => !v)}
               className="desk:hidden px-2 py-1 text-xs rounded border border-slate-300 text-slate-700 hover:bg-slate-50">
@@ -74,11 +99,55 @@ export default function TableEditPanel({ hook, onClose }) {
       <div className={`p-3 overflow-y-auto text-sm space-y-3 ${collapsed ? "phone:hidden" : ""}`}>
         {tables === null && <p className="text-slate-500">กำลังหาตารางในหน้านี้...</p>}
         {tables?.length === 0 && (
-          <p className="text-slate-600">ไม่พบตารางที่มีเส้นในหน้านี้ — รองรับตารางที่มีเส้นตาราง (ไม่ใช่ภาพสแกน)</p>
+          <p className="text-slate-600">ไม่พบตารางที่มีเส้นในหน้านี้ — สร้างตารางใหม่ด้านล่างได้เลย</p>
         )}
         {tables?.length > 0 && !selected && (
           <p className="text-slate-600">คลิกหรือแตะกรอบประสีฟ้าเพื่อเลือกตาราง ({tables.length} ตารางในหน้านี้)</p>
         )}
+
+        {/* แทรกตารางใหม่ (v1.49.0): กำหนดจำนวนแถวและคอลัมน์เริ่มต้นได้ */}
+        <details className="group rounded-lg border border-slate-200 bg-slate-50/80 p-2.5" open={!selected}>
+          <summary className="text-xs font-semibold text-slate-800 cursor-pointer select-none">
+            + แทรกตารางใหม่
+          </summary>
+          <div className="mt-2 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <label htmlFor="new-table-rows" className="block text-[11px] font-medium text-slate-700">
+                <span>จำนวนแถว</span>
+                <input
+                  id="new-table-rows"
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={newRows}
+                  onChange={(e) => setNewRows(Number.parseInt(e.target.value, 10) || 1)}
+                  className="mt-0.5 w-full border border-slate-300 rounded bg-white px-2 py-1 text-xs"
+                />
+              </label>
+              <label htmlFor="new-table-cols" className="block text-[11px] font-medium text-slate-700">
+                <span>จำนวนคอลัมน์</span>
+                <input
+                  id="new-table-cols"
+                  type="number"
+                  min="1"
+                  max="30"
+                  value={newCols}
+                  onChange={(e) => setNewCols(Number.parseInt(e.target.value, 10) || 1)}
+                  className="mt-0.5 w-full border border-slate-300 rounded bg-white px-2 py-1 text-xs"
+                />
+              </label>
+            </div>
+            <button
+              type="button"
+              disabled={applying}
+              onClick={() => void createNewTable?.({ rows: newRows, cols: newCols })}
+              className="w-full px-3 py-1.5 text-xs font-medium rounded bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-50"
+            >
+              {applying ? "กำลังสร้าง..." : "สร้างตาราง"}
+            </button>
+          </div>
+        </details>
+
         {selected && draft && (
           <>
             <p className="text-xs text-slate-500">
@@ -110,9 +179,6 @@ export default function TableEditPanel({ hook, onClose }) {
                 />
                 <span>เลือกหลายเซลล์เพื่อรวม (หรือ Shift+คลิก)</span>
               </label>
-              {changed && (
-                <p className="text-[11px] text-amber-700">กด &quot;ตกลง&quot; หรือ &quot;รีเซ็ต&quot; ขนาดก่อนปรับแถว/คอลัมน์</p>
-              )}
               <div className="grid grid-cols-3 gap-1">
                 <button type="button" disabled={structDisabled}
                   onClick={() => void runStructure("insert_row", { position: "above" })}
@@ -173,10 +239,51 @@ export default function TableEditPanel({ hook, onClose }) {
                 )}
               </div>
             </section>
+
+            {overlapWarning && (
+              <div className="p-2 rounded bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-2" role="alert">
+                <p>{overlapWarning}</p>
+                <button type="button" onClick={() => void confirmOverlap()} disabled={applying}
+                  className="px-3 py-1.5 rounded bg-amber-600 text-white disabled:opacity-50">วางทับต่อ</button>
+              </div>
+            )}
+
             <section className="space-y-1.5" aria-label="ตำแหน่ง">
               <h4 className="text-xs font-semibold text-slate-700">ตำแหน่ง (มม. จากมุมซ้ายบน)</h4>
               <MmInput id="tbl-left" label="ซ้าย" valuePt={draft.xs[0]} onChangePt={(v) => update((d) => ({ ...d, xs: translate(d.xs, v - d.xs[0]) }))} />
               <MmInput id="tbl-top" label="บน" valuePt={draft.ys[0]} onChangePt={(v) => update((d) => ({ ...d, ys: translate(d.ys, v - d.ys[0]) }))} />
+              <div className="pt-1 space-y-1">
+                <span className="block text-[11px] font-medium text-slate-600">ขยายเต็มพื้นที่หน้ากระดาษ</span>
+                <div className="grid grid-cols-3 gap-1">
+                  <button
+                    type="button"
+                    disabled={applying}
+                    onClick={() => fitTableToPage?.("width")}
+                    className="px-1.5 py-1.5 text-[11px] font-medium rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-45"
+                    title="ขยายความกว้างตารางให้เต็มพื้นที่ซ้าย–ขวาของหน้า"
+                  >
+                    ↔ เต็มซ้าย–ขวา
+                  </button>
+                  <button
+                    type="button"
+                    disabled={applying}
+                    onClick={() => fitTableToPage?.("height")}
+                    className="px-1.5 py-1.5 text-[11px] font-medium rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-45"
+                    title="ขยายความสูงตารางให้เต็มพื้นที่บน–ล่างของหน้า"
+                  >
+                    ↕ เต็มบน–ล่าง
+                  </button>
+                  <button
+                    type="button"
+                    disabled={applying}
+                    onClick={() => fitTableToPage?.("full")}
+                    className="px-1.5 py-1.5 text-[11px] font-medium rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-45"
+                    title="ขยายตารางให้เต็มทั้งซ้าย–ขวาและบน–ล่างของหน้า"
+                  >
+                    ⛶ เต็มหน้า
+                  </button>
+                </div>
+              </div>
             </section>
             <details className="group" open={draft.xs.length <= 8}>
               <summary className="text-xs font-semibold text-slate-700 cursor-pointer">ความกว้างคอลัมน์ (มม.)</summary>
@@ -201,13 +308,6 @@ export default function TableEditPanel({ hook, onClose }) {
               </div>
             </details>
             <p className="text-[11px] text-slate-500">ช่องที่แคบลงจนข้อความไม่พอ จะตัดบรรทัดใหม่และแถวสูงขึ้นอัตโนมัติ (ข้อความในช่องนั้นอาจเปลี่ยนเป็นฟอนต์ระบบที่ใกล้เคียง)</p>
-            {overlapWarning && (
-              <div className="p-2 rounded bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-2" role="alert">
-                <p>{overlapWarning}</p>
-                <button type="button" onClick={() => void confirmOverlap()} disabled={applying}
-                  className="px-3 py-1.5 rounded bg-amber-600 text-white disabled:opacity-50">วางทับต่อ</button>
-              </div>
-            )}
             {error && <p className="text-xs text-red-600" role="alert">{error}</p>}
             {lastResult && !changed && (
               <p className="text-xs text-green-700" role="status">
@@ -216,8 +316,17 @@ export default function TableEditPanel({ hook, onClose }) {
               </p>
             )}
             <div className="flex gap-2">
-              <button type="button" onClick={reset} disabled={!changed || applying}
-                className="flex-1 px-3 py-2 text-sm rounded border border-slate-300 text-slate-700 disabled:opacity-50">รีเซ็ต</button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (changed) reset();
+                  else void onUndo?.();
+                }}
+                disabled={(!changed && !canUndo) || applying}
+                className="flex-1 px-3 py-2 text-sm rounded border border-slate-300 text-slate-700 disabled:opacity-50"
+              >
+                รีเซ็ต
+              </button>
               <button type="button" onClick={() => void apply()} disabled={!changed || applying}
                 className="flex-1 px-3 py-2 text-sm font-medium rounded bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50">
                 {applying ? "กำลังวาดตาราง..." : "ตกลง"}
@@ -225,6 +334,7 @@ export default function TableEditPanel({ hook, onClose }) {
             </div>
           </>
         )}
+        {!selected && error && <p className="text-xs text-red-600" role="alert">{error}</p>}
       </div>
     </aside>
   );

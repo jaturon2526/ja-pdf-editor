@@ -12,6 +12,7 @@ from app.models.domain import User
 
 from app.models.schemas import (
     BarcodeObjectEditRequest,
+    TableCreateRequest,
     TableEditRequest,
     TableStructureRequest,
     FontFamilyResponse,
@@ -275,6 +276,27 @@ def edit_table_structure_api(session_id: str, page_number: int, payload: TableSt
             return {"status": "ok", **result}
     except tables.TableOverlapError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/{session_id}/page/{page_number}/table/create")
+def create_table_api(session_id: str, page_number: int, payload: TableCreateRequest,
+                     session: PDFSession = Depends(get_owned_session)):
+    """สร้างตารางใหม่บนหน้ากระดาษ (v1.49.0): กำหนดจำนวนแถวและคอลัมน์เริ่มต้นได้"""
+    from app.services.edit_service import table_structure
+
+    try:
+        with session.lock:
+            result = table_structure.create_table(
+                session,
+                page_number,
+                rows=payload.rows,
+                cols=payload.cols,
+                bbox=payload.bbox.model_dump() if payload.bbox else None,
+            )
+            session.push_history()
+            return {"status": "ok", **result}
     except PDFError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 

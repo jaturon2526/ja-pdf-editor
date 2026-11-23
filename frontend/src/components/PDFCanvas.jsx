@@ -113,6 +113,9 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   onDraftSignatureRectChange,
   onCommitSignature,
   onCancelSignature,
+  onCopyImageEdit,
+  onPasteImageEdit,
+  canPasteImage = false,
   cropPage,
   formFill,
 }, canvasAreaRef) {
@@ -1259,6 +1262,22 @@ const PDFCanvas = forwardRef(function PDFCanvas({
           )
         )}
 
+        {editMode === "image" && canPasteImage && !draftImageEdit && (
+          <div className="absolute top-2 right-2 z-30">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                void onPasteImageEdit?.();
+              }}
+              className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-medium shadow-md"
+              title="วางรูปที่คัดลอกไว้ (Ctrl+V)"
+            >
+              วางรูปที่คัดลอกไว้
+            </button>
+          </div>
+        )}
+
         {editMode === "image" && draftImageEdit && (
           <ImageEditBox
             key={draftImageEdit.key}
@@ -1269,6 +1288,9 @@ const PDFCanvas = forwardRef(function PDFCanvas({
             keepAspect={!!draftImageEdit.barcode}
             onRectChange={onDraftImageRectChange}
             onReplaceFile={onImageReplaceFile}
+            onCopy={onCopyImageEdit}
+            onPaste={onPasteImageEdit}
+            canPaste={canPasteImage}
             onConfirm={onCommitImageEdit}
             onCancel={onCancelImageEdit}
             onDelete={onDeleteImageEdit}
