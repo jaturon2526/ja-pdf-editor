@@ -263,6 +263,23 @@ export async function createTable(sessionId, pageNumber, { rows = 3, cols = 4, b
   }));
 }
 
+// พิมพ์หรือแก้ไขข้อความในเซลล์ตารางที่เลือก (v1.49.0)
+export async function editTableCellText(sessionId, pageNumber, {
+  bbox,
+  r0,
+  c0,
+  text,
+  fontsize = null,
+  align = null,
+  color = null,
+}) {
+  return handle(await fetchWithAuth(`${BASE}/edit/${sessionId}/page/${pageNumber}/table/cell-text`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bbox, r0, c0, text, fontsize, align, color }),
+  }));
+}
+
 // ---------- ย้าย/ลบบาร์โค้ดที่มีอยู่ในหน้า (v1.41.0 — backend app/services/edit_service/barcodes.py) ----------
 export async function getBarcodes(sessionId, pageNumber) {
   const res = await fetchWithAuth(`${BASE}/edit/${sessionId}/page/${pageNumber}/barcodes?_t=${Date.now()}`, { cache: "no-store" });

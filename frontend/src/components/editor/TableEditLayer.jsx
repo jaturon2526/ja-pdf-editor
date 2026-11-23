@@ -99,6 +99,11 @@ export default function TableEditLayer({
   onSelect,
   onCellClick,
   onUpdate,
+  cellText = "",
+  onCellTextChange,
+  onSaveCellText,
+  editingCellOnCanvas = false,
+  onSetEditingCellOnCanvas,
 }) {
   const [activeHandle, setActiveHandle] = useState(null);
   const moveRef = useRef(null);
@@ -226,8 +231,60 @@ export default function TableEditLayer({
                 }}
               />
             )}
-            <div role="presentation" title="คลิกเพื่อเลือกเซลล์ หรือลากเพื่อย้ายตาราง" data-handle="ย้ายตาราง" className="absolute z-10 cursor-move touch-none"
-              style={{ left: leftX, top: topY, width: rightX - leftX, height: botY - topY }} {...moveDrag} />
+            <div
+              role="presentation"
+              title="คลิกเพื่อเลือกเซลล์ · ดับเบิลคลิกเพื่อพิมพ์ข้อความในเซลล์ · ลากเพื่อย้ายตาราง"
+              data-handle="ย้ายตาราง"
+              className="absolute z-10 cursor-move touch-none"
+              style={{ left: leftX, top: topY, width: rightX - leftX, height: botY - topY }}
+              onDoubleClick={(e) => {
+                if (!selected || !draft || !onCellClick) return;
+                e.stopPropagation();
+                const box = e.currentTarget.getBoundingClientRect();
+                const xPt = draft.xs[0] + (e.clientX - box.left) / zoom;
+                const yPt = draft.ys[0] + (e.clientY - box.top) / zoom;
+                const hit = selected.cells.find((c) => (
+                  xPt >= draft.xs[c.c] && xPt <= draft.xs[c.c + c.colspan]
+                  && yPt >= draft.ys[c.r] && yPt <= draft.ys[c.r + c.rowspan]
+                ));
+                if (hit) onCellClick(hit, false, true);
+              }}
+              {...moveDrag}
+            />
+
+            {/* ช่องพิมพ์ข้อความลงในเซลล์บนหน้ากระดาษโดยตรง (เมื่อเพิ่มแถว/คอลัมน์ หรือดับเบิลคลิก/คลิกซ้ำที่เซลล์) */}
+            {editingCellOnCanvas && cellSelection && !changed && cellSelection.r1 + 1 < ys.length && cellSelection.c1 + 1 < xs.length && (
+              <input
+                type="text"
+                aria-label="พิมพ์ข้อความในเซลล์"
+                data-testid="table-inline-cell-input"
+                value={cellText || ""}
+                placeholder="พิมพ์..."
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => onCellTextChange?.(e.target.value)}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void onSaveCellText?.(cellText, { moveRow: 1 });
+                  } else if (e.key === "Tab") {
+                    e.preventDefault();
+                    void onSaveCellText?.(cellText, { moveCol: e.shiftKey ? -1 : 1 });
+                  } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    onSetEditingCellOnCanvas?.(false);
+                  }
+                }}
+                className="absolute z-30 bg-white/95 border-2 border-sky-600 rounded-[2px] px-1 text-xs text-slate-900 shadow-sm focus:outline-none"
+                style={{
+                  left: z(xs[cellSelection.c0]),
+                  top: z(ys[cellSelection.r0]),
+                  width: Math.max(44, z(xs[cellSelection.c1 + 1] - xs[cellSelection.c0])),
+                  height: Math.max(20, z(ys[cellSelection.r1 + 1] - ys[cellSelection.r0])),
+                }}
+              />
+            )}
 
             {/* เส้นแบ่งคอลัมน์ด้านใน + ปุ่มจับสีฟ้าด้านบนตาราง (ใช้นิ้วลากขยายคอลัมน์ได้ง่ายบนมือถือ) */}
             {xs.slice(1, -1).map((x, k) => {

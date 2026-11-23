@@ -19,6 +19,7 @@ export default function TableEditPanel({ hook, onClose, canUndo = false, canRedo
     tables, selected, draft, update, reset, changed, apply, applying, error,
     overlapWarning, lastResult, expandMode, setExpandMode,
     fitTableToPage, createNewTable,
+    cellText, setCellText, cellTextAlign, setCellTextAlign, cellTextDirty, saveCellText,
     cellSelection, multiSelectMode, setMultiSelectMode, runStructure, confirmOverlap,
   } = hook;
   const [collapsed, setCollapsed] = useState(false); // มือถือ: ย่อแผ่นล่างให้เห็นตารางเต็มจอตอนใช้นิ้วลากจุดจับ
@@ -88,9 +89,18 @@ export default function TableEditPanel({ hook, onClose, canUndo = false, canRedo
       {collapsed && selected && (
         <div className="desk:hidden px-3 py-2 flex items-center gap-2">
           <span className="text-xs text-slate-500 flex-1 truncate">ลากปุ่มสีฟ้าขอบบน/ซ้ายของตาราง</span>
-          <button type="button" onClick={reset} disabled={!changed || applying}
-            className="px-2.5 py-1.5 text-xs rounded border border-slate-300 text-slate-700 disabled:opacity-50">รีเซ็ต</button>
-          <button type="button" onClick={() => void apply()} disabled={!changed || applying}
+          <button
+            type="button"
+            onClick={() => {
+              if (changed || cellTextDirty) reset();
+              else void onUndo?.();
+            }}
+            disabled={(!changed && !cellTextDirty && !canUndo) || applying}
+            className="px-2.5 py-1.5 text-xs rounded border border-slate-300 text-slate-700 disabled:opacity-50"
+          >
+            รีเซ็ต
+          </button>
+          <button type="button" onClick={() => void apply({ onDone: onClose })} disabled={applying}
             className="px-3 py-1.5 text-xs font-medium rounded bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50">
             {applying ? "กำลังวาด..." : "ตกลง"}
           </button>
@@ -179,6 +189,66 @@ export default function TableEditPanel({ hook, onClose, canUndo = false, canRedo
                 />
                 <span>เลือกหลายเซลล์เพื่อรวม (หรือ Shift+คลิก)</span>
               </label>
+
+              {/* พิมพ์ข้อความในเซลล์ที่เลือก (v1.49.0) */}
+              {cellSelection && (
+                <div className="space-y-1.5 pt-1 pb-1.5 border-y border-slate-200/80">
+                  <label htmlFor="tbl-cell-text" className="block text-[11px] font-medium text-slate-700">
+                    ข้อความในเซลล์ที่เลือก (กด Enter เพื่อบันทึก · Tab ไปช่องถัดไป)
+                  </label>
+                  <div className="flex gap-1">
+                    <input
+                      id="tbl-cell-text"
+                      type="text"
+                      value={cellText || ""}
+                      disabled={applying}
+                      placeholder="พิมพ์ข้อความในเซลล์..."
+                      onChange={(e) => setCellText?.(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void saveCellText?.(cellText, { moveRow: 1 });
+                        } else if (e.key === "Tab") {
+                          e.preventDefault();
+                          void saveCellText?.(cellText, { moveCol: e.shiftKey ? -1 : 1 });
+                        }
+                      }}
+                      className="flex-1 min-w-0 border border-slate-300 rounded bg-white px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={!cellTextDirty || applying}
+                      onClick={() => void saveCellText?.()}
+                      className="px-2.5 py-1 text-[11px] font-medium rounded bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-45 shrink-0"
+                    >
+                      ใส่ข้อความ
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-slate-500 mr-1">จัดวาง:</span>
+                    {[
+                      { k: "", label: "ตามคอลัมน์" },
+                      { k: "left", label: "ซ้าย" },
+                      { k: "center", label: "กลาง" },
+                      { k: "right", label: "ขวา" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.k || "auto"}
+                        type="button"
+                        onClick={() => setCellTextAlign?.(opt.k)}
+                        className={`px-1.5 py-0.5 text-[10px] rounded border ${
+                          (cellTextAlign || "") === opt.k
+                            ? "border-sky-500 bg-sky-50 text-sky-700 font-medium"
+                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-3 gap-1">
                 <button type="button" disabled={structDisabled}
                   onClick={() => void runStructure("insert_row", { position: "above" })}
@@ -319,15 +389,15 @@ export default function TableEditPanel({ hook, onClose, canUndo = false, canRedo
               <button
                 type="button"
                 onClick={() => {
-                  if (changed) reset();
+                  if (changed || cellTextDirty) reset();
                   else void onUndo?.();
                 }}
-                disabled={(!changed && !canUndo) || applying}
+                disabled={(!changed && !cellTextDirty && !canUndo) || applying}
                 className="flex-1 px-3 py-2 text-sm rounded border border-slate-300 text-slate-700 disabled:opacity-50"
               >
                 รีเซ็ต
               </button>
-              <button type="button" onClick={() => void apply()} disabled={!changed || applying}
+              <button type="button" onClick={() => void apply({ onDone: onClose })} disabled={applying}
                 className="flex-1 px-3 py-2 text-sm font-medium rounded bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50">
                 {applying ? "กำลังวาดตาราง..." : "ตกลง"}
               </button>

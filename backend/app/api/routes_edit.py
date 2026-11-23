@@ -12,6 +12,7 @@ from app.models.domain import User
 
 from app.models.schemas import (
     BarcodeObjectEditRequest,
+    TableCellTextRequest,
     TableCreateRequest,
     TableEditRequest,
     TableStructureRequest,
@@ -294,6 +295,31 @@ def create_table_api(session_id: str, page_number: int, payload: TableCreateRequ
                 rows=payload.rows,
                 cols=payload.cols,
                 bbox=payload.bbox.model_dump() if payload.bbox else None,
+            )
+            session.push_history()
+            return {"status": "ok", **result}
+    except PDFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/{session_id}/page/{page_number}/table/cell-text")
+def edit_table_cell_text_api(session_id: str, page_number: int, payload: TableCellTextRequest,
+                             session: PDFSession = Depends(get_owned_session)):
+    """พิมพ์หรือแก้ไขข้อความในเซลล์ตารางที่เลือก (v1.49.0)"""
+    from app.services.edit_service import table_structure
+
+    try:
+        with session.lock:
+            result = table_structure.set_table_cell_text(
+                session,
+                page_number,
+                payload.bbox.model_dump(),
+                r0=payload.r0,
+                c0=payload.c0,
+                text=payload.text,
+                fontsize=payload.fontsize,
+                align=payload.align,
+                color=payload.color,
             )
             session.push_history()
             return {"status": "ok", **result}

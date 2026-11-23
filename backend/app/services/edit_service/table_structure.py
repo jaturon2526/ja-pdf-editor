@@ -22,6 +22,7 @@ from app.services.edit_service.tables import (
     _place,
     _prune_empty_xobjects,
     _redraw,
+    extract_cell_texts,
     page_tables,
 )
 from app.services.pdf_service import PDFError, require_unlocked
@@ -610,7 +611,157 @@ def edit_table_structure(
         "xs": nx,
         "ys": ny,
         "cells": new_cells,
+        "cell_texts": extract_cell_texts(page, nx, ny, new_cells),
         "overlaps_content": overlaps,
+    }
+
+
+def _detect_cell_text_style(
+    page: fitz.Page,
+    xs: list[float],
+    ys: list[float],
+    cells: list[dict],
+    target: dict,
+) -> tuple[str, float, tuple[float, float, float], str]:
+    """อนุมานฟอนต์ ขนาด สี และการจัดวางแนวนอนของเซลล์ จากเซลล์ตัวเอง หรือเซลล์แถวก่อนหน้าในคอลัมน์เดียวกัน"""
+    from app.services import font_inspect, fonts
+
+    tp = _content_page(page)
+    ftable = font_inspect.font_table(tp)
+
+    # ลำดับเซลล์ต้นแบบ: เซลล์ตัวเอง -> เซลล์แถวก่อนหน้าในคอลัมน์เดียวกัน -> เซลล์อื่นในคอลัมน์เดียวกัน -> เซลล์ใดก็ได้ในตาราง
+    same_col = sorted(
+        [c for c in cells if c["c"] == target["c"] and c is not target],
+        key=lambda c: (0 if c["r"] > 0 and target["r"] > 0 else 1, abs(c["r"] - target["r"])),
+    )
+    other_cells = [c for c in cells if c["c"] != target["c"]]
+    candidates = [target] + same_col + other_cells
+
+    for cand in candidates:
+        crect = fitz.Rect(
+            xs[cand["c"]],
+            ys[cand["r"]],
+            xs[cand["c"] + cand["colspan"]],
+            ys[cand["r"] + cand["rowspan"]],
+        )
+        raw = tp.get_text("dict", clip=crect)
+        span_chars = []
+        bbox = fitz.Rect()
+        for blk in raw.get("blocks", []):
+            if blk.get("type") != 0:
+                continue
+            for line in blk.get("lines", []):
+                for s in line.get("spans", []):
+                    t = (s.get("text") or "").strip()
+                    if t:
+                        bbox |= fitz.Rect(s["bbox"]) & crect
+                        span_chars.append((s, len(t)))
+        if not span_chars:
+            continue
+        summary = font_inspect.summarize_spans(span_chars, ftable)
+        if not summary:
+            continue
+        main = summary[0]
+        fontname = fonts.match_pdf_font_name(main["name"], flag_bold=main["bold"], flag_italic=main["italic"])
+        hex_col = main.get("color") or "#000000"
+        rgb = tuple(int(hex_col[i : i + 2], 16) / 255.0 for i in (1, 3, 5))
+        h_mode = _align(bbox.x0 - crect.x0, crect.x1 - bbox.x1, crect.width)
+        align = {"start": "left", "center": "center", "end": "right"}[h_mode]
+        return fontname, float(main["size"]), rgb, align
+
+    target_h = ys[target["r"] + target["rowspan"]] - ys[target["r"]]
+    default_size = min(11.0, max(8.0, round(target_h * 0.45, 1)))
+    return "Sarabun", default_size, (0.0, 0.0, 0.0), "center"
+
+
+def set_table_cell_text(
+    session: PDFSession,
+    page_number: int,
+    bbox: dict,
+    r0: int,
+    c0: int,
+    text: str,
+    fontsize: float | None = None,
+    align: str | None = None,
+    color: str | None = None,
+) -> dict:
+    """พิมพ์หรือแก้ไขข้อความในเซลล์ตารางที่เลือก (v1.49.0) โดยสืบทอดฟอนต์/สี/การจัดวางจากคอลัมน์เดิมอัตโนมัติ"""
+    from app.models.schemas import Rect
+    from app.services.edit_service.text import replace_text
+
+    doc = require_unlocked(session)
+    if not (0 <= page_number < doc.page_count):
+        raise PDFError(f"page_number {page_number} อยู่นอกช่วง")
+    page = doc[page_number]
+    if page.rotation:
+        raise PDFError("ยังแก้ตารางในหน้าที่หมุนไม่ได้ — หมุนหน้ากลับเป็นแนวเดิมก่อน")
+
+    table = _match(page_tables(session, page), bbox)
+    xs, ys, cells = table["xs"], table["ys"], table["cells"]
+    target = _cell_at(cells, r0, c0)
+    if target is None:
+        raise PDFError("ไม่พบเซลล์ที่เลือกในตาราง")
+
+    cell_rect = fitz.Rect(
+        xs[target["c"]],
+        ys[target["r"]],
+        xs[target["c"] + target["colspan"]],
+        ys[target["r"] + target["rowspan"]],
+    )
+    fontname, det_size, det_rgb, det_align = _detect_cell_text_style(page, xs, ys, cells, target)
+    use_size = float(fontsize) if fontsize else det_size
+    use_align = align if align in ("left", "center", "right") else det_align
+    if color and len(color) == 7 and color.startswith("#"):
+        use_rgb = tuple(int(color[i : i + 2], 16) / 255.0 for i in (1, 3, 5))
+    else:
+        use_rgb = det_rgb
+
+    # ลบเฉพาะข้อความเดิมในเซลล์ (เว้นขอบ 1.2 pt ไม่แตะเส้นตารางหรือพื้นสีเซลล์)
+    inset_r = min(1.2, max(0.4, min(cell_rect.width, cell_rect.height) * 0.08))
+    inner_redact = cell_rect + (inset_r, inset_r, -inset_r, -inset_r)
+    if inner_redact.width > 1.0 and inner_redact.height > 1.0:
+        page.add_redact_annot(inner_redact, fill=False)
+        page.apply_redactions(
+            images=fitz.PDF_REDACT_IMAGE_NONE,
+            graphics=fitz.PDF_REDACT_LINE_ART_NONE,
+        )
+        _prune_empty_xobjects(doc, page)
+
+    clean_text = (text or "").strip()
+    page_edits = session.text_edits.setdefault(page_number, {})
+    if clean_text:
+        pad_x = min(2.5, max(0.8, cell_rect.width * 0.04))
+        pad_y = min(1.5, max(0.5, cell_rect.height * 0.05))
+        draw_rect = cell_rect + (pad_x, pad_y, -pad_x, -pad_y)
+        if draw_rect.width < 4.0 or draw_rect.height < 4.0:
+            draw_rect = cell_rect
+        temp_id = f"insert-cell-{uuid.uuid4().hex[:10]}"
+        replace_text(
+            session,
+            page_number,
+            Rect(x0=draw_rect.x0, y0=draw_rect.y0, x1=draw_rect.x1, y1=draw_rect.y1),
+            clean_text,
+            use_size,
+            fontname,
+            use_rgb,
+            block_id=temp_id,
+            align=use_align,
+            valign="middle",
+        )
+        # ลบ temp_id ออกจากทะเบียนแก้ข้อความเดี่ยว เพื่อให้ข้อความนี้เป็นเนื้อหาของเซลล์ตารางโดยตรง
+        page_edits.pop(temp_id, None)
+
+    table_key = table["id"] if table["id"].startswith("table-") else f"table-{uuid.uuid4().hex[:10]}"
+    page_edits[table_key] = {"kind": "table", "xs": xs, "ys": ys, "cells": cells}
+    session.mark_dirty()
+
+    return {
+        "id": table_key,
+        "bbox": {"x0": xs[0], "y0": ys[0], "x1": xs[-1], "y1": ys[-1]},
+        "xs": xs,
+        "ys": ys,
+        "cells": cells,
+        "cell_texts": extract_cell_texts(page, xs, ys, cells),
     }
 
 

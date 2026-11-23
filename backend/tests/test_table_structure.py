@@ -232,3 +232,28 @@ def test_create_new_table_and_undo(client, make_user):
     assert r_undo.status_code == 200
     tables_after_undo = client.get(f"/edit/{sid}/page/0/tables", headers=h).json()["tables"]
     assert tables_after_undo == []
+
+
+def test_set_table_cell_text_on_inserted_row(client, make_user, upload):
+    _, h = make_user()
+    sid = upload(h, _make_table_pdf())
+    t0 = _get_first_table(client, sid, h)
+
+    # Insert row below row 2 (new row 3)
+    r_ins = client.post(
+        f"/edit/{sid}/page/0/table/structure",
+        json={"bbox": t0["bbox"], "op": "insert_row", "r0": 2, "c0": 0, "position": "below"},
+        headers=h,
+    )
+    assert r_ins.status_code == 200, r_ins.text
+
+    # Write text into cell (3, 0) of the newly inserted row
+    t1 = _get_first_table(client, sid, h)
+    r_txt = client.post(
+        f"/edit/{sid}/page/0/table/cell-text",
+        json={"bbox": t1["bbox"], "r0": 3, "c0": 0, "text": "NEW_ROW_TEXT"},
+        headers=h,
+    )
+    assert r_txt.status_code == 200, r_txt.text
+    cell_texts = r_txt.json()["cell_texts"]
+    assert "NEW_ROW_TEXT" in cell_texts.get("3,0", "")

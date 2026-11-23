@@ -526,6 +526,17 @@ class TableCreateRequest(BaseModel):
     bbox: Optional[Rect] = None
 
 
+class TableCellTextRequest(BaseModel):
+    """พิมพ์หรือแก้ไขข้อความในเซลล์ตารางที่เลือก (v1.49.0)"""
+    bbox: Rect
+    r0: int = Field(..., ge=0)
+    c0: int = Field(..., ge=0)
+    text: str = Field(default="", max_length=2000)
+    fontsize: Optional[float] = Field(default=None, ge=4, le=72)
+    align: Optional[Literal["left", "center", "right"]] = None
+    color: Optional[str] = Field(default=None, max_length=16)
+
+
 class BarcodeObjectEditRequest(BaseModel):
     """ย้าย/ลบบาร์โค้ดที่มีอยู่ในหน้า (v1.41.0): bbox เดิม (จาก GET .../barcodes) + กรอบใหม่ หรือ delete"""
     bbox: Rect

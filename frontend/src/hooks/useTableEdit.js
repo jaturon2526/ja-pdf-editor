@@ -26,6 +26,9 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
   const [applying, setApplying] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [expandMode, setExpandMode] = useState(false); // มือถือไม่มีปุ่ม Shift — เปิดสวิตช์นี้เพื่อให้ลากเส้นแบ่งแล้วช่องถัดไปเลื่อนตาม
+  const [cellText, setCellText] = useState("");
+  const [cellTextAlign, setCellTextAlign] = useState(""); // "" = อัตโนมัติตามคอลัมน์ · "left" | "center" | "right"
+  const [editingCellOnCanvas, setEditingCellOnCanvas] = useState(false);
 
   useEffect(() => {
     if (!active || !session) {
@@ -50,6 +53,17 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
   }, [active, session?.sessionId, currentPage, pageImage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selected = tables?.find((t) => t.id === selectedId) || null;
+  const activeCell = selected && cellSelection
+    ? selected.cells.find((c) => (
+      cellSelection.r0 >= c.r && cellSelection.r0 < c.r + c.rowspan
+      && cellSelection.c0 >= c.c && cellSelection.c0 < c.c + c.colspan
+    )) || null
+    : null;
+  const activeCellOrigText = (selected && activeCell && selected.cell_texts?.[`${activeCell.r},${activeCell.c}`]) || "";
+
+  useEffect(() => {
+    setCellText(activeCellOrigText);
+  }, [selected?.id, activeCell?.r, activeCell?.c, activeCellOrigText]);
 
   // เลือกตาราง/ตารางเปลี่ยนหลังวาดใหม่ → draft เริ่มจากตำแหน่งปัจจุบัน + clamp cellSelection ให้อยู่ในตาราง
   useEffect(() => {
@@ -79,7 +93,7 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
     setLastResult(null);
   }, []);
 
-  const selectCell = useCallback((cell, extend = false) => {
+  const selectCell = useCallback((cell, extend = false, startInlineEdit = false) => {
     if (!cell) return;
     const cr0 = cell.r;
     const cc0 = cell.c;
@@ -87,6 +101,7 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
     const cc1 = cell.c + cell.colspan - 1;
     setCellSelection((prev) => {
       if ((extend || multiSelectMode) && prev) {
+        setEditingCellOnCanvas(false);
         return {
           r0: Math.min(prev.r0, cr0),
           c0: Math.min(prev.c0, cc0),
@@ -94,6 +109,8 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
           c1: Math.max(prev.c1, cc1),
         };
       }
+      const sameSingleCell = prev && prev.r0 === cr0 && prev.c0 === cc0 && prev.r1 === cr1 && prev.c1 === cc1;
+      setEditingCellOnCanvas(Boolean(startInlineEdit || sameSingleCell));
       return { r0: cr0, c0: cc0, r1: cr1, c1: cc1 };
     });
     setError("");
@@ -109,10 +126,12 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
 
   const reset = useCallback(() => {
     if (selected) setDraft({ xs: [...selected.xs], ys: [...selected.ys] });
+    setCellText(activeCellOrigText);
+    setEditingCellOnCanvas(false);
     setOverlapWarning("");
     setPendingOverlapOp(null);
     setError("");
-  }, [selected]);
+  }, [selected, activeCellOrigText]);
 
   // ขยายตารางให้เต็มพื้นที่หน้ากระดาษ: "width" (ซ้าย-ขวา) · "height" (บน-ล่าง) · "full" (เต็มหน้า)
   const fitTableToPage = useCallback((mode) => {
@@ -134,6 +153,68 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
 
   const changed = !!(selected && draft && (draft.xs.some((v, i) => Math.abs(v - selected.xs[i]) > 0.05)
     || draft.ys.some((v, i) => Math.abs(v - selected.ys[i]) > 0.05)));
+  const cellTextDirty = !!(selected && activeCell && cellText.trim() !== activeCellOrigText.trim());
+
+  async function saveCellText(textOverride = null, { moveCol = 0, moveRow = 0 } = {}) {
+    if (!selected || !cellSelection || applying) return null;
+    const nextText = textOverride !== null ? textOverride : cellText;
+    const totalRows = selected.ys.length - 1;
+    const totalCols = selected.xs.length - 1;
+    const curR = cellSelection.r0;
+    const curC = cellSelection.c0;
+
+    const advanceSelection = () => {
+      if (moveCol === 0 && moveRow === 0) return;
+      let nr = curR + moveRow;
+      let nc = curC + moveCol;
+      if (nc >= totalCols) {
+        nc = 0;
+        nr += 1;
+      } else if (nc < 0) {
+        nc = Math.max(0, totalCols - 1);
+        nr -= 1;
+      }
+      nr = Math.max(0, Math.min(totalRows - 1, nr));
+      nc = Math.max(0, Math.min(totalCols - 1, nc));
+      setCellSelection({ r0: nr, c0: nc, r1: nr, c1: nc });
+    };
+
+    if (nextText.trim() === activeCellOrigText.trim()) {
+      advanceSelection();
+      return null;
+    }
+
+    setApplying(true);
+    setError("");
+    try {
+      let result = null;
+      await runDocumentChange(async (sid) => {
+        result = await api.editTableCellText(sid, currentPage, {
+          bbox: selected.bbox,
+          r0: curR,
+          c0: curC,
+          text: nextText,
+          align: cellTextAlign || null,
+        });
+        return result;
+      }, {
+        nextPage: currentPage,
+        success: "บันทึกข้อความในเซลล์แล้ว",
+        failure: "บันทึกข้อความในเซลล์ไม่สำเร็จ",
+        rethrow: true,
+        keepTool: true,
+      });
+      setLastResult(result);
+      if (result?.id) setSelectedId(result.id);
+      advanceSelection();
+      return result;
+    } catch (e) {
+      setError(e.message || "บันทึกข้อความในเซลล์ไม่สำเร็จ");
+      return null;
+    } finally {
+      setApplying(false);
+    }
+  }
 
   async function createNewTable({ rows = 3, cols = 4 } = {}) {
     if (!session || applying) return null;
@@ -169,14 +250,39 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
     }
   }
 
-  async function apply({ allowOverlap = false } = {}) {
-    if (!selected || !draft || !changed || applying) return;
+  async function apply({ allowOverlap = false, onDone = null } = {}) {
+    if (!selected || !draft || applying) return;
+    if (!changed && !cellTextDirty) {
+      setEditingCellOnCanvas(false);
+      onDone?.();
+      return;
+    }
+    if (!changed && cellTextDirty) {
+      await saveCellText();
+      return;
+    }
     setApplying(true);
     setError("");
     try {
       let result = null;
       await runDocumentChange(async (sid) => {
         result = await api.editTable(sid, currentPage, { bbox: selected.bbox, xs: draft.xs, ys: draft.ys, allowOverlap });
+        if (cellTextDirty && cellSelection) {
+          const nextBbox = {
+            x0: result.xs[0],
+            y0: result.ys[0],
+            x1: result.xs.at(-1),
+            y1: result.ys.at(-1),
+          };
+          const cellRes = await api.editTableCellText(sid, currentPage, {
+            bbox: nextBbox,
+            r0: cellSelection.r0,
+            c0: cellSelection.c0,
+            text: cellText,
+            align: cellTextAlign || null,
+          });
+          result = { ...result, ...cellRes };
+        }
         return result;
       }, {
         nextPage: currentPage,
@@ -251,7 +357,15 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
       setOverlapWarning("");
       setPendingOverlapOp(null);
       if (result?.id) setSelectedId(result.id);
-      if (op === "merge_cells" || op === "split_cell") {
+      if (op === "insert_row") {
+        const targetR = (opts.position || "below") === "above" ? cellSelection.r0 : cellSelection.r0 + 1;
+        setCellSelection({ r0: targetR, c0: cellSelection.c0, r1: targetR, c1: cellSelection.c0 });
+        setEditingCellOnCanvas(true);
+      } else if (op === "insert_col") {
+        const targetC = opts.position === "left" ? cellSelection.c0 : cellSelection.c0 + 1;
+        setCellSelection({ r0: cellSelection.r0, c0: targetC, r1: cellSelection.r0, c1: targetC });
+        setEditingCellOnCanvas(true);
+      } else if (op === "merge_cells" || op === "split_cell") {
         setCellSelection({ r0: cellSelection.r0, c0: cellSelection.c0, r1: cellSelection.r0, c1: cellSelection.c0 });
       }
     } catch (e) {
@@ -277,6 +391,8 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
   return {
     tables, selected, selectedId, select, draft, update, moveBy, reset, changed,
     fitTableToPage, createNewTable,
+    activeCell, cellText, setCellText, cellTextAlign, setCellTextAlign, cellTextDirty, saveCellText,
+    editingCellOnCanvas, setEditingCellOnCanvas,
     cellSelection, selectCell, multiSelectMode, setMultiSelectMode, runStructure, confirmOverlap,
     apply, applying, error, overlapWarning, lastResult, expandMode, setExpandMode,
   };

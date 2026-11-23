@@ -813,7 +813,11 @@ const PDFCanvas = forwardRef(function PDFCanvas({
           <TableEditLayer tables={tableEdit.tables} selected={tableEdit.selected} draft={tableEdit.draft}
             cellSelection={tableEdit.cellSelection} expandMode={tableEdit.expandMode} zoom={zoom}
             pageSrc={pageImage ? pageImageSrc(pageImage) : ""} pageWidthPt={pageWidthPt} pageHeightPt={pageHeightPt}
-            onSelect={tableEdit.select} onCellClick={tableEdit.selectCell} onUpdate={tableEdit.update} />
+            onSelect={tableEdit.select} onCellClick={tableEdit.selectCell} onUpdate={tableEdit.update}
+            cellText={tableEdit.cellText} onCellTextChange={tableEdit.setCellText}
+            onSaveCellText={tableEdit.saveCellText}
+            editingCellOnCanvas={tableEdit.editingCellOnCanvas}
+            onSetEditingCellOnCanvas={tableEdit.setEditingCellOnCanvas} />
         )}
 
         {activeTool === "edit_barcode" && barcodeEdit && (

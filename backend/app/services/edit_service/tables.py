@@ -108,6 +108,22 @@ def _overlap(a: dict, b: dict) -> bool:
     return min(a["x1"], b["x1"]) > max(a["x0"], b["x0"]) and min(a["y1"], b["y1"]) > max(a["y0"], b["y0"])
 
 
+def extract_cell_texts(page: fitz.Page, xs: list[float], ys: list[float], cells: list[dict]) -> dict[str, str]:
+    """อ่านข้อความปัจจุบันของแต่ละเซลล์ (ผ่านการจัดรูปภาษาไทย) คืนเป็น map {'r,c': text}"""
+    from app.services import thai_text
+
+    tp = _content_page(page)
+    out: dict[str, str] = {}
+    for c in cells:
+        rect = fitz.Rect(xs[c["c"]], ys[c["r"]], xs[c["c"] + c["colspan"]], ys[c["r"] + c["rowspan"]])
+        raw = thai_text.normalize(tp.get_text("text", clip=rect) or "")
+        lines = [line.strip() for line in raw.splitlines() if line.strip()]
+        txt = _join_lines(lines)
+        if txt:
+            out[f"{c['r']},{c['c']}"] = txt
+    return out
+
+
 def page_tables(session: PDFSession, page: fitz.Page) -> list[dict]:
     known = _registered(session, page.number)
     found = [t for t in find_tables(page) if not any(_overlap(t["bbox"], k["bbox"]) for k in known)]
@@ -120,7 +136,11 @@ def get_tables(session: PDFSession, page_number: int) -> list[dict]:
     doc = require_unlocked(session)
     if not (0 <= page_number < doc.page_count):
         raise PDFError(f"page_number {page_number} อยู่นอกช่วง")
-    return page_tables(session, doc[page_number])
+    page = doc[page_number]
+    tables = page_tables(session, page)
+    for t in tables:
+        t["cell_texts"] = extract_cell_texts(page, t["xs"], t["ys"], t["cells"])
+    return tables
 
 
 # ---------- แปลงพิกัด ----------

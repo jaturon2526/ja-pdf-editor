@@ -44,7 +44,7 @@ test.describe("แก้ไขตาราง", () => {
     await expect(panel.getByRole("status")).toContainText("แก้ตารางแล้ว");
     await expect(panel.getByRole("status")).toContainText("ตัดบรรทัดใหม่");
     await expect(panel.locator("#tbl-col-1")).toHaveValue("30"); // เลือกตารางเดิมค้างไว้แก้ต่อ
-    await expect(page.getByRole("button", { name: "ตกลง" })).toBeDisabled();
+    await expect(panel.getByRole("button", { name: "ตกลง" })).toBeEnabled();
 
     await page.getByRole("button", { name: /เลิกทำ/ }).first().click();
     await page.getByRole("button", { name: /เลือกตารางที่ 1/ }).click();
@@ -65,9 +65,12 @@ test.describe("แก้ไขตาราง", () => {
   test("โครงสร้างตาราง: เพิ่มแถว · ลบแถว · รวมเซลล์ · แยกเซลล์ · Undo", async ({ page }) => {
     const panel = page.getByTestId("table-edit-panel");
 
-    // เพิ่มแถวล่าง → 5 แถว × 4 คอลัมน์
+    // เพิ่มแถวล่าง → 5 แถว × 4 คอลัมน์ + พิมพ์ข้อความลงในเซลล์ของแถวที่เพิ่งเพิ่มได้ทันที
     await panel.getByRole("button", { name: "+ แถวล่าง", exact: true }).click();
     await expect(panel).toContainText("5 แถว × 4 คอลัมน์", { timeout: 15_000 });
+    await panel.locator("#tbl-cell-text").fill("4");
+    await panel.getByRole("button", { name: "ใส่ข้อความ" }).click();
+    await expect(panel.locator("#tbl-cell-text")).toHaveValue("4");
 
     // ลบแถว → กลับเป็น 4 แถว × 4 คอลัมน์
     await panel.getByRole("button", { name: "ลบแถว", exact: true }).click();
