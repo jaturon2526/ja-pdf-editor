@@ -5,6 +5,7 @@
 // จุดลากเป็นของเมาส์/นิ้วเท่านั้น — คีย์บอร์ด/โปรแกรมอ่านหน้าจอใช้ช่องตัวเลข (มม.) ในแผง และปุ่มลูกศรย้ายตาราง
 import { useRef, useState } from "react";
 import { moveInnerLine, ptToMm, scaleTo, setSize, translate } from "../../utils/tableGeometry.js";
+import { fontFamilyForKey } from "../../utils/textEditUtils.js";
 
 const HIT = "[--hit:10px] [@media(pointer:coarse)]:[--hit:26px]";
 const KNOB_HIT = 34; // พื้นที่นิ้วจับปุ่มสีฟ้านอกขอบตาราง (px) — ไม่ทับกันระหว่างคอลัมน์กับแถว
@@ -100,6 +101,11 @@ export default function TableEditLayer({
   onCellClick,
   onUpdate,
   cellText = "",
+  cellFontKey = "sarabun",
+  cellFontSize = 11,
+  cellColorHex = "#000000",
+  cellTextAlign = "",
+  cellUnderline = false,
   onCellTextChange,
   onSaveCellText,
   editingCellOnCanvas = false,
@@ -276,12 +282,17 @@ export default function TableEditLayer({
                     onSetEditingCellOnCanvas?.(false);
                   }
                 }}
-                className="absolute z-30 bg-white/95 border-2 border-sky-600 rounded-[2px] px-1 text-xs text-slate-900 shadow-sm focus:outline-none"
+                className="absolute z-30 bg-white/95 border-2 border-sky-600 rounded-[2px] px-1 shadow-sm focus:outline-none"
                 style={{
                   left: z(xs[cellSelection.c0]),
                   top: z(ys[cellSelection.r0]),
                   width: Math.max(44, z(xs[cellSelection.c1 + 1] - xs[cellSelection.c0])),
                   height: Math.max(20, z(ys[cellSelection.r1 + 1] - ys[cellSelection.r0])),
+                  fontFamily: fontFamilyForKey(cellFontKey || "sarabun"),
+                  fontSize: `${Math.max(10, (Number(cellFontSize) || 11) * zoom)}px`,
+                  color: cellColorHex || "#0f172a",
+                  textAlign: cellTextAlign || "left",
+                  textDecoration: cellUnderline ? "underline" : "none",
                 }}
               />
             )}

@@ -257,3 +257,41 @@ def test_set_table_cell_text_on_inserted_row(client, make_user, upload):
     assert r_txt.status_code == 200, r_txt.text
     cell_texts = r_txt.json()["cell_texts"]
     assert "NEW_ROW_TEXT" in cell_texts.get("3,0", "")
+
+
+def test_set_table_cell_text_with_custom_font_and_style(client, make_user, upload):
+    _, h = make_user()
+    sid = upload(h, _make_table_pdf())
+    t0 = _get_first_table(client, sid, h)
+    assert "cell_styles" in t0
+    assert "0,0" in t0["cell_styles"]
+
+    # Update cell (0, 0) with custom font, bold style, size, color, align, valign, underline
+    r_txt = client.post(
+        f"/edit/{sid}/page/0/table/cell-text",
+        json={
+            "bbox": t0["bbox"],
+            "r0": 0,
+            "c0": 0,
+            "text": "หัวข้อใหม่",
+            "fontname": "sarabun-bold",
+            "fontsize": 14,
+            "color": "#d32f2f",
+            "align": "right",
+            "valign": "bottom",
+            "underline": True,
+        },
+        headers=h,
+    )
+    assert r_txt.status_code == 200, r_txt.text
+    body = r_txt.json()
+    assert "หัวข้อใหม่" in body["cell_texts"].get("0,0", "")
+    style = body["cell_styles"].get("0,0")
+    assert style is not None
+    assert style["fontname"] == "sarabun-bold"
+    assert abs(style["fontsize"] - 14.0) < 0.6
+    # fpdf2 writes 3-decimal RGB floats, so each channel may differ by ±1 (e.g. #d32f2f -> #d32e2e)
+    got_rgb = [int(style["color"][i : i + 2], 16) for i in (1, 3, 5)]
+    exp_rgb = [0xD3, 0x2F, 0x2F]
+    assert all(abs(g - e) <= 2 for g, e in zip(got_rgb, exp_rgb)), style["color"]
+    assert style["align"] == "right"

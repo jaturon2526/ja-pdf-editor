@@ -27,7 +27,20 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
   const [lastResult, setLastResult] = useState(null);
   const [expandMode, setExpandMode] = useState(false); // มือถือไม่มีปุ่ม Shift — เปิดสวิตช์นี้เพื่อให้ลากเส้นแบ่งแล้วช่องถัดไปเลื่อนตาม
   const [cellText, setCellText] = useState("");
+  const [cellFontKey, setCellFontKey] = useState("sarabun");
+  const [cellFontSize, setCellFontSize] = useState(11);
+  const [cellColorHex, setCellColorHex] = useState("#000000");
   const [cellTextAlign, setCellTextAlign] = useState(""); // "" = อัตโนมัติตามคอลัมน์ · "left" | "center" | "right"
+  const [cellTextValign, setCellTextValign] = useState("middle"); // "top" | "middle" | "bottom"
+  const [cellUnderline, setCellUnderline] = useState(false);
+  const [origCellStyle, setOrigCellStyle] = useState({
+    fontKey: "sarabun",
+    fontSize: 11,
+    colorHex: "#000000",
+    align: "",
+    valign: "middle",
+    underline: false,
+  });
   const [editingCellOnCanvas, setEditingCellOnCanvas] = useState(false);
 
   useEffect(() => {
@@ -59,11 +72,50 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
       && cellSelection.c0 >= c.c && cellSelection.c0 < c.c + c.colspan
     )) || null
     : null;
-  const activeCellOrigText = (selected && activeCell && selected.cell_texts?.[`${activeCell.r},${activeCell.c}`]) || "";
+  const activeCellKey = activeCell ? `${activeCell.r},${activeCell.c}` : null;
+  const activeCellOrigText = (selected && activeCellKey && selected.cell_texts?.[activeCellKey]) || "";
+  const activeCellOrigStyle = (selected && activeCellKey && selected.cell_styles?.[activeCellKey]) || null;
 
   useEffect(() => {
     setCellText(activeCellOrigText);
-  }, [selected?.id, activeCell?.r, activeCell?.c, activeCellOrigText]);
+    if (activeCellOrigStyle) {
+      const nextStyle = {
+        fontKey: activeCellOrigStyle.fontname || "sarabun",
+        fontSize: Number(activeCellOrigStyle.fontsize) || 11,
+        colorHex: (activeCellOrigStyle.color || "#000000").toLowerCase(),
+        align: activeCellOrigStyle.align || "",
+        valign: activeCellOrigStyle.valign || "middle",
+        underline: false,
+      };
+      setCellFontKey(nextStyle.fontKey);
+      setCellFontSize(nextStyle.fontSize);
+      setCellColorHex(nextStyle.colorHex);
+      setCellTextAlign(nextStyle.align);
+      setCellTextValign(nextStyle.valign);
+      setCellUnderline(false);
+      setOrigCellStyle(nextStyle);
+    } else {
+      // เซลล์ว่าง: คงฟอนต์และสไตล์ที่ผู้ใช้เลือกค้างไว้ เพื่อให้พิมพ์หลายช่องต่อเนื่องได้สะดวก
+      setOrigCellStyle({
+        fontKey: cellFontKey,
+        fontSize: cellFontSize,
+        colorHex: (cellColorHex || "#000000").toLowerCase(),
+        align: cellTextAlign,
+        valign: cellTextValign,
+        underline: cellUnderline,
+      });
+    }
+  }, [ // eslint-disable-line react-hooks/exhaustive-deps
+    selected?.id,
+    activeCell?.r,
+    activeCell?.c,
+    activeCellOrigText,
+    activeCellOrigStyle?.fontname,
+    activeCellOrigStyle?.fontsize,
+    activeCellOrigStyle?.color,
+    activeCellOrigStyle?.align,
+    activeCellOrigStyle?.valign,
+  ]);
 
   // เลือกตาราง/ตารางเปลี่ยนหลังวาดใหม่ → draft เริ่มจากตำแหน่งปัจจุบัน + clamp cellSelection ให้อยู่ในตาราง
   useEffect(() => {
@@ -127,11 +179,17 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
   const reset = useCallback(() => {
     if (selected) setDraft({ xs: [...selected.xs], ys: [...selected.ys] });
     setCellText(activeCellOrigText);
+    setCellFontKey(origCellStyle.fontKey);
+    setCellFontSize(origCellStyle.fontSize);
+    setCellColorHex(origCellStyle.colorHex);
+    setCellTextAlign(origCellStyle.align);
+    setCellTextValign(origCellStyle.valign);
+    setCellUnderline(origCellStyle.underline);
     setEditingCellOnCanvas(false);
     setOverlapWarning("");
     setPendingOverlapOp(null);
     setError("");
-  }, [selected, activeCellOrigText]);
+  }, [selected, activeCellOrigText, origCellStyle]);
 
   // ขยายตารางให้เต็มพื้นที่หน้ากระดาษ: "width" (ซ้าย-ขวา) · "height" (บน-ล่าง) · "full" (เต็มหน้า)
   const fitTableToPage = useCallback((mode) => {
@@ -153,7 +211,19 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
 
   const changed = !!(selected && draft && (draft.xs.some((v, i) => Math.abs(v - selected.xs[i]) > 0.05)
     || draft.ys.some((v, i) => Math.abs(v - selected.ys[i]) > 0.05)));
-  const cellTextDirty = !!(selected && activeCell && cellText.trim() !== activeCellOrigText.trim());
+  const cellStyleDirty = !!(
+    cellFontKey !== origCellStyle.fontKey
+    || Math.abs((Number(cellFontSize) || 11) - (Number(origCellStyle.fontSize) || 11)) > 0.05
+    || (cellColorHex || "#000000").toLowerCase() !== (origCellStyle.colorHex || "#000000").toLowerCase()
+    || (cellTextAlign || "") !== (origCellStyle.align || "")
+    || (cellTextValign || "middle") !== (origCellStyle.valign || "middle")
+    || Boolean(cellUnderline) !== Boolean(origCellStyle.underline)
+  );
+  const cellTextDirty = !!(
+    selected
+    && activeCell
+    && (cellText.trim() !== activeCellOrigText.trim() || (cellText.trim() !== "" && cellStyleDirty))
+  );
 
   async function saveCellText(textOverride = null, { moveCol = 0, moveRow = 0 } = {}) {
     if (!selected || !cellSelection || applying) return null;
@@ -179,7 +249,7 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
       setCellSelection({ r0: nr, c0: nc, r1: nr, c1: nc });
     };
 
-    if (nextText.trim() === activeCellOrigText.trim()) {
+    if (nextText.trim() === activeCellOrigText.trim() && !(nextText.trim() !== "" && cellStyleDirty)) {
       advanceSelection();
       return null;
     }
@@ -194,7 +264,12 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
           r0: curR,
           c0: curC,
           text: nextText,
+          fontname: cellFontKey || null,
+          fontsize: Number.isFinite(Number(cellFontSize)) && Number(cellFontSize) >= 4 ? Number(cellFontSize) : null,
           align: cellTextAlign || null,
+          valign: cellTextValign || "middle",
+          color: cellColorHex || null,
+          underline: Boolean(cellUnderline),
         });
         return result;
       }, {
@@ -279,7 +354,12 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
             r0: cellSelection.r0,
             c0: cellSelection.c0,
             text: cellText,
+            fontname: cellFontKey || null,
+            fontsize: Number.isFinite(Number(cellFontSize)) && Number(cellFontSize) >= 4 ? Number(cellFontSize) : null,
             align: cellTextAlign || null,
+            valign: cellTextValign || "middle",
+            color: cellColorHex || null,
+            underline: Boolean(cellUnderline),
           });
           result = { ...result, ...cellRes };
         }
@@ -391,7 +471,14 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
   return {
     tables, selected, selectedId, select, draft, update, moveBy, reset, changed,
     fitTableToPage, createNewTable,
-    activeCell, cellText, setCellText, cellTextAlign, setCellTextAlign, cellTextDirty, saveCellText,
+    activeCell, cellText, setCellText,
+    cellFontKey, setCellFontKey,
+    cellFontSize, setCellFontSize,
+    cellColorHex, setCellColorHex,
+    cellTextAlign, setCellTextAlign,
+    cellTextValign, setCellTextValign,
+    cellUnderline, setCellUnderline,
+    cellTextDirty, saveCellText,
     editingCellOnCanvas, setEditingCellOnCanvas,
     cellSelection, selectCell, multiSelectMode, setMultiSelectMode, runStructure, confirmOverlap,
     apply, applying, error, overlapWarning, lastResult, expandMode, setExpandMode,

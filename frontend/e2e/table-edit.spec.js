@@ -65,9 +65,14 @@ test.describe("แก้ไขตาราง", () => {
   test("โครงสร้างตาราง: เพิ่มแถว · ลบแถว · รวมเซลล์ · แยกเซลล์ · Undo", async ({ page }) => {
     const panel = page.getByTestId("table-edit-panel");
 
-    // เพิ่มแถวล่าง → 5 แถว × 4 คอลัมน์ + พิมพ์ข้อความลงในเซลล์ของแถวที่เพิ่งเพิ่มได้ทันที
+    // เพิ่มแถวล่าง → 5 แถว × 4 คอลัมน์ + พิมพ์ข้อความลงในเซลล์ของแถวที่เพิ่งเพิ่มพร้อมเลือกฟอนต์/ตัวหนา/ขนาด/สีได้ทันที
     await panel.getByRole("button", { name: "+ แถวล่าง", exact: true }).click();
     await expect(panel).toContainText("5 แถว × 4 คอลัมน์", { timeout: 15_000 });
+    await expect(panel.locator("#tbl-cell-font")).toBeVisible();
+    await panel.getByRole("button", { name: "ตัวหนา (Bold)" }).click();
+    await panel.getByRole("button", { name: "ขีดเส้นใต้" }).click();
+    await panel.locator("#tbl-cell-fontsize").fill("14");
+    await panel.getByRole("button", { name: "สีแดง" }).click();
     await panel.locator("#tbl-cell-text").fill("4");
     await panel.getByRole("button", { name: "ใส่ข้อความ" }).click();
     await expect(panel.locator("#tbl-cell-text")).toHaveValue("4");

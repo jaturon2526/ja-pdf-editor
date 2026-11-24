@@ -2,6 +2,33 @@
 // เดสก์ท็อปอยู่ขวา มือถือเป็นแผ่นล่าง (เหมือนแผงตรวจฟอนต์)
 import { useState } from "react";
 import { equalize, mmToPt, ptToMm, setSize, sizes, translate } from "../../utils/tableGeometry.js";
+import { resolveFamilyAndStyle } from "../../utils/textEditUtils.js";
+
+const CELL_STYLE_OPTIONS = [
+  { key: "regular", label: "R", title: "ตัวปกติ (Regular)" },
+  { key: "bold", label: "B", title: "ตัวหนา (Bold)" },
+  { key: "italic", label: "I", title: "ตัวเอียง (Italic)" },
+  { key: "bold_italic", label: "BI", title: "ตัวหนาเอียง (Bold Italic)" },
+];
+
+const CELL_PRESET_COLORS = [
+  { key: "black", label: "ดำ", value: "#000000" },
+  { key: "blue", label: "น้ำเงิน", value: "#1a56db" },
+  { key: "red", label: "แดง", value: "#d32f2f" },
+];
+
+const CELL_ALIGN_OPTIONS = [
+  { k: "", label: "อัตโนมัติ" },
+  { k: "left", label: "ซ้าย" },
+  { k: "center", label: "กลาง" },
+  { k: "right", label: "ขวา" },
+];
+
+const CELL_VALIGN_OPTIONS = [
+  { k: "top", label: "บน" },
+  { k: "middle", label: "กลาง" },
+  { k: "bottom", label: "ล่าง" },
+];
 
 function MmInput({ id, label, valuePt, onChangePt }) {
   return (
@@ -14,14 +41,44 @@ function MmInput({ id, label, valuePt, onChangePt }) {
   );
 }
 
-export default function TableEditPanel({ hook, onClose, canUndo = false, canRedo = false, onUndo, onRedo }) {
+export default function TableEditPanel({
+  hook,
+  fontFamilies = [],
+  onClose,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
+}) {
   const {
     tables, selected, draft, update, reset, changed, apply, applying, error,
     overlapWarning, lastResult, expandMode, setExpandMode,
     fitTableToPage, createNewTable,
-    cellText, setCellText, cellTextAlign, setCellTextAlign, cellTextDirty, saveCellText,
+    cellText, setCellText,
+    cellFontKey, setCellFontKey,
+    cellFontSize, setCellFontSize,
+    cellColorHex, setCellColorHex,
+    cellTextAlign, setCellTextAlign,
+    cellTextValign, setCellTextValign,
+    cellUnderline, setCellUnderline,
+    cellTextDirty, saveCellText,
     cellSelection, multiSelectMode, setMultiSelectMode, runStructure, confirmOverlap,
   } = hook;
+  const families = fontFamilies || [];
+  const { familyKey: cellFamilyKey, style: cellCurrentStyle } = resolveFamilyAndStyle(cellFontKey, families);
+  const currentCellFamily = families.find((f) => f.key === cellFamilyKey) || families[0] || null;
+
+  function handleCellFamilyChange(newFamilyKey) {
+    const fam = families.find((f) => f.key === newFamilyKey);
+    if (!fam) return;
+    const nextStyle = fam.styles[cellCurrentStyle] ? cellCurrentStyle : "regular";
+    setCellFontKey?.(fam.styles[nextStyle] || fam.styles.regular);
+  }
+
+  function handleCellStyleChange(newStyle) {
+    if (!currentCellFamily || !currentCellFamily.styles[newStyle]) return;
+    setCellFontKey?.(currentCellFamily.styles[newStyle]);
+  }
   const [collapsed, setCollapsed] = useState(false); // มือถือ: ย่อแผ่นล่างให้เห็นตารางเต็มจอตอนใช้นิ้วลากจุดจับ
   const [newRows, setNewRows] = useState(3);
   const [newCols, setNewCols] = useState(4);
@@ -224,20 +281,161 @@ export default function TableEditPanel({ hook, onClose, canUndo = false, canRedo
                       ใส่ข้อความ
                     </button>
                   </div>
+                  {/* ฟอนต์และรูปแบบฟอนต์ของเซลล์ (เหมือนโหมดแก้ไขข้อความ — v1.50.0) */}
+                  {families.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      <div>
+                        <label htmlFor="tbl-cell-font" className="block text-[10px] font-medium text-slate-600 mb-0.5">
+                          ฟอนต์
+                        </label>
+                        <select
+                          id="tbl-cell-font"
+                          value={cellFamilyKey || ""}
+                          disabled={applying}
+                          onChange={(e) => handleCellFamilyChange(e.target.value)}
+                          className="w-full border border-slate-300 rounded bg-white px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                          {families.map((f) => (
+                            <option key={f.key} value={f.key}>
+                              {f.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-1" role="group" aria-label="รูปแบบฟอนต์ในเซลล์">
+                        {CELL_STYLE_OPTIONS.map((opt) => {
+                          const available = !!currentCellFamily?.styles[opt.key];
+                          const active = cellCurrentStyle === opt.key;
+                          let fontCls = "";
+                          if (opt.key === "bold") fontCls = "font-bold";
+                          else if (opt.key === "italic") fontCls = "italic";
+                          else if (opt.key === "bold_italic") fontCls = "font-bold italic";
+                          return (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              title={available ? opt.title : `${opt.title} — ฟอนต์นี้ไม่มีไฟล์สไตล์นี้`}
+                              aria-label={opt.title}
+                              aria-pressed={active}
+                              disabled={!available || applying}
+                              onClick={() => handleCellStyleChange(opt.key)}
+                              className={`flex-1 py-1 text-[11px] rounded border transition-colors disabled:opacity-35 ${fontCls} ${
+                                active
+                                  ? "border-sky-600 bg-sky-600 text-white"
+                                  : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          title="ขีดเส้นใต้ (ใช้ได้กับทุกฟอนต์)"
+                          aria-label="ขีดเส้นใต้"
+                          aria-pressed={!!cellUnderline}
+                          disabled={applying}
+                          onClick={() => setCellUnderline?.(!cellUnderline)}
+                          className={`flex-1 py-1 text-[11px] underline rounded border transition-colors disabled:opacity-35 ${
+                            cellUnderline
+                              ? "border-sky-600 bg-sky-600 text-white"
+                              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                          }`}
+                        >
+                          U
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-end gap-2 pt-0.5">
+                    <div className="w-20">
+                      <label htmlFor="tbl-cell-fontsize" className="block text-[10px] font-medium text-slate-600 mb-0.5">
+                        ขนาด (pt)
+                      </label>
+                      <input
+                        id="tbl-cell-fontsize"
+                        type="number"
+                        min={6}
+                        max={96}
+                        step={0.5}
+                        disabled={applying}
+                        value={cellFontSize ?? 11}
+                        onChange={(e) => {
+                          const v = Number.parseFloat(e.target.value);
+                          if (Number.isFinite(v)) setCellFontSize?.(v);
+                        }}
+                        className="w-full border border-slate-300 rounded bg-white px-2 py-1 text-xs"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span id="tbl-cell-color-label" className="block text-[10px] font-medium text-slate-600 mb-0.5">
+                        สีตัวอักษร
+                      </span>
+                      <div className="flex items-center gap-1.5" role="group" aria-labelledby="tbl-cell-color-label">
+                        {CELL_PRESET_COLORS.map((preset) => (
+                          <button
+                            key={preset.key}
+                            type="button"
+                            title={preset.label}
+                            aria-label={`สี${preset.label}`}
+                            disabled={applying}
+                            onClick={() => setCellColorHex?.(preset.value)}
+                            className={`w-6 h-6 rounded-full border transition-all ${
+                              (cellColorHex || "#000000").toLowerCase() === preset.value
+                                ? "border-sky-500 scale-110 ring-2 ring-sky-200"
+                                : "border-slate-300 hover:scale-105"
+                            }`}
+                            style={{ backgroundColor: preset.value }}
+                          />
+                        ))}
+                        <div
+                          className="relative w-6 h-6 rounded-full overflow-hidden border border-slate-300 hover:border-slate-400"
+                          title="สีอื่นๆ"
+                        >
+                          <input
+                            type="color"
+                            aria-label="เลือกสีตัวอักษรในเซลล์"
+                            disabled={applying}
+                            value={cellColorHex || "#000000"}
+                            onChange={(e) => setCellColorHex?.(e.target.value)}
+                            className="absolute -top-2 -left-2 w-10 h-10 cursor-pointer border-0 p-0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-slate-500 mr-1">จัดวาง:</span>
-                    {[
-                      { k: "", label: "ตามคอลัมน์" },
-                      { k: "left", label: "ซ้าย" },
-                      { k: "center", label: "กลาง" },
-                      { k: "right", label: "ขวา" },
-                    ].map((opt) => (
+                    <span className="text-[10px] text-slate-500 mr-1">แนวนอน:</span>
+                    {CELL_ALIGN_OPTIONS.map((opt) => (
                       <button
                         key={opt.k || "auto"}
                         type="button"
+                        disabled={applying}
                         onClick={() => setCellTextAlign?.(opt.k)}
                         className={`px-1.5 py-0.5 text-[10px] rounded border ${
                           (cellTextAlign || "") === opt.k
+                            ? "border-sky-500 bg-sky-50 text-sky-700 font-medium"
+                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-slate-500 mr-1">แนวตั้ง:</span>
+                    {CELL_VALIGN_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.k}
+                        type="button"
+                        disabled={applying}
+                        onClick={() => setCellTextValign?.(opt.k)}
+                        className={`px-1.5 py-0.5 text-[10px] rounded border ${
+                          (cellTextValign || "middle") === opt.k
                             ? "border-sky-500 bg-sky-50 text-sky-700 font-medium"
                             : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                         }`}

@@ -10,6 +10,25 @@ from app.models.schemas import ImageInfo, Rect
 from app.services.pdf_service import PDFError, require_unlocked
 
 
+def _is_transparent_placeholder(doc: fitz.Document, img: dict) -> bool:
+    """ตรวจว่าเป็นภาพโปร่งใส 1×1 ที่ PyMuPDF สร้างไว้ตอนเรียก page.delete_image(xref) หรือไม่
+    (ป้องกันกรอบรูปผีโผล่ในโหมดแก้ไขรูปภาพ ทั้งจากไฟล์ที่เคยบันทึกไว้ก่อนหน้าและกรณี fallback)"""
+    if (img.get("width") or 0) > 1 or (img.get("height") or 0) > 1:
+        return False
+    xref = img.get("xref", 0)
+    if not xref:
+        return False
+    try:
+        info = doc.extract_image(xref)
+        smask_xref = info.get("smask") or 0
+        if smask_xref:
+            mask_pix = fitz.Pixmap(doc, smask_xref)
+            return not any(mask_pix.samples)
+    except Exception:
+        return False
+    return False
+
+
 def get_images(session: PDFSession, page_number: int) -> list[ImageInfo]:
     doc = require_unlocked(session)
     if not (0 <= page_number < doc.page_count):
@@ -42,6 +61,9 @@ def get_images(session: PDFSession, page_number: int) -> list[ImageInfo]:
         w_pt = abs(bbox[2] - bbox[0])
         h_pt = abs(bbox[3] - bbox[1])
         if w_pt < 1.0 or h_pt < 1.0:
+            continue
+        # กรองภาพโปร่งใส 1×1 ที่เหลือค้างจากการลบด้วย page.delete_image()
+        if _is_transparent_placeholder(doc, img):
             continue
         results.append(
             ImageInfo(
@@ -77,12 +99,15 @@ def _hide_image(page: fitz.Page, xref: int) -> bool:
     if not entries:
         return False
     placements = sum(1 for info in page.get_image_info(xrefs=True) if info.get("xref") == xref)
+    # ใช้ hide_xobject_name ก่อนเมื่อรูปอยู่ใน Resources ของหน้าโดยตรงและวางครั้งเดียวในหน้านี้
+    # เพื่อเปลี่ยนชื่อ XObject เป็น Form ว่าง — ทำให้ get_image_info() ไม่เห็นกรอบรูปเดิมค้างอีกต่อไป
+    # (page.delete_image จะทิ้ง /ImX Do ไว้กับภาพโปร่งใส 1×1 ทำให้กรอบรูปยังโผล่เมื่อเข้าโหมดแก้ไขรูป)
+    if placements == 1 and entries[0][9] == 0 and hide_xobject_name(page, entries[0][7]):
+        return True
     if _image_use_count(doc, xref) == 1:
         page.delete_image(xref)
         return True
-    if placements != 1 or entries[0][9] != 0:  # วางซ้ำในหน้าเดียวกัน / อยู่ใน Form XObject ที่อาจใช้ร่วม
-        return False
-    return hide_xobject_name(page, entries[0][7])
+    return False
 
 
 def hide_xobject_name(page: fitz.Page, name: str) -> bool:
@@ -155,9 +180,15 @@ def delete_image(session: PDFSession, page_number: int, xref: int, rect: Optiona
                     return
             raise PDFError(f"ไม่พบรูปภาพ xref={xref} ในหน้า {page_number}")
 
-        # สำรอง: redaction เฉพาะพิกเซลในกรอบ ไม่ลบข้อความ/เส้นที่ทับอยู่
+        # สำรอง: ถ้าไม่มีรูปอื่นซ้อนทับกรอบนี้ ลบเฉพาะ image object ออกเลยเพื่อไม่ให้เหลือกรอบค้าง
+        # แต่ถ้ามีรูปอื่นทับอยู่ (เช่น รูปสแกนพื้นหลังเต็มหน้า) ใช้ลบเฉพาะพิกเซลเพื่อไม่ให้รูปพื้นหลังหาย
+        overlaps_other_image = any(
+            info.get("xref") != xref and fitz.Rect(info["bbox"]).intersects(image_rect)
+            for info in page.get_image_info(xrefs=True)
+        )
+        redact_mode = fitz.PDF_REDACT_IMAGE_PIXELS if overlaps_other_image else fitz.PDF_REDACT_IMAGE_REMOVE
         page.add_redact_annot(image_rect, fill=False)
-        page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_PIXELS, graphics=fitz.PDF_REDACT_LINE_ART_NONE,
+        page.apply_redactions(images=redact_mode, graphics=fitz.PDF_REDACT_LINE_ART_NONE,
                               text=fitz.PDF_REDACT_TEXT_NONE)
     except PDFError:
         raise

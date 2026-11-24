@@ -317,9 +317,12 @@ def edit_table_cell_text_api(session_id: str, page_number: int, payload: TableCe
                 r0=payload.r0,
                 c0=payload.c0,
                 text=payload.text,
+                fontname=payload.fontname,
                 fontsize=payload.fontsize,
                 align=payload.align,
+                valign=payload.valign,
                 color=payload.color,
+                underline=payload.underline,
             )
             session.push_history()
             return {"status": "ok", **result}

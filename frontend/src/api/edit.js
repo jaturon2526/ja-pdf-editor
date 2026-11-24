@@ -263,20 +263,23 @@ export async function createTable(sessionId, pageNumber, { rows = 3, cols = 4, b
   }));
 }
 
-// พิมพ์หรือแก้ไขข้อความในเซลล์ตารางที่เลือก (v1.49.0)
+// พิมพ์หรือแก้ไขข้อความในเซลล์ตารางที่เลือก (v1.49.0, รองรับเลือกฟอนต์/สไตล์ v1.50.0)
 export async function editTableCellText(sessionId, pageNumber, {
   bbox,
   r0,
   c0,
   text,
+  fontname = null,
   fontsize = null,
   align = null,
+  valign = null,
   color = null,
+  underline = false,
 }) {
   return handle(await fetchWithAuth(`${BASE}/edit/${sessionId}/page/${pageNumber}/table/cell-text`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ bbox, r0, c0, text, fontsize, align, color }),
+    body: JSON.stringify({ bbox, r0, c0, text, fontname, fontsize, align, valign, color, underline }),
   }));
 }
 

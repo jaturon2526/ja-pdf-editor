@@ -176,9 +176,9 @@ export default function Editor() {
     };
   }, []);
 
-  // Refresh ฟอนต์ทุกครั้งที่เปิดโหมดแก้ไขข้อความ เพื่อให้เห็นฟอนต์ที่ติดตั้งใหม่ทันที
+  // Refresh ฟอนต์ทุกครั้งที่เปิดโหมดแก้ไขข้อความหรือแก้ไขตาราง เพื่อให้เห็นฟอนต์ที่ติดตั้งใหม่ทันที
   useEffect(() => {
-    if (editMode === "text") {
+    if (editMode === "text" || activeTool === "edit_table") {
       if (fontsHook.setFontFamilies) {
         import("../api.js").then(api => {
           api.getFontFamilies().then(fontsHook.setFontFamilies).catch(() => {});
@@ -186,7 +186,7 @@ export default function Editor() {
         }).catch(() => { /* โหลดโมดูลไม่ได้ (ออฟไลน์) — ใช้รายการฟอนต์เดิม */ });
       }
     }
-  }, [editMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [editMode, activeTool]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const docPropsHook = useDocumentProperties({ session, setSession, setStatusMessage });
 
@@ -1022,6 +1022,7 @@ export default function Editor() {
         {activeTool === "edit_table" && session && (
           <TableEditPanel
             hook={tableEdit}
+            fontFamilies={fontsHook.fontFamilies}
             onClose={() => setActiveTool(null)}
             canUndo={canUndo || hasLocalUndo}
             canRedo={canRedo}

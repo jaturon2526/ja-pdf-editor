@@ -22,6 +22,7 @@ from app.services.edit_service.tables import (
     _place,
     _prune_empty_xobjects,
     _redraw,
+    extract_cell_styles,
     extract_cell_texts,
     page_tables,
 )
@@ -612,6 +613,7 @@ def edit_table_structure(
         "ys": ny,
         "cells": new_cells,
         "cell_texts": extract_cell_texts(page, nx, ny, new_cells),
+        "cell_styles": extract_cell_styles(page, nx, ny, new_cells),
         "overlaps_content": overlaps,
     }
 
@@ -671,7 +673,7 @@ def _detect_cell_text_style(
 
     target_h = ys[target["r"] + target["rowspan"]] - ys[target["r"]]
     default_size = min(11.0, max(8.0, round(target_h * 0.45, 1)))
-    return "Sarabun", default_size, (0.0, 0.0, 0.0), "center"
+    return "sarabun", default_size, (0.0, 0.0, 0.0), "center"
 
 
 def set_table_cell_text(
@@ -681,11 +683,14 @@ def set_table_cell_text(
     r0: int,
     c0: int,
     text: str,
+    fontname: str | None = None,
     fontsize: float | None = None,
     align: str | None = None,
+    valign: str | None = None,
     color: str | None = None,
+    underline: bool = False,
 ) -> dict:
-    """พิมพ์หรือแก้ไขข้อความในเซลล์ตารางที่เลือก (v1.49.0) โดยสืบทอดฟอนต์/สี/การจัดวางจากคอลัมน์เดิมอัตโนมัติ"""
+    """พิมพ์หรือแก้ไขข้อความในเซลล์ตารางที่เลือก (v1.49.0, รองรับเลือกฟอนต์/สไตล์/ขีดเส้นใต้/จัดวางแนวตั้ง v1.50.0)"""
     from app.models.schemas import Rect
     from app.services.edit_service.text import replace_text
 
@@ -708,9 +713,11 @@ def set_table_cell_text(
         xs[target["c"] + target["colspan"]],
         ys[target["r"] + target["rowspan"]],
     )
-    fontname, det_size, det_rgb, det_align = _detect_cell_text_style(page, xs, ys, cells, target)
+    det_font, det_size, det_rgb, det_align = _detect_cell_text_style(page, xs, ys, cells, target)
+    use_font = fontname.strip() if (fontname and fontname.strip()) else det_font
     use_size = float(fontsize) if fontsize else det_size
     use_align = align if align in ("left", "center", "right") else det_align
+    use_valign = valign if valign in ("top", "middle", "bottom") else "middle"
     if color and len(color) == 7 and color.startswith("#"):
         use_rgb = tuple(int(color[i : i + 2], 16) / 255.0 for i in (1, 3, 5))
     else:
@@ -742,11 +749,12 @@ def set_table_cell_text(
             Rect(x0=draw_rect.x0, y0=draw_rect.y0, x1=draw_rect.x1, y1=draw_rect.y1),
             clean_text,
             use_size,
-            fontname,
+            use_font,
             use_rgb,
             block_id=temp_id,
             align=use_align,
-            valign="middle",
+            valign=use_valign,
+            underline=bool(underline),
         )
         # ลบ temp_id ออกจากทะเบียนแก้ข้อความเดี่ยว เพื่อให้ข้อความนี้เป็นเนื้อหาของเซลล์ตารางโดยตรง
         page_edits.pop(temp_id, None)
@@ -762,6 +770,7 @@ def set_table_cell_text(
         "ys": ys,
         "cells": cells,
         "cell_texts": extract_cell_texts(page, xs, ys, cells),
+        "cell_styles": extract_cell_styles(page, xs, ys, cells),
     }
 
 

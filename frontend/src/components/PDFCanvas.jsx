@@ -814,7 +814,13 @@ const PDFCanvas = forwardRef(function PDFCanvas({
             cellSelection={tableEdit.cellSelection} expandMode={tableEdit.expandMode} zoom={zoom}
             pageSrc={pageImage ? pageImageSrc(pageImage) : ""} pageWidthPt={pageWidthPt} pageHeightPt={pageHeightPt}
             onSelect={tableEdit.select} onCellClick={tableEdit.selectCell} onUpdate={tableEdit.update}
-            cellText={tableEdit.cellText} onCellTextChange={tableEdit.setCellText}
+            cellText={tableEdit.cellText}
+            cellFontKey={tableEdit.cellFontKey}
+            cellFontSize={tableEdit.cellFontSize}
+            cellColorHex={tableEdit.cellColorHex}
+            cellTextAlign={tableEdit.cellTextAlign}
+            cellUnderline={tableEdit.cellUnderline}
+            onCellTextChange={tableEdit.setCellText}
             onSaveCellText={tableEdit.saveCellText}
             editingCellOnCanvas={tableEdit.editingCellOnCanvas}
             onSetEditingCellOnCanvas={tableEdit.setEditingCellOnCanvas} />

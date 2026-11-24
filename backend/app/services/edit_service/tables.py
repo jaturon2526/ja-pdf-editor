@@ -124,6 +124,44 @@ def extract_cell_texts(page: fitz.Page, xs: list[float], ys: list[float], cells:
     return out
 
 
+def extract_cell_styles(page: fitz.Page, xs: list[float], ys: list[float], cells: list[dict]) -> dict[str, dict]:
+    """อ่านฟอนต์/ขนาด/สี/การจัดวางปัจจุบันของแต่ละเซลล์ คืนเป็น map {'r,c': {fontname, fontsize, color, align, valign}}"""
+    tp = _content_page(page)
+    ftable = font_inspect.font_table(tp)
+    out: dict[str, dict] = {}
+    for c in cells:
+        crect = fitz.Rect(xs[c["c"]], ys[c["r"]], xs[c["c"] + c["colspan"]], ys[c["r"] + c["rowspan"]])
+        raw = tp.get_text("dict", clip=crect)
+        span_chars = []
+        bbox = fitz.Rect()
+        for blk in raw.get("blocks", []):
+            if blk.get("type") != 0:
+                continue
+            for line in blk.get("lines", []):
+                for s in line.get("spans", []):
+                    t = (s.get("text") or "").strip()
+                    if t:
+                        bbox |= fitz.Rect(s["bbox"]) & crect
+                        span_chars.append((s, len(t)))
+        if not span_chars:
+            continue
+        summary = font_inspect.summarize_spans(span_chars, ftable)
+        if not summary:
+            continue
+        main = summary[0]
+        fontname = fonts.match_pdf_font_name(main["name"], flag_bold=main["bold"], flag_italic=main["italic"])
+        h_mode = _align(bbox.x0 - crect.x0, crect.x1 - bbox.x1, crect.width)
+        v_mode = _align(bbox.y0 - crect.y0, crect.y1 - bbox.y1, crect.height)
+        out[f"{c['r']},{c['c']}"] = {
+            "fontname": fontname,
+            "fontsize": round(float(main["size"]), 1),
+            "color": main.get("color") or "#000000",
+            "align": {"start": "left", "center": "center", "end": "right"}[h_mode],
+            "valign": {"start": "top", "center": "middle", "end": "bottom"}[v_mode],
+        }
+    return out
+
+
 def page_tables(session: PDFSession, page: fitz.Page) -> list[dict]:
     known = _registered(session, page.number)
     found = [t for t in find_tables(page) if not any(_overlap(t["bbox"], k["bbox"]) for k in known)]
@@ -140,6 +178,7 @@ def get_tables(session: PDFSession, page_number: int) -> list[dict]:
     tables = page_tables(session, page)
     for t in tables:
         t["cell_texts"] = extract_cell_texts(page, t["xs"], t["ys"], t["cells"])
+        t["cell_styles"] = extract_cell_styles(page, t["xs"], t["ys"], t["cells"])
     return tables
 
 

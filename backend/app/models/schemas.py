@@ -527,14 +527,17 @@ class TableCreateRequest(BaseModel):
 
 
 class TableCellTextRequest(BaseModel):
-    """พิมพ์หรือแก้ไขข้อความในเซลล์ตารางที่เลือก (v1.49.0)"""
+    """พิมพ์หรือแก้ไขข้อความในเซลล์ตารางที่เลือก (v1.49.0, รองรับฟอนต์/สไตล์ v1.50.0)"""
     bbox: Rect
     r0: int = Field(..., ge=0)
     c0: int = Field(..., ge=0)
     text: str = Field(default="", max_length=2000)
-    fontsize: Optional[float] = Field(default=None, ge=4, le=72)
+    fontname: Optional[str] = Field(default=None, max_length=100)
+    fontsize: Optional[float] = Field(default=None, ge=4, le=96)
     align: Optional[Literal["left", "center", "right"]] = None
+    valign: Optional[Literal["top", "middle", "bottom"]] = None
     color: Optional[str] = Field(default=None, max_length=16)
+    underline: bool = False
 
 
 class BarcodeObjectEditRequest(BaseModel):

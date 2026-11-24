@@ -52,6 +52,23 @@ def test_delete_image_keeps_text_and_background_scan(client, make_user, upload):
     # โลโก้มองไม่เห็นแล้ว: พิกเซลกลางโลโก้ไม่ใช่สีแดง
     pix = out[0].get_pixmap(clip=fitz.Rect(150, 150, 151, 151))
     assert pix.pixel(0, 0)[:3] != (255, 0, 0)
+    # หลังลบแล้ว GET /images ต้องไม่เหลือกรอบรูปโลโก้ค้างอยู่ (ทั้งก่อนและหลังบันทึก/เปิดใหม่)
+    imgs_after = client.get(f"/edit/{sid}/page/0/images", headers=h).json()
+    assert not any(abs(i["rect"]["x0"] - 72) < 1 for i in imgs_after)
+    sid2 = upload(h, client.get(f"/pdf/{sid}/download", headers=h).content, name="reopen.pdf")
+    imgs_reopen = client.get(f"/edit/{sid2}/page/0/images", headers=h).json()
+    assert not any(abs(i["rect"]["x0"] - 72) < 1 for i in imgs_reopen)
+
+
+def test_get_images_filters_legacy_1x1_transparent_placeholder(client, make_user, upload):
+    """ไฟล์ที่เคยลบรูปด้วย page.delete_image() (เหลือภาพโปร่งใส 1×1) ต้องไม่โผล่เป็นกรอบรูปให้เลือก"""
+    d = fitz.open()
+    p = d.new_page()
+    xref = p.insert_image(fitz.Rect(72, 72, 172, 172), stream=_png())
+    p.delete_image(xref)
+    _, h = make_user()
+    sid = upload(h, d.tobytes(), name="legacy-deleted.pdf")
+    assert client.get(f"/edit/{sid}/page/0/images", headers=h).json() == []
 
 
 def test_move_image_keeps_text(client, make_user, upload):
@@ -67,6 +84,10 @@ def test_move_image_keeps_text(client, make_user, upload):
     assert out[0].get_pixmap(clip=fitz.Rect(100, 300, 101, 301)).pixel(0, 0)[:3] == (255, 0, 0)
     assert out[0].get_pixmap(clip=fitz.Rect(150, 150, 151, 151)).pixel(0, 0)[:3] != (255, 0, 0)
     assert not Path("debug_reposition.png").exists()
+    # หลังย้ายรูป ต้องเหลือเฉพาะกรอบที่ตำแหน่งใหม่ ไม่มีกรอบผีค้างที่ตำแหน่งเดิม
+    imgs_after = client.get(f"/edit/{sid}/page/0/images", headers=h).json()
+    assert len(imgs_after) == 1
+    assert abs(imgs_after[0]["rect"]["y0"] - 240) < 1
 
 
 def test_delete_shared_image_only_on_this_page(client, make_user, upload):
