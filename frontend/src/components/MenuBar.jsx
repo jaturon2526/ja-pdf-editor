@@ -75,7 +75,10 @@ export default function MenuBar({ menus, fileName }) {
                         item.onClick && item.onClick();
                       }}
                     >
-                      <span className="text-slate-700 group-hover:text-slate-900 group-disabled:text-slate-400">{item.label}{item.hint && <span className="block text-[11px] leading-tight text-slate-400">{item.hint}</span>}</span>
+                      <span className="text-slate-700 group-hover:text-slate-900 group-disabled:text-slate-400">
+                        <span className="block leading-snug">{item.label}</span>
+                        {item.hint && <span className="block text-[11px] leading-tight text-slate-400">{item.hint}</span>}
+                      </span>
                     </button>
                   )
                 )}
@@ -111,23 +114,25 @@ export default function MenuBar({ menus, fileName }) {
               {menu.label}
             </button>
             {openIndex === idx && (
-              <div className="absolute top-full left-0 mt-1 min-w-[220px] bg-white text-slate-800 border border-slate-200 rounded shadow-xl py-1 z-50">
+              <div className="absolute top-full left-0 mt-1 min-w-[235px] max-h-[calc(100vh-56px)] overflow-y-auto overscroll-contain bg-white text-slate-800 border border-slate-200 rounded shadow-xl py-1 z-50">
                 {menu.items.map((item, i) =>
                   item.divider ? (
                     <div className="h-px bg-slate-200 my-1 mx-2" key={`div-${i}`} />
                   ) : (
                     <button
                       key={item.label}
-                      className="w-full text-left px-4 py-1.5 text-[13px] hover:bg-sky-50 focus:bg-sky-50 focus:outline-none flex justify-between items-center group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                      className={`w-full text-left px-3.5 ${item.hint ? "py-1" : "py-1.5"} text-[13px] hover:bg-sky-50 focus:bg-sky-50 focus:outline-none flex justify-between items-center gap-3 group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent`}
                       disabled={item.disabled}
-                      onClick={() => { 
-                        
+                      onClick={() => {
                         setOpenIndex(null);
                         item.onClick && item.onClick();
                       }}
                     >
-                      <span className="text-slate-700 group-hover:text-slate-900 group-disabled:text-slate-400">{item.label}{item.hint && <span className="block text-[11px] leading-tight text-slate-400">{item.hint}</span>}</span>
-                      {item.shortcut && <span className="text-slate-400 text-xs tracking-wider">{formatShortcut(item.shortcut)}</span>}
+                      <span className="text-slate-700 group-hover:text-slate-900 group-disabled:text-slate-400">
+                        <span className="block leading-snug">{item.label}</span>
+                        {item.hint && <span className="block text-[11px] leading-tight text-slate-400">{item.hint}</span>}
+                      </span>
+                      {item.shortcut && <span className="text-slate-400 text-xs tracking-wider shrink-0">{formatShortcut(item.shortcut)}</span>}
                     </button>
                   )
                 )}
