@@ -57,8 +57,12 @@ fail=0
 for f in .env .env.prod scripts/deploy.env backend/.env frontend/.env; do
   if [ -e "$WORK/$f" ]; then echo "✗ พบไฟล์ค่าตั้งจริง: $f"; fail=1; fi
 done
-if find "$WORK" -type f \( -name '*.pem' -o -name '*.key' -o -name 'id_rsa*' -o -name '*.pfx' \) | grep -q .; then
-  echo "✗ พบไฟล์คีย์/ใบรับรอง:"; find "$WORK" -type f \( -name '*.pem' -o -name '*.key' -o -name 'id_rsa*' -o -name '*.pfx' \); fail=1
+bad_keys="$(find "$WORK" -type f \( -name '*.pem' -o -name '*.key' -o -name 'id_rsa*' -o -name '*.pfx' \) ! -path "$WORK/backend/app/assets/trusted_certs/*.pem")"
+if [ -n "$bad_keys" ]; then
+  echo "✗ พบไฟล์คีย์/ใบรับรอง:"; echo "$bad_keys"; fail=1
+fi
+if [ -d "$WORK/backend/app/assets/trusted_certs" ] && grep -rIl "PRIVATE KEY" "$WORK/backend/app/assets/trusted_certs" >/dev/null 2>&1; then
+  echo "✗ พบ PRIVATE KEY ใน backend/app/assets/trusted_certs/"; fail=1
 fi
 if [ -s "$BLOCKLIST" ]; then
   # -F ตรงตัวอักษร, -i ไม่สนตัวพิมพ์, -I ข้ามไฟล์ไบนารี (PDF ที่บีบอัดตรวจไม่ได้ — ตรวจเฉพาะ fixture ที่สร้างจากสคริปต์)

@@ -3,57 +3,90 @@ from __future__ import annotations
 
 import hashlib
 import io
+import logging
+import re
 from datetime import datetime, timezone
+from pathlib import Path
 import pikepdf
 from app.core.session import PDFSession
 from app.services.pdf_service.core import get_encryption_state, require_unlocked
 
-import logging
-
 logger = logging.getLogger("pdf_service")
 
 
-_TRUST_CONTEXT = None
+_TRUST_CERTS = None
+_BUNDLED_TRUSTED_CERTS_DIR = Path(__file__).resolve().parent.parent.parent / "assets" / "trusted_certs"
+_CUSTOM_TRUSTED_CERTS_DIR = Path("/data/trusted_certs")
+_PEM_CERT_RE = re.compile(rb"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", re.DOTALL)
+_CERT_EXTS = (".pem", ".crt", ".cer", ".der")
+
+
+def _parse_certificates(raw: bytes) -> list:
+    """อ่านใบรับรอง X.509 จากไบต์ PEM (รองรับหลายใบต่อไฟล์) หรือ DER เดี่ยว"""
+    from asn1crypto.pem import unarmor
+    from asn1crypto.x509 import Certificate
+
+    parsed = []
+    if b"-----BEGIN CERTIFICATE-----" in raw:
+        for match in _PEM_CERT_RE.finditer(raw):
+            type_name, _headers, der_bytes = unarmor(match.group(0))
+            if type_name == "CERTIFICATE":
+                parsed.append(Certificate.load(der_bytes))
+        return parsed
+    if raw:
+        parsed.append(Certificate.load(raw))
+    return parsed
+
+
+def _load_trusted_dir(directory: Path) -> tuple[list, list]:
+    """โหลดใบรับรองสาธารณะจากโฟลเดอร์ โดยแยก Root CA (self-signed) ออกจาก Intermediate CA (other_certs)"""
+    roots: list = []
+    intermediates: list = []
+    if not directory.exists() or not directory.is_dir():
+        return roots, intermediates
+    for cert_file in sorted(directory.iterdir()):
+        if not cert_file.is_file() or cert_file.suffix.lower() not in _CERT_EXTS:
+            continue
+        try:
+            for cert in _parse_certificates(cert_file.read_bytes()):
+                if cert.self_signed != "no":
+                    roots.append(cert)
+                else:
+                    intermediates.append(cert)
+        except Exception as exc:
+            logger.warning("ข้ามไฟล์ใบรับรองที่ไม่ถูกต้อง %s: %s", cert_file.name, exc)
+    return roots, intermediates
 
 
 def _get_trust_context():
-    global _TRUST_CONTEXT
-    if _TRUST_CONTEXT is not None:
-        return _TRUST_CONTEXT
+    global _TRUST_CERTS
     try:
-        import certifi
-        import re
-        from pathlib import Path
-        from asn1crypto.pem import unarmor
-        from asn1crypto.x509 import Certificate
         from pyhanko_certvalidator.context import ValidationContext
-        
-        certs = []
-        
-        # 1. Load Standard Global Roots (Mozilla Bundle via certifi)
-        with open(certifi.where(), "rb") as f:
-            pem_data = f.read()
-        for match in re.finditer(b"(?s)-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", pem_data):
-            type_name, headers, der_bytes = unarmor(match.group(0))
-            if type_name == "CERTIFICATE":
-                certs.append(Certificate.load(der_bytes))
-                
-        # 2. Load Custom Local Roots (e.g. Thai CAs) from /data/trusted_certs
-        custom_certs_dir = Path("/data/trusted_certs")
-        if custom_certs_dir.exists():
-            for cert_file in custom_certs_dir.glob("*.pem"):
-                with open(cert_file, "rb") as f:
-                    custom_pem = f.read()
-                for match in re.finditer(b"(?s)-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", custom_pem):
-                    type_name, headers, der_bytes = unarmor(match.group(0))
-                    if type_name == "CERTIFICATE":
-                        certs.append(Certificate.load(der_bytes))
-                        
-        _TRUST_CONTEXT = ValidationContext(trust_roots=certs)
+
+        if _TRUST_CERTS is None:
+            import certifi
+
+            # 1. Load Standard Global Roots (Mozilla Bundle via certifi)
+            roots = _parse_certificates(Path(certifi.where()).read_bytes())
+            intermediates: list = []
+
+            # 2. Load Bundled Thai CA Roots/Intermediates (e.g. Thailand NRCA + Thai Digital ID CA G3)
+            # 3. Load Custom Local Roots/Intermediates (e.g. internal org CAs) from /data/trusted_certs
+            for cert_dir in (_BUNDLED_TRUSTED_CERTS_DIR, _CUSTOM_TRUSTED_CERTS_DIR):
+                dir_roots, dir_inter = _load_trusted_dir(cert_dir)
+                roots.extend(dir_roots)
+                intermediates.extend(dir_inter)
+
+            _TRUST_CERTS = (roots, intermediates)
+
+        if _TRUST_CERTS is False:
+            return None
+        roots, intermediates = _TRUST_CERTS
+        return ValidationContext(trust_roots=roots, other_certs=intermediates, allow_fetching=False)
     except Exception as e:
-        logger.warning(f"Failed to load certifi roots: {e}")
-        _TRUST_CONTEXT = False
-    return _TRUST_CONTEXT if _TRUST_CONTEXT is not False else None
+        logger.warning("Failed to load CA trust roots: %s", e)
+        _TRUST_CERTS = False
+        return None
 
 
 # ขนาดกระดาษมาตรฐานที่รู้จัก (หน่วย point, 72pt = 1 นิ้ว) ใช้ทาย label ให้เหมือน Acrobat (เช่น "A4",
@@ -194,7 +227,12 @@ def get_document_properties(session: PDFSession) -> dict:
     doc = require_unlocked(session)
     meta = doc.metadata or {}
 
-    raw_bytes = doc.tobytes()
+    # ใช้ไบต์จริงจาก working_path เมื่อเอกสารยังไม่ถูกแก้ เพื่อรักษา ByteRange ของลายเซ็นดิจิทัล
+    # (doc.tobytes() เขียนโครงสร้าง PDF ใหม่จน pyHanko เห็น intact=False และ trusted=False เสมอ)
+    if not getattr(session, "_doc_dirty", False) and session.working_path and session.working_path.exists():
+        raw_bytes = session.working_path.read_bytes()
+    else:
+        raw_bytes = doc.tobytes()
     file_size_bytes = len(raw_bytes)
 
     page_count = doc.page_count
