@@ -32,7 +32,12 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
   const [currentPage, setCurrentPage] = useState(0);
   const currentPageRef = useRef(0);
   currentPageRef.current = currentPage;
-  const [pageImage, setPageImage] = useState(null);
+  const [pageImage, setPageImageRaw] = useState(null);
+  const [pageImagePage, setPageImagePage] = useState(0);
+  const setPageImage = useCallback((img, pageIdx = null) => {
+    setPageImageRaw(img);
+    if (img !== null) setPageImagePage(pageIdx ?? currentPageRef.current);
+  }, []);
   const [pageLoading, setPageLoading] = useState(false);
   const [thumbnails, setThumbnails] = useState({});
   const [bookmarks, setBookmarks] = useState([]);
@@ -40,18 +45,25 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
 
   // ---------- โหลดรูปหน้าปัจจุบันทุกครั้งที่ page/zoom/session เปลี่ยน ----------
   useEffect(() => {
-    if (!session) return;
-    let cancelled = false;
+    if (!session) return undefined;
+    const ctrl = new AbortController();
     setPageLoading(true);
     api
-      .renderPage(session.sessionId, currentPage, zoom)
+      .renderPage(session.sessionId, currentPage, zoom, { signal: ctrl.signal })
       .then((data) => {
-        if (!cancelled) setPageImage(data.image_base64);
+        if (!ctrl.signal.aborted) {
+          setPageImageRaw(data.image_base64);
+          setPageImagePage(currentPage);
+        }
       })
-      .catch((err) => setStatusMessage(`โหลดหน้าไม่สำเร็จ: ${err.message}`))
-      .finally(() => !cancelled && setPageLoading(false));
+      .catch((err) => {
+        if (!ctrl.signal.aborted) setStatusMessage(`โหลดหน้าไม่สำเร็จ: ${err.message}`);
+      })
+      .finally(() => {
+        if (!ctrl.signal.aborted) setPageLoading(false);
+      });
     return () => {
-      cancelled = true;
+      ctrl.abort();
     };
   }, [session, currentPage, zoom]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -354,6 +366,7 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
     currentPage,
     setCurrentPage,
     pageImage,
+    pageImagePage,
     setPageImage,
     pageLoading,
     thumbnails,

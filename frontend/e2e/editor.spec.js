@@ -8,8 +8,8 @@ test.describe("Editor", () => {
   });
 
   test("หมุนหน้าแล้ว undo/redo ได้", async ({ page }) => {
-    const thumbs = page.locator("img[src^='data:image/']");
-    await expect(thumbs).toHaveCount(4); // หน้าหลัก 1 + thumbnail 3
+    const thumbs = page.getByTestId("page-sidebar").locator("img[src^='data:image/']");
+    await expect(thumbs).toHaveCount(3); // thumbnail 3 หน้าในแถบด้านซ้าย
     await thumbs.nth(1).click({ button: "right" });
     await page.getByRole("menuitem", { name: /^หมุนขวา/ }).click();
     await expect(page.getByText("หมุนหน้าสำเร็จ")).toBeVisible();
@@ -51,7 +51,7 @@ test.describe("Editor", () => {
   });
 
   test("เอกสารที่มีหน้าแนวนอนให้เลือกพิมพ์ตามที่เห็นบนจอ", async ({ page }) => {
-    const thumbs = page.locator("img[src^='data:image/']");
+    const thumbs = page.getByTestId("page-sidebar").locator("img[src^='data:image/']");
     await thumbs.nth(1).click({ button: "right" });
     await page.getByRole("menuitem", { name: /^หมุนซ้าย/ }).click();
     await expect(page.getByText("หมุนหน้าสำเร็จ")).toBeVisible();

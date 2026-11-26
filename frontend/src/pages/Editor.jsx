@@ -355,6 +355,7 @@ export default function Editor() {
     session,
     currentPage,
     pageImage: sessionHook.pageImage,
+    pageImagePage: sessionHook.pageImagePage,
     zoom,
     canvasAreaRef,
     canAutoSwitchPage,
@@ -997,6 +998,8 @@ export default function Editor() {
           continuousMode={continuousPages.active}
           continuousLayouts={continuousPages.layouts}
           continuousPages={continuousPages.cachedPages}
+          thumbnails={sessionHook.thumbnails}
+          pageImagePage={sessionHook.pageImagePage}
           currentPage={currentPage}
           onSelectPage={sessionHook.goToPage}
           pageWidthPt={session?.pageSizes?.[currentPage]?.[0] || 1}

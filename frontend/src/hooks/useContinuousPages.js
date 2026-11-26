@@ -10,7 +10,7 @@ import {
   findVisiblePageRange,
 } from "../utils/continuousScroll.js";
 
-const FETCH_DEBOUNCE_MS = 120;
+const FETCH_DEBOUNCE_MS = 60;
 const MAX_CONCURRENT_FETCHES = 2;
 const MAX_CACHED_PAGES = 15;
 
@@ -19,6 +19,7 @@ export function useContinuousPages({
   session,
   currentPage,
   pageImage,
+  pageImagePage,
   zoom,
   canvasAreaRef,
   canAutoSwitchPage = true,
@@ -69,12 +70,14 @@ export function useContinuousPages({
     invalidate();
   }, [active, session?.sessionId, session?.pageCount, zoom, invalidate]);
 
-  // ซิงค์ภาพของ currentPage ที่ useSession โหลดมาแล้วเข้าแคชทันที (ไม่ยิง API ซ้ำ)
+  // ซิงค์ภาพของ currentPage ที่ useSession โหลดมาแล้วเข้าแคชทันที (เฉพาะเมื่อ pageImagePage ตรงกับ currentPage
+  // ป้องกันเอาภาพหน้าก่อนหน้าไปทับช่องหน้าใหม่ตอนกำลังเลื่อนผ่านรอยต่อหน้า)
   useEffect(() => {
-    if (!active || !pageImage) return;
+    if (!active || !pageImage || pageImagePage !== currentPage) return;
+    if (cacheRef.current.get(currentPage) === pageImage) return;
     cacheRef.current.set(currentPage, pageImage);
     setCachedPages(cacheRef.current.toObject());
-  }, [active, currentPage, pageImage]);
+  }, [active, currentPage, pageImage, pageImagePage]);
 
   // เลื่อน scroll ไปที่หน้าเป้าหมายเมื่อ currentPage เปลี่ยนจากปุ่ม/Sidebar/Find (ไม่ใช่จากการเลื่อนเองหรือการซูม)
   useEffect(() => {

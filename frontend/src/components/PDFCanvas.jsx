@@ -121,6 +121,8 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   continuousMode = false,
   continuousLayouts = [],
   continuousPages = {},
+  thumbnails = {},
+  pageImagePage = 0,
   currentPage = 0,
   onSelectPage,
 }, canvasAreaRef) {
@@ -697,34 +699,8 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   const knownImageXrefKeys = new Set((images || []).map((img) => img.id || `img-${img.xref}`));
   const newlyInsertedImageKeys = [...pendingImageKeys].filter((key) => !knownImageXrefKeys.has(key));
 
-  const activePageImage = continuousMode ? (continuousPages?.[currentPage] || pageImage) : pageImage;
-  const activeSheet = (
-    <div role="presentation"
-      className={`page-sheet ${activeTool ? `tool-${activeTool}` : ""}`}
-      onClick={handleClick}
-      onPointerDown={handlePageMouseDown}
-      ref={pageSheetRef}
-      // ยังไม่มีรูปหน้า (เปิดไฟล์ครั้งแรก): กันพื้นที่เท่าขนาดหน้าไว้ก่อน — ไม่งั้นกรอบกว้างเกือบ 0 ข้อความ
-      // "กำลังโหลดหน้า…" ถูกบีบเป็นบรรทัดละตัวอักษร และหน้าไม่กระโดดตอนรูปมา
-      style={!activePageImage ? {
-        width: (pageWidthPt > 1 ? pageWidthPt : 595) * zoom,
-        height: (pageHeightPt > 1 ? pageHeightPt : 842) * zoom,
-        maxWidth: "100%",
-      } : undefined}
-    >
-      {loading && !activePageImage && <div className="page-loading">กำลังโหลดหน้า…</div>}
-      {activePageImage && (
-        <img
-          ref={imgRef}
-          src={pageImageSrc(activePageImage)}
-          alt="หน้าเอกสารปัจจุบัน"
-          className="page-image"
-          // ขนาดบนจอ = ขนาดหน้า × ซูม (รูปเรนเดอร์ละเอียดกว่านั้นตามความละเอียดจอ — ไม่เบลอบนมือถือ/จอ Retina)
-          // ความสูงตามสัดส่วนรูปจริง · ซูมเปลี่ยนแล้วขนาดเปลี่ยนทันที ไม่ต้องรอรูปใหม่
-          style={pageWidthPt > 1 ? { width: pageWidthPt * zoom, height: "auto" } : undefined}
-          draggable={false}
-        />
-      )}
+  const activeOverlays = (
+    <>
 
         {/* ผลค้นหาข้อความ (Ctrl+F, v1.42.0) — จุดที่เลือกสีส้ม จุดอื่นสีเหลืองอ่อน */}
         {findMatches?.flatMap((m) =>
@@ -1290,6 +1266,33 @@ const PDFCanvas = forwardRef(function PDFCanvas({
             onCancel={onCancelSignature}
           />
         )}
+    </>
+  );
+
+  const singleSheet = (
+    <div role="presentation"
+      className={`page-sheet ${activeTool ? `tool-${activeTool}` : ""}`}
+      onClick={handleClick}
+      onPointerDown={handlePageMouseDown}
+      ref={pageSheetRef}
+      style={!pageImage ? {
+        width: (pageWidthPt > 1 ? pageWidthPt : 595) * zoom,
+        height: (pageHeightPt > 1 ? pageHeightPt : 842) * zoom,
+        maxWidth: "100%",
+      } : undefined}
+    >
+      {loading && <div className="page-loading">กำลังโหลดหน้า…</div>}
+      {pageImage && (
+        <img
+          ref={imgRef}
+          src={pageImageSrc(pageImage)}
+          alt="หน้าเอกสารปัจจุบัน"
+          className="page-image"
+          style={pageWidthPt > 1 ? { width: pageWidthPt * zoom, height: "auto" } : undefined}
+          draggable={false}
+        />
+      )}
+      {activeOverlays}
     </div>
   );
 
@@ -1340,36 +1343,49 @@ const PDFCanvas = forwardRef(function PDFCanvas({
       {continuousMode && continuousLayouts.length > 1 ? (
         <div className="continuous-pages-stack" data-testid="continuous-pages-stack">
           {continuousLayouts.map((layout) => {
-            if (layout.index === currentPage) {
-              return <React.Fragment key={layout.index}>{activeSheet}</React.Fragment>;
-            }
-            const src = continuousPages?.[layout.index];
+            const isActive = layout.index === currentPage;
+            const activeFallback = isActive && pageImagePage === currentPage ? pageImage : null;
+            const fullImg = continuousPages?.[layout.index] || activeFallback;
+            const thumbImg = thumbnails?.[layout.index] || null;
+            const displaySrc = fullImg || thumbImg;
+            const toolClass = activeTool ? `tool-${activeTool}` : "";
+            const sheetClass = isActive ? `page-sheet ${toolClass}`.trim() : "continuous-page-slot";
             return (
               <div
                 key={layout.index}
                 role="presentation"
                 data-page-index={layout.index}
-                className="continuous-page-slot"
+                ref={isActive ? pageSheetRef : undefined}
+                className={sheetClass}
                 style={{ width: layout.width, height: layout.height }}
-                onClick={() => onSelectPage?.(layout.index)}
+                onClick={isActive ? handleClick : () => onSelectPage?.(layout.index)}
+                onPointerDown={isActive ? handlePageMouseDown : undefined}
               >
-                {src ? (
+                {isActive && loading && !displaySrc && <div className="page-loading">กำลังโหลดหน้า…</div>}
+                {displaySrc ? (
                   <img
-                    src={pageImageSrc(src)}
-                    alt={`หน้า ${layout.index + 1}`}
-                    className="continuous-page-img"
-                    style={{ width: layout.width, height: layout.height }}
+                    ref={isActive ? imgRef : undefined}
+                    src={pageImageSrc(displaySrc)}
+                    alt={isActive ? "หน้าเอกสารปัจจุบัน" : `หน้า ${layout.index + 1}`}
+                    className={isActive ? "page-image" : "continuous-page-img"}
+                    style={{
+                      width: layout.width,
+                      height: layout.height,
+                      filter: fullImg ? undefined : "blur(1.5px)",
+                      transition: "filter 120ms ease-out",
+                    }}
                     draggable={false}
                   />
                 ) : (
                   <div className="continuous-page-placeholder">หน้า {layout.index + 1}</div>
                 )}
+                {isActive && activeOverlays}
               </div>
             );
           })}
         </div>
       ) : (
-        activeSheet
+        singleSheet
       )}
     </div>
   );
