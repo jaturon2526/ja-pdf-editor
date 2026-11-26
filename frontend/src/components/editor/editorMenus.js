@@ -28,6 +28,8 @@ export function buildEditorMenus({
   zoomIn,
   zoomOut,
   setZoom,
+  continuousMode,
+  toggleContinuousMode,
   docPropsHook,
   signatureHook,
   openRedactSearch,
@@ -88,6 +90,12 @@ export function buildEditorMenus({
         {
           label: isSidebarOpen ? "ซ่อนแผงด้านข้าง (Sidebar)" : "แสดงแผงด้านข้าง (Sidebar)",
           onClick: () => setIsSidebarOpen(!isSidebarOpen),
+        },
+        {
+          label: continuousMode ? "✓ เลื่อนหน้าต่อเนื่อง" : "เลื่อนหน้าต่อเนื่อง",
+          hint: continuousMode ? "คลิกเพื่อสลับเป็นแสดงทีละหน้า" : "เลื่อนดูทุกหน้าต่อเนื่องแนวตั้ง",
+          onClick: toggleContinuousMode,
+          disabled: noDoc,
         },
         { divider: true },
         { label: "ขยาย", shortcut: "Ctrl++", onClick: zoomIn, disabled: noDoc },

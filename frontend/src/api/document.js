@@ -55,13 +55,14 @@ export function renderPixelRatio() {
   return Math.min(2, Math.max(1, dpr));
 }
 
-export async function renderPage(sessionId, pageNumber, zoom) {
-  // ป้องกันเบราว์เซอร์แคชรูปหน้าเดิม ทำให้หน้าจอไม่ยอมอัปเดตเวลามีการแก้ไข annotation 
+export async function renderPage(sessionId, pageNumber, zoom, { signal } = {}) {
+  // ป้องกันเบราว์เซอร์แคชรูปหน้าเดิม ทำให้หน้าจอไม่ยอมอัปเดตเวลามีการแก้ไข annotation
   const ts = new Date().getTime();
   // เรนเดอร์ละเอียดตามจอ แต่แสดงที่ขนาด หน้า×ซูม (PDFCanvas ตั้งความกว้างรูปเอง) — เดิมตัวหนังสือเบลอบนมือถือ
   const renderZoom = Math.round(Math.min(8, zoom * renderPixelRatio()) * 1000) / 1000;
   const res = await fetchWithAuth(`${BASE}/pdf/${sessionId}/page/${pageNumber}?zoom=${renderZoom}&_t=${ts}`, {
     cache: "no-store",
+    signal,
     headers: {
       "Pragma": "no-cache",
       "Cache-Control": "no-cache"

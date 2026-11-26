@@ -118,6 +118,11 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   canPasteImage = false,
   cropPage,
   formFill,
+  continuousMode = false,
+  continuousLayouts = [],
+  continuousPages = {},
+  currentPage = 0,
+  onSelectPage,
 }, canvasAreaRef) {
   const imgRef = useRef(null);
   const pageSheetRef = useRef(null);
@@ -159,6 +164,10 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   useEffect(() => {
     onNavigatePageRef.current = onNavigatePage;
   }, [onNavigatePage]);
+  const continuousModeRef = useRef(continuousMode);
+  useEffect(() => {
+    continuousModeRef.current = continuousMode;
+  }, [continuousMode]);
 
   // เพิ่งเปิดโหมดลากวางตำแหน่งลายเซ็น (draftSignature เปลี่ยนจาก null -> มีค่า) — ตำแหน่งเริ่มต้นอยู่
   // มุมล่างขวาของหน้าเอกสารเสมอ (ดู App.jsx defaultSignatureRectPt) ซึ่งอาจอยู่นอกจอที่กำลังเลื่อนดู
@@ -193,6 +202,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
     if (!el) return undefined;
 
     function handleWheel(e) {
+      if (continuousModeRef.current) return; // โหมดเลื่อนหน้าต่อเนื่อง: ปล่อยให้เบราว์เซอร์เลื่อนแนวตั้งตามธรรมชาติ
       if (editModeRef.current || wheelCooldownRef.current) return; // ปิดใช้งานระหว่างแก้ไขข้อความ/รูปภาพ กันสลับหน้าหนีดราฟต์ที่ยังไม่บันทึกโดยไม่ตั้งใจ
       if (isPanningRef.current || dragSelectRef.current) return; // กำลังลากมือจับเลื่อนจอ/วาง annotation อยู่ ไม่ยุ่ง
       if (e.deltaY === 0 || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return; // สนใจแค่การเลื่อนแนวตั้งเป็นหลัก
@@ -687,76 +697,34 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   const knownImageXrefKeys = new Set((images || []).map((img) => img.id || `img-${img.xref}`));
   const newlyInsertedImageKeys = [...pendingImageKeys].filter((key) => !knownImageXrefKeys.has(key));
 
-  return (
+  const activePageImage = continuousMode ? (continuousPages?.[currentPage] || pageImage) : pageImage;
+  const activeSheet = (
     <div role="presentation"
-      ref={canvasAreaRef}
-      className={`canvas-area ${activeTool === "hand" ? "tool-hand" : ""} ${isPanning ? "panning" : ""} ${imageDragOver ? "image-drop-target" : ""}`}
-      onDragOver={handleDragOver}
-      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setImageDragOver(false); }}
-      onDrop={handleDrop}
-      onPointerDown={handlePanMouseDown}
-      onTouchStart={handleTouchStart}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        setContextMenu({ x: e.clientX, y: e.clientY });
-      }}
+      className={`page-sheet ${activeTool ? `tool-${activeTool}` : ""}`}
+      onClick={handleClick}
+      onPointerDown={handlePageMouseDown}
+      ref={pageSheetRef}
+      // ยังไม่มีรูปหน้า (เปิดไฟล์ครั้งแรก): กันพื้นที่เท่าขนาดหน้าไว้ก่อน — ไม่งั้นกรอบกว้างเกือบ 0 ข้อความ
+      // "กำลังโหลดหน้า…" ถูกบีบเป็นบรรทัดละตัวอักษร และหน้าไม่กระโดดตอนรูปมา
+      style={!activePageImage ? {
+        width: (pageWidthPt > 1 ? pageWidthPt : 595) * zoom,
+        height: (pageHeightPt > 1 ? pageHeightPt : 842) * zoom,
+        maxWidth: "100%",
+      } : undefined}
     >
-      {showLoupe && (() => {
-        // อยู่เหนือนิ้ว (นิ้วบังด้านล่างอยู่แล้ว) — ชิดขอบบนจอแล้วย้ายไปข้างนิ้วแทน
-        const vw = window.innerWidth;
-        let top = loupe.y - LOUPE - LOUPE_GAP;
-        let left = loupe.x - LOUPE / 2;
-        if (top < 8) {
-          top = Math.max(8, loupe.y - LOUPE / 2);
-          left = loupe.x + LOUPE_GAP + LOUPE <= vw - 8 ? loupe.x + LOUPE_GAP : loupe.x - LOUPE_GAP - LOUPE;
-        }
-        left = Math.min(vw - LOUPE - 8, Math.max(8, left));
-        return (
-          // แว่นขยายเป็นภาพประกอบล้วน (โปรแกรมอ่านหน้าจอไม่ต้องอ่าน) — aria-hidden ที่ตัวห่อ ไม่ใส่ role ให้ canvas
-          <div aria-hidden="true" className="fixed z-[150] pointer-events-none" style={{ left, top }}>
-            <canvas ref={loupeCanvasRef} data-testid="text-loupe"
-              className="block rounded-full border-2 border-white shadow-xl"
-              style={{ width: LOUPE, height: LOUPE }} />
-          </div>
-        );
-      })()}
-      {contextMenu && (
-        <CanvasContextMenu
-          position={contextMenu}
-          onSelectTool={onSelectTool}
-          onRotateLeft={onRotateLeft}
-          onRotateRight={onRotateRight}
-          onZoomIn={onZoomIn}
-          onZoomOut={onZoomOut}
-          onZoomOriginal={onZoomOriginal}
+      {loading && !activePageImage && <div className="page-loading">กำลังโหลดหน้า…</div>}
+      {activePageImage && (
+        <img
+          ref={imgRef}
+          src={pageImageSrc(activePageImage)}
+          alt="หน้าเอกสารปัจจุบัน"
+          className="page-image"
+          // ขนาดบนจอ = ขนาดหน้า × ซูม (รูปเรนเดอร์ละเอียดกว่านั้นตามความละเอียดจอ — ไม่เบลอบนมือถือ/จอ Retina)
+          // ความสูงตามสัดส่วนรูปจริง · ซูมเปลี่ยนแล้วขนาดเปลี่ยนทันที ไม่ต้องรอรูปใหม่
+          style={pageWidthPt > 1 ? { width: pageWidthPt * zoom, height: "auto" } : undefined}
+          draggable={false}
         />
       )}
-      <div role="presentation"
-        className={`page-sheet ${activeTool ? `tool-${activeTool}` : ""}`}
-        onClick={handleClick}
-        onPointerDown={handlePageMouseDown}
-        ref={pageSheetRef}
-        // ยังไม่มีรูปหน้า (เปิดไฟล์ครั้งแรก): กันพื้นที่เท่าขนาดหน้าไว้ก่อน — ไม่งั้นกรอบกว้างเกือบ 0 ข้อความ
-        // "กำลังโหลดหน้า…" ถูกบีบเป็นบรรทัดละตัวอักษร และหน้าไม่กระโดดตอนรูปมา
-        style={!pageImage ? {
-          width: (pageWidthPt > 1 ? pageWidthPt : 595) * zoom,
-          height: (pageHeightPt > 1 ? pageHeightPt : 842) * zoom,
-          maxWidth: "100%",
-        } : undefined}
-      >
-        {loading && <div className="page-loading">กำลังโหลดหน้า…</div>}
-        {pageImage && (
-          <img
-            ref={imgRef}
-            src={pageImageSrc(pageImage)}
-            alt="หน้าเอกสารปัจจุบัน"
-            className="page-image"
-            // ขนาดบนจอ = ขนาดหน้า × ซูม (รูปเรนเดอร์ละเอียดกว่านั้นตามความละเอียดจอ — ไม่เบลอบนมือถือ/จอ Retina)
-            // ความสูงตามสัดส่วนรูปจริง · ซูมเปลี่ยนแล้วขนาดเปลี่ยนทันที ไม่ต้องรอรูปใหม่
-            style={pageWidthPt > 1 ? { width: pageWidthPt * zoom, height: "auto" } : undefined}
-            draggable={false}
-          />
-        )}
 
         {/* ผลค้นหาข้อความ (Ctrl+F, v1.42.0) — จุดที่เลือกสีส้ม จุดอื่นสีเหลืองอ่อน */}
         {findMatches?.flatMap((m) =>
@@ -1322,7 +1290,87 @@ const PDFCanvas = forwardRef(function PDFCanvas({
             onCancel={onCancelSignature}
           />
         )}
-      </div>
+    </div>
+  );
+
+  return (
+    <div role="presentation"
+      ref={canvasAreaRef}
+      className={`canvas-area ${activeTool === "hand" ? "tool-hand" : ""} ${isPanning ? "panning" : ""} ${imageDragOver ? "image-drop-target" : ""}`}
+      onDragOver={handleDragOver}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setImageDragOver(false); }}
+      onDrop={handleDrop}
+      onPointerDown={handlePanMouseDown}
+      onTouchStart={handleTouchStart}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setContextMenu({ x: e.clientX, y: e.clientY });
+      }}
+    >
+      {showLoupe && (() => {
+        // อยู่เหนือนิ้ว (นิ้วบังด้านล่างอยู่แล้ว) — ชิดขอบบนจอแล้วย้ายไปข้างนิ้วแทน
+        const vw = window.innerWidth;
+        let top = loupe.y - LOUPE - LOUPE_GAP;
+        let left = loupe.x - LOUPE / 2;
+        if (top < 8) {
+          top = Math.max(8, loupe.y - LOUPE / 2);
+          left = loupe.x + LOUPE_GAP + LOUPE <= vw - 8 ? loupe.x + LOUPE_GAP : loupe.x - LOUPE_GAP - LOUPE;
+        }
+        left = Math.min(vw - LOUPE - 8, Math.max(8, left));
+        return (
+          // แว่นขยายเป็นภาพประกอบล้วน (โปรแกรมอ่านหน้าจอไม่ต้องอ่าน) — aria-hidden ที่ตัวห่อ ไม่ใส่ role ให้ canvas
+          <div aria-hidden="true" className="fixed z-[150] pointer-events-none" style={{ left, top }}>
+            <canvas ref={loupeCanvasRef} data-testid="text-loupe"
+              className="block rounded-full border-2 border-white shadow-xl"
+              style={{ width: LOUPE, height: LOUPE }} />
+          </div>
+        );
+      })()}
+      {contextMenu && (
+        <CanvasContextMenu
+          position={contextMenu}
+          onSelectTool={onSelectTool}
+          onRotateLeft={onRotateLeft}
+          onRotateRight={onRotateRight}
+          onZoomIn={onZoomIn}
+          onZoomOut={onZoomOut}
+          onZoomOriginal={onZoomOriginal}
+        />
+      )}
+      {continuousMode && continuousLayouts.length > 1 ? (
+        <div className="continuous-pages-stack" data-testid="continuous-pages-stack">
+          {continuousLayouts.map((layout) => {
+            if (layout.index === currentPage) {
+              return <React.Fragment key={layout.index}>{activeSheet}</React.Fragment>;
+            }
+            const src = continuousPages?.[layout.index];
+            return (
+              <div
+                key={layout.index}
+                role="presentation"
+                data-page-index={layout.index}
+                className="continuous-page-slot"
+                style={{ width: layout.width, height: layout.height }}
+                onClick={() => onSelectPage?.(layout.index)}
+              >
+                {src ? (
+                  <img
+                    src={pageImageSrc(src)}
+                    alt={`หน้า ${layout.index + 1}`}
+                    className="continuous-page-img"
+                    style={{ width: layout.width, height: layout.height }}
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="continuous-page-placeholder">หน้า {layout.index + 1}</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        activeSheet
+      )}
     </div>
   );
 });

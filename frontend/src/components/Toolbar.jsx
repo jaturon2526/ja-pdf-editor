@@ -122,6 +122,12 @@ const ICONS = {
       <path d="M8 12.5v2M8 14.5l-1.6-1.6M8 14.5l1.6-1.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  continuousScroll: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="3.5" y="1.5" width="9" height="5.5" rx="0.8" stroke="currentColor" strokeWidth="1.3" />
+      <rect x="3.5" y="9" width="9" height="5.5" rx="0.8" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  ),
   close: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <path d="M3 2h6.5L12 4.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
@@ -269,6 +275,8 @@ export default function Toolbar({
   onZoomFitWidth,
   onZoomFitHeight,
   onZoomSet,
+  continuousMode = false,
+  onToggleContinuousMode,
   activeTool,
   onSelectTool,
   onInsertImage,
@@ -309,6 +317,15 @@ export default function Toolbar({
         <ToolbarButton icon="zoomIn" label="ขยาย" onClick={onZoomIn} disabled={!hasDocument} />
         <ToolbarButton icon="fitWidth" label="พอดีความกว้าง" onClick={onZoomFitWidth} disabled={!hasDocument} />
         <ToolbarButton icon="fitHeight" label="พอดีหน้า" onClick={onZoomFitHeight} disabled={!hasDocument} />
+        {onToggleContinuousMode && (
+          <ToolbarButton
+            icon="continuousScroll"
+            label={continuousMode ? "เลื่อนหน้าต่อเนื่อง (คลิกเพื่อดูทีละหน้า)" : "แสดงทีละหน้า (คลิกเพื่อเลื่อนต่อเนื่อง)"}
+            active={continuousMode}
+            onClick={onToggleContinuousMode}
+            disabled={!hasDocument}
+          />
+        )}
       </div>
 
       <div className="w-px h-6 shrink-0 bg-slate-300 mx-1" />

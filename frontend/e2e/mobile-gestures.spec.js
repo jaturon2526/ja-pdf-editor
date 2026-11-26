@@ -67,8 +67,9 @@ test.describe("มือถือ: ท่าทางนิ้วบนหน้
   test("นิ้วเดียวลากขึ้นบนหน้า = เลื่อนจอ ไม่ใช่กรอบเลือกข้อความ", async ({ page }) => {
     await zoomInput(page).fill("150");
     await zoomInput(page).press("Enter");
-    await expect.poll(() => page.locator(".canvas-area").evaluate((el) => el.scrollHeight > el.clientHeight * 1.5)).toBe(true);
-    await page.waitForTimeout(500);
+    // รอให้หน้าขยายเป็น 150% จริงก่อนลาก (ในโหมดเลื่อนต่อเนื่อง scrollHeight ยาวตั้งแต่ซูม 59% แล้ว)
+    await expect.poll(() => page.locator(".page-image").evaluate((el) => el.getBoundingClientRect().width > 700)).toBe(true);
+    await page.waitForTimeout(300);
     const area = page.locator(".canvas-area");
     const before = await area.evaluate((el) => el.scrollTop);
     const t = await touchCdp(page);
@@ -110,6 +111,8 @@ test.describe("มือถือ: ท่าทางนิ้วบนหน้
   });
 
   test("สองนิ้วกาง = ซูมเข้า จุดใต้นิ้วอยู่ที่เดิม และรูปคมตามความละเอียดจอ", async ({ page }) => {
+    // รอให้ auto zoomFitWidth() บนมือถือทำงานเสร็จก่อนอ่านค่าเริ่มต้น z0
+    await expect.poll(async () => Number(await zoomInput(page).inputValue())).toBeLessThan(90);
     const img = page.locator(".page-image");
     const z0 = Number(await zoomInput(page).inputValue());
     const b0 = await img.boundingBox();

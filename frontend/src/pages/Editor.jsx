@@ -54,6 +54,7 @@ import useRedact from "../hooks/useRedact.js";
 import { useEditorShortcuts } from "../hooks/useEditorShortcuts.js";
 import { isPhoneLayout, resetUnintendedScroll } from "../utils/viewport.js";
 import { useDocumentHistory } from "../hooks/useDocumentHistory.js";
+import { useContinuousPages } from "../hooks/useContinuousPages.js";
 import { useApplyEdits } from "../hooks/useApplyEdits.js";
 import { useEscapeStack } from "../hooks/useEscapeStack.js";
 import { buildEditorMenus } from "../components/editor/editorMenus.js";
@@ -104,6 +105,22 @@ export default function Editor() {
   const [compressProfile, setCompressProfile] = useState("screen");
   const [showDocumentFonts, setShowDocumentFonts] = useState(false);
   const [insertPagesAt, setInsertPagesAt] = useState(null); // ตำแหน่งเริ่มต้นในหน้าต่างแทรกหน้า (null = ปิด)
+  const [continuousMode, setContinuousMode] = useState(() => {
+    try {
+      return localStorage.getItem("ja_pdf_scroll_mode") !== "single";
+    } catch {
+      return true;
+    }
+  });
+  const toggleContinuousMode = useCallback(() => {
+    setContinuousMode((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("ja_pdf_scroll_mode", next ? "continuous" : "single");
+      } catch { /* ignore private mode */ }
+      return next;
+    });
+  }, []);
 
   // ---------- Derived ----------
   const editMode =
@@ -324,6 +341,24 @@ export default function Editor() {
     pageImage: sessionHook.pageImage,
     active: activeTool === "fill_form",
     runDocumentChange,
+  });
+
+  const canAutoSwitchPage = !(
+    textEditHook.draftEdit
+    || imageEditHook.draftImageEdit
+    || signatureHook.draftSignature
+    || annotationHook.annotationDraft
+    || activeTool === "crop_page"
+  );
+  const continuousPages = useContinuousPages({
+    enabled: continuousMode,
+    session,
+    currentPage,
+    pageImage: sessionHook.pageImage,
+    zoom,
+    canvasAreaRef,
+    canAutoSwitchPage,
+    onSelectPageFromScroll: sessionHook.setCurrentPage,
   });
 
   // รองรับลิงก์ ?tool=fill_form&mode=design เมื่อสร้างเอกสารเปล่าเพื่อออกแบบแบบฟอร์มจากหน้าแรก
@@ -667,6 +702,8 @@ export default function Editor() {
     zoomIn,
     zoomOut,
     setZoom,
+    continuousMode,
+    toggleContinuousMode,
     docPropsHook,
     signatureHook,
     openRedactSearch: () => setShowRedactSearchModal(true),
@@ -900,6 +937,8 @@ export default function Editor() {
         onZoomFitWidth={zoomFitWidth}
         onZoomFitHeight={zoomFitHeight}
         onZoomSet={(z) => setZoom(Math.min(5, Math.max(0.1, z)))}
+        continuousMode={continuousMode}
+        onToggleContinuousMode={toggleContinuousMode}
         activeTool={activeTool}
         onSelectTool={setActiveTool}
         onInsertImage={() => imageEditHook.openImagePicker()}
@@ -955,6 +994,11 @@ export default function Editor() {
           barcodeEdit={barcodeEdit}
           cropPage={cropPage}
           formFill={formFill}
+          continuousMode={continuousPages.active}
+          continuousLayouts={continuousPages.layouts}
+          continuousPages={continuousPages.cachedPages}
+          currentPage={currentPage}
+          onSelectPage={sessionHook.goToPage}
           pageWidthPt={session?.pageSizes?.[currentPage]?.[0] || 1}
           pageHeightPt={session?.pageSizes?.[currentPage]?.[1] || 1}
           zoom={zoom}
