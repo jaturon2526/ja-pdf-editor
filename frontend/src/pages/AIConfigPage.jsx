@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAiQuota, getMe, removeApiKey, saveApiKey } from "../api";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 const PROVIDER_HELP = {
   gemini: {
@@ -32,6 +33,7 @@ const PROVIDER_HELP = {
 const input = "w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
 
 export default function AIConfigPage() {
+  const { t } = useI18n();
   const [user, setUser] = useState(null);
   const [q, setQ] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -100,24 +102,24 @@ export default function AIConfigPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-center">กำลังโหลด...</div>;
+  if (loading) return <div className="p-8 text-center">{t("common.loading")}</div>;
 
   return (
     <div className="max-w-2xl mx-auto p-4 md:p-8">
       <div className="mb-6">
         <Link to="/dashboard" className="text-blue-600 hover:underline text-sm flex items-center gap-1">
-          &larr; กลับหน้า Dashboard
+          {t("profile.backToDashboard")}
         </Link>
       </div>
 
-      <h1 className="text-2xl font-bold mb-2">ตั้งค่า AI &amp; API Key ส่วนตัว</h1>
+      <h1 className="text-2xl font-bold mb-2">{t("pages.aiConfigTitle")}</h1>
       <p className="text-sm text-gray-500 mb-6">AI ใช้แก้คำไทยตอนแปลง PDF เป็น Word และอ่านข้อความจากพื้นที่ที่เลือก (คัดลอกข้อความ)</p>
 
       {error && <div className="bg-red-50 text-red-700 p-4 rounded mb-4" role="alert">{error}</div>}
       {success && <div className="bg-green-50 text-green-700 p-4 rounded mb-4">{success}</div>}
 
       <div className="bg-white rounded-lg shadow p-6 mb-6" data-testid="system-ai">
-        <h2 className="text-lg font-semibold mb-2">AI ของระบบ</h2>
+        <h2 className="text-lg font-semibold mb-2">{t("pages.aiSystemTitle")}</h2>
         {q?.system_ai ? (
           <>
             <p className="text-sm text-gray-700">

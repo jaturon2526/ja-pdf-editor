@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import AppBrand from "../components/AppBrand.jsx";
 import { isLoggedIn } from "../api/client.js";
 import { donationQrUrl, getDonationInfo, getMyDonations, reportDonation } from "../api/donations.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 const PRESETS = [49, 99, 299, 499];
 const STATUS = {
@@ -31,6 +32,7 @@ function localNow() {
 }
 
 export default function SupportPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const loggedIn = isLoggedIn();
   const [info, setInfo] = useState(null);
@@ -92,7 +94,7 @@ export default function SupportPage() {
       <main className="max-w-5xl mx-auto px-4 pb-16">
         <section className="text-center py-8">
           <div className="text-5xl mb-3" aria-hidden="true">☕</div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">สนับสนุนผู้พัฒนา</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">{t("pages.supportTitle")}</h1>
           <p className="mt-3 text-slate-600 max-w-2xl mx-auto leading-relaxed">
             JA PDF Editor ใช้ฟรีและเป็นโอเพนซอร์ส (AGPL-3.0) — เงินสนับสนุนช่วยค่าเซิร์ฟเวอร์ ค่าโดเมน และเวลาพัฒนาฟีเจอร์ใหม่
             {info?.tiers?.length ? " · ผู้สนับสนุนได้พื้นที่เก็บไฟล์และจำนวนอุปกรณ์เพิ่มเป็นการขอบคุณ" : ""}

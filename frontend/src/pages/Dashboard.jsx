@@ -598,91 +598,91 @@ export default function Dashboard() {
 
         {/* Quick Tools Section */}
         <div className="mb-8">
-          <h3 className="text-lg leading-6 font-semibold text-gray-900 mb-3 sm:mb-4">เครื่องมือด่วน (Quick Tools)</h3>
+          <h3 className="text-lg leading-6 font-semibold text-gray-900 mb-3 sm:mb-4">{t("dashboard.quickTools")}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {canScan && (
               <ToolCard
                 color="teal"
                 testId="tool-card-scan"
-                title="สแกนเอกสาร"
-                description="ถ่ายเอกสารด้วยกล้อง เป็น PDF ขาวดำ ค้นหาคำได้"
-                onClick={() => navigate('/scan')}
+                title={t("dashboard.scan")}
+                description={t("dashboard.scanDesc")}
+                onClick={() => void navigate('/scan')}
                 icon={<><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3" /><path d="M7 12h10" /></>}
               />
             )}
             <ToolCard
               color="sky"
               testId="tool-card-word"
-              title="แปลงเป็น Word"
-              description="PDF หรือไฟล์สแกน เป็น Word ที่แก้ไขได้"
+              title={t("dashboard.toWord")}
+              description={t("dashboard.toWordDesc")}
               onClick={() => setShowWordChooser(true)}
               icon={<><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /><path d="M8 13l1.5 5L12 14l2.5 4L16 13" /></>}
             />
             <ToolCard
               color="indigo"
               testId="tool-card-compare"
-              title="เปรียบเทียบเอกสาร"
-              description="หาจุดต่างของ 2 ไฟล์ ข้อความและภาพ"
+              title={t("dashboard.compare")}
+              description={t("dashboard.compareDesc")}
               onClick={() => setCompareStart({})}
               icon={<><path d="M9 4H5a1 1 0 00-1 1v14a1 1 0 001 1h4M15 4h4a1 1 0 011 1v14a1 1 0 01-1 1h-4" /><path d="M12 2v20" /><path d="M7 9h2M7 13h2M15 9h2M15 13h2" /></>}
             />
             <ToolCard
               color="teal"
               testId="tool-card-create-blank"
-              title="สร้างฟอร์ม PDF"
-              description="สร้างหน้าเปล่าและออกแบบช่องแบบฟอร์ม PDF"
+              title={t("dashboard.createBlank")}
+              description={t("dashboard.createBlankDesc")}
               onClick={() => setShowCreateBlankModal(true)}
               icon={<><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /><path d="M12 18v-6M9 15h6" /></>}
             />
             <ToolCard
               color="purple"
-              title="สร้างเอกสารอัตโนมัติ"
-              description="กรอกข้อมูลแล้วสร้าง PDF ทันที"
+              title={t("dashboard.autoGen")}
+              description={t("dashboard.autoGenDesc")}
               onClick={() => setShowAutoGenModal(true)}
               icon={<path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />}
             />
             <ToolCard
               color="green"
-              title="รวมไฟล์ PDF"
-              description="รวมหลายไฟล์เป็นไฟล์เดียว"
+              title={t("dashboard.merge")}
+              description={t("dashboard.mergeDesc")}
               onClick={() => setShowMergeModal(true)}
               icon={<path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />}
             />
             <ToolCard
               color="blue"
-              title="ใส่ลายน้ำ"
-              description="ประทับข้อความลายน้ำทุกหน้า"
+              title={t("dashboard.watermark")}
+              description={t("dashboard.watermarkDesc")}
               onClick={() => setQuickAction({ action: 'watermark' })}
               icon={<><path d="M12 3s-6 6.5-6 11a6 6 0 0012 0c0-4.5-6-11-6-11z" /><path d="M9.5 15a2.5 2.5 0 002.5 2.5" /></>}
             />
             <ToolCard
               color="blue"
               testId="tool-card-page-numbers"
-              title="ใส่เลขหน้า"
-              description="1, 2, 3 หรือ 1/N · เลขไทยได้"
+              title={t("dashboard.pageNumbers")}
+              description={t("dashboard.pageNumbersDesc")}
               onClick={() => setQuickAction({ action: 'page_numbers' })}
               icon={<><path d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z" /><path d="M9 9h5M9 12h6" /><path d="M11.5 16.5l1-1v3.5" /></>}
             />
             <ToolCard
               color="red"
-              title="เซ็นเซอร์ด้วยคำค้นหา"
-              description="ลบคำที่ค้นหาออกถาวร"
+              title={t("dashboard.redactSearch")}
+              description={t("dashboard.redactSearchDesc")}
               onClick={() => setQuickAction({ action: 'redact_search' })}
               icon={<><circle cx="10.5" cy="10.5" r="6" /><path d="M15 15l5 5" /><path d="M7.5 10.5h6" strokeWidth="3" /></>}
             />
             <ToolCard
               color="indigo"
               testId="tool-card-pdpa"
-              title="ปกปิดข้อมูลส่วนบุคคล"
-              description="ตรวจหาเลขบัตร เบอร์โทร ฯลฯ ตาม PDPA"
+              title={t("dashboard.pdpa")}
+              description={t("dashboard.pdpaDesc")}
               onClick={() => setQuickAction({ action: 'pdpa' })}
               icon={<><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z" /><path d="M8.5 12h7" strokeWidth="3" /></>}
             />
             {/* ติดตั้งฟอนต์อยู่ท้ายสุดเสมอ — ใช้ไม่บ่อย (ตั้งครั้งเดียวต่อบัญชี) */}
             <ToolCard
               color="orange"
-              title="ติดตั้งฟอนต์"
-              description="เพิ่มฟอนต์ใหม่เข้าระบบ"
+              title={t("dashboard.installFont")}
+              description={t("dashboard.installFontDesc")}
               onClick={fontsHook.handleOpenInstallFont}
               icon={<path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />}
             />
@@ -692,33 +692,33 @@ export default function Dashboard() {
         {/* Signing Section */}
         <div className="mb-8">
           <div className="flex items-baseline justify-between mb-3 sm:mb-4">
-            <h3 className="text-lg leading-6 font-semibold text-gray-900">การลงนามเอกสาร</h3>
-            <button type="button" onClick={() => navigate("/signing")} className="text-sm font-medium text-blue-600 hover:text-blue-800">
-              ดูทั้งหมด →
+            <h3 className="text-lg leading-6 font-semibold text-gray-900">{t("dashboard.signing")}</h3>
+            <button type="button" onClick={() => void navigate("/signing")} className="text-sm font-medium text-blue-600 hover:text-blue-800">
+              {t("dashboard.viewAll")}
             </button>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <ToolCard
               color="sky"
               testId="signing-card-to-sign"
-              title="รอฉันลงนาม"
-              description={signingCounts.toSign ? `ถึงคิวคุณ ${signingCounts.toSign} เอกสาร` : "ไม่มีเอกสารที่รอคุณ"}
+              title={t("dashboard.toSignTitle")}
+              description={signingCounts.toSign ? t("dashboard.toSignCount", { count: signingCounts.toSign }) : t("dashboard.toSignEmpty")}
               badge={signingCounts.toSign}
-              onClick={() => navigate("/signing?box=to_sign")}
+              onClick={() => void navigate("/signing?box=to_sign")}
               icon={<path d="M15.232 5.232l3.536 3.536M9 13l6.232-6.232a2.5 2.5 0 113.536 3.536L12.536 16.536 8 18l1.464-4.536zM4 20h16" />}
             />
             <ToolCard
               color="emerald"
-              title="ส่งเอกสารให้ลงนาม"
-              description="เลือกไฟล์ แล้วกำหนดผู้ลงนาม"
+              title={t("dashboard.sendToSignTitle")}
+              description={t("dashboard.sendToSignDesc")}
               onClick={() => setShowSignChooser(true)}
               icon={<path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />}
             />
             <ToolCard
               color="indigo"
-              title="ที่ฉันส่ง"
-              description={signingCounts.sentPending ? `รอผู้อื่นลงนาม ${signingCounts.sentPending} เอกสาร` : "ติดตามสถานะเอกสารที่ส่ง"}
-              onClick={() => navigate("/signing?box=sent")}
+              title={t("dashboard.sentTitle")}
+              description={signingCounts.sentPending ? t("dashboard.sentPending", { count: signingCounts.sentPending }) : t("dashboard.sentDesc")}
+              onClick={() => void navigate("/signing?box=sent")}
               icon={<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />}
             />
           </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useLayoutEffect } from "react";
 import { pageImageSrc } from "../utils/pageImage.js";
 import { keepInViewport } from "../utils/viewport.js";
 import { newPositions, reorderedPages } from "../utils/pageOrder.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 /**
  * Sidebar — ด้านซ้ายของจอ มี 2 แท็บมาตรฐานของ PDF editor ทั่วไป:
@@ -75,6 +76,7 @@ export default function Sidebar({
   isOpenOnMobile,
   onCloseMobile,
 }) {
+  const { t } = useI18n();
   const [tab, setTab] = useState("pages");
   const [selectedPages, setSelectedPages] = useState(() => new Set());
   const [lastClickedPage, setLastClickedPage] = useState(null);
@@ -464,34 +466,36 @@ export default function Sidebar({
       <div className={`flex flex-col bg-slate-50 border-r border-slate-200 relative shrink-0 transition-all z-20 select-none [-webkit-touch-callout:none] ${isOpenOnMobile ? "absolute inset-y-0 left-0 shadow-2xl h-full" : "hidden desk:flex"}`} style={{ width }} data-testid="page-sidebar">
         <div className="flex items-center px-2 py-1 bg-slate-100 border-b border-slate-200 gap-1 shrink-0">
         <button
+          type="button"
           className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${tab === "pages" ? "bg-white text-sky-600 border border-slate-200 border-b-0" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"}`}
           onClick={() => setTab("pages")}
         >
-          หน้าเอกสาร
+          {t("sidebar.pagesTab")}
         </button>
         <button
+          type="button"
           className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors ${tab === "bookmarks" ? "bg-white text-sky-600 border border-slate-200 border-b-0" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"}`}
           onClick={() => setTab("bookmarks")}
         >
-          บุ๊คมาร์ค
+          {t("sidebar.bookmarksTab")}
         </button>
-        <button className="ml-auto p-1 px-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded transition-colors text-lg leading-none" title="ซ่อนแผงหน้าเอกสาร" onClick={() => setCollapsed(true)}>
+        <button type="button" className="ml-auto p-1 px-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded transition-colors text-lg leading-none" title={t("sidebar.hidePanel")} onClick={() => setCollapsed(true)}>
           «
         </button>
       </div>
 
       {selectMode && tab === "pages" && (
         <div className="flex items-center gap-1 px-2 py-1.5 bg-sky-50 border-b border-sky-200 shrink-0 text-xs" data-testid="select-mode-bar">
-          <span className="font-semibold text-sky-800 mr-auto whitespace-nowrap" aria-live="polite">เลือก {selectedPages.size} หน้า</span>
-          <button className="px-2 py-1.5 rounded text-sky-700 hover:bg-sky-100 whitespace-nowrap"
+          <span className="font-semibold text-sky-800 mr-auto whitespace-nowrap" aria-live="polite">{t("sidebar.selectedCount", { count: selectedPages.size })}</span>
+          <button type="button" className="px-2 py-1.5 rounded text-sky-700 hover:bg-sky-100 whitespace-nowrap"
             onClick={() => setSelectedPages(selectedPages.size === pageCount ? new Set() : new Set(Array.from({ length: pageCount }, (_, i) => i)))}>
-            {selectedPages.size === pageCount ? "ล้าง" : "ทั้งหมด"}
+            {selectedPages.size === pageCount ? t("sidebar.clearSelection") : t("sidebar.selectAll")}
           </button>
-          <button className="px-2 py-1.5 rounded bg-sky-600 text-white font-medium hover:bg-sky-700 disabled:opacity-40 whitespace-nowrap"
+          <button type="button" className="px-2 py-1.5 rounded bg-sky-600 text-white font-medium hover:bg-sky-700 disabled:opacity-40 whitespace-nowrap"
             disabled={!hasSelection} onClick={openSelectionMenu}>
-            จัดการ ▾
+            {t("sidebar.manage")}
           </button>
-          <button className="px-2 py-1.5 rounded text-slate-600 hover:bg-slate-200 whitespace-nowrap" onClick={exitSelectMode}>เสร็จ</button>
+          <button type="button" className="px-2 py-1.5 rounded text-slate-600 hover:bg-slate-200 whitespace-nowrap" onClick={exitSelectMode}>{t("sidebar.done")}</button>
         </div>
       )}
 
@@ -504,7 +508,7 @@ export default function Sidebar({
             onClick={handleListBackgroundClick}
             onContextMenu={(e) => e.preventDefault()}
           >
-            {pageCount === 0 && <div className="text-center text-slate-400 text-xs mt-10">ยังไม่มีเอกสาร</div>}
+            {pageCount === 0 && <div className="text-center text-slate-400 text-xs mt-10">{t("sidebar.noDocument")}</div>}
             {Array.from({ length: pageCount }, (_, i) => i).map((pageNum, idx) => {
               const isSelected = multiSelectActive && selectedPages.has(pageNum);
               const isDraggingSource = !!reorderDrag && reorderDrag.movingPages.includes(pageNum);

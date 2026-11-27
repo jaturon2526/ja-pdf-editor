@@ -8,64 +8,71 @@ import html
 import logging
 
 from app.core.config import settings
+from app.core.i18n import t as i18n_t
 from app.services import mailer
 
 logger = logging.getLogger("mailer")
 
 
-def _layout(heading_lines: list[str], button_text: str, url: str, footer: str) -> str:
+def _layout(heading_lines: list[str], button_text: str, url: str, footer: str, lang: str = "th") -> str:
     esc = html.escape
     paragraphs = "".join(f"<p>{esc(line)}</p>" for line in heading_lines)
+    greeting = i18n_t(lang, "email.greeting")
+    fallback = i18n_t(lang, "email.fallback_link")
     return f"""<html><body style="font-family:Arial,sans-serif;color:#333;line-height:1.6;padding:20px">
 <div style="max-width:600px;margin:0 auto;background:#fff;border:1px solid #ddd;border-radius:8px;padding:30px">
 <h2 style="color:#2563eb;text-align:center;margin-bottom:20px">{esc(settings.APP_NAME)}</h2>
-<p>สวัสดีครับ,</p>
+<p>{esc(greeting)}</p>
 {paragraphs}
 <div style="text-align:center;margin:30px 0"><a href="{esc(url)}" style="background-color:#2563eb;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block">{esc(button_text)}</a></div>
-<p style="font-size:14px;color:#666">หากปุ่มคลิกไม่ได้ สามารถคัดลอกลิงก์ด้านล่างไปวางในเบราว์เซอร์ได้เลยครับ:<br><a href="{esc(url)}" style="color:#2563eb">{esc(url)}</a></p>
+<p style="font-size:14px;color:#666">{esc(fallback)}<br><a href="{esc(url)}" style="color:#2563eb">{esc(url)}</a></p>
 <p style="margin-top:30px;font-size:13px;color:#999">{esc(footer)}</p>
 </div></body></html>"""
 
 
-def _send(to_email: str, subject: str, lines: list[str], button: str, url: str, footer: str) -> bool:
-    text = "\n".join(["สวัสดีครับ,", "", *lines, "", f"{button}: {url}", "", footer])
+def _send(to_email: str, subject: str, lines: list[str], button: str, url: str, footer: str, lang: str = "th") -> bool:
+    greeting = i18n_t(lang, "email.greeting")
+    text = "\n".join([greeting, "", *lines, "", f"{button}: {url}", "", footer])
     return mailer.send_now(mailer.Mail(to=to_email, subject=subject, text=text,
-                                       html=_layout(lines, button, url, footer)))
+                                       html=_layout(lines, button, url, footer, lang=lang)))
 
 
-def send_verification_email(to_email: str, token: str) -> bool:
+def send_verification_email(to_email: str, token: str, lang: str = "th") -> bool:
     verify_url = f"{settings.FRONTEND_URL.rstrip('/')}/api/auth/verify-email?token={token}"
     return _send(
         to_email,
-        f"ยืนยันอีเมลของคุณ - {settings.APP_NAME}",
-        [f"ขอบคุณที่สมัครสมาชิกเพื่อใช้งาน {settings.APP_NAME}",
-         "กรุณาคลิกปุ่มด้านล่างเพื่อยืนยันที่อยู่อีเมลของคุณ และเริ่มต้นใช้งาน"],
-        "ยืนยันอีเมลของฉัน",
+        i18n_t(lang, "email.verify.subject", app_name=settings.APP_NAME),
+        [i18n_t(lang, "email.verify.line1", app_name=settings.APP_NAME),
+         i18n_t(lang, "email.verify.line2")],
+        i18n_t(lang, "email.verify.button"),
         verify_url,
-        "หากคุณไม่ได้เป็นผู้สมัครสมาชิก กรุณาละเว้นอีเมลฉบับนี้ (ลิงก์มีอายุ 24 ชั่วโมง)",
+        i18n_t(lang, "email.verify.footer"),
+        lang=lang,
     )
 
 
-def send_reset_password_email(to_email: str, reset_link: str) -> bool:
+def send_reset_password_email(to_email: str, reset_link: str, lang: str = "th") -> bool:
     return _send(
         to_email,
-        f"ตั้งรหัสผ่านใหม่ (Reset Password) - {settings.APP_NAME}",
-        ["มีการร้องขอเพื่อตั้งรหัสผ่านใหม่สำหรับบัญชีของคุณ",
-         "กรุณาคลิกปุ่มด้านล่างเพื่อตั้งรหัสผ่านใหม่ (ลิงก์มีอายุ 1 ชั่วโมง)"],
-        "ตั้งรหัสผ่านใหม่",
+        i18n_t(lang, "email.reset.subject", app_name=settings.APP_NAME),
+        [i18n_t(lang, "email.reset.line1"),
+         i18n_t(lang, "email.reset.line2")],
+        i18n_t(lang, "email.reset.button"),
         reset_link,
-        "หากคุณไม่ได้ทำการร้องขอ โปรดละเว้นอีเมลฉบับนี้",
+        i18n_t(lang, "email.reset.footer"),
+        lang=lang,
     )
 
 
-def send_line_login_confirm_email(to_email: str, confirm_link: str) -> bool:
+def send_line_login_confirm_email(to_email: str, confirm_link: str, lang: str = "th") -> bool:
     return _send(
         to_email,
-        f"ยืนยันอีเมลเพื่อเข้าสู่ระบบด้วย LINE - {settings.APP_NAME}",
-        ["มีการเข้าสู่ระบบด้วย LINE และระบุอีเมลนี้เป็นอีเมลของบัญชี",
-         "กดปุ่มด้านล่างเพื่อยืนยันอีเมลและเข้าสู่ระบบ (ลิงก์มีอายุ 30 นาที ใช้ได้ครั้งเดียว)",
-         "ถ้าอีเมลนี้มีบัญชีอยู่แล้ว บัญชี LINE จะถูกเชื่อมกับบัญชีเดิม"],
-        "ยืนยันอีเมลและเข้าสู่ระบบ",
+        i18n_t(lang, "email.line_confirm.subject", app_name=settings.APP_NAME),
+        [i18n_t(lang, "email.line_confirm.line1"),
+         i18n_t(lang, "email.line_confirm.line2"),
+         i18n_t(lang, "email.line_confirm.line3")],
+        i18n_t(lang, "email.line_confirm.button"),
         confirm_link,
-        "หากคุณไม่ได้ทำรายการนี้ โปรดละเว้นอีเมลฉบับนี้ — จะไม่มีอะไรเปลี่ยนแปลง",
+        i18n_t(lang, "email.line_confirm.footer"),
+        lang=lang,
     )

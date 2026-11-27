@@ -4,10 +4,10 @@ import { getMe, getAdminStats, getAdminUsers, updateAdminUserPlan, updateAdminUs
 import { getPublicConfig } from "../api/config.js";
 import QuotaPanel from "../components/admin/QuotaPanel.jsx";
 import DonationsPanel from "../components/admin/DonationsPanel.jsx";
-
-
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 export default function AdminDashboard() {
+  const { t } = useI18n();
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
@@ -125,7 +125,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">แผงควบคุมสำหรับผู้ดูแลระบบ</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{t("pages.adminTitle")}</h1>
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setShowPlanConfig(true)}

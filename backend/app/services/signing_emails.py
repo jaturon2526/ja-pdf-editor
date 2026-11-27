@@ -16,22 +16,13 @@ from urllib.parse import quote
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.i18n import t as i18n_t, user_lang
 from app.models.domain import SigningRequest, User
 from app.services import line_service, mailer
 
 # ชนิดแจ้งเตือนที่ส่งอีเมลด้วย (sign_progress = มีคนลงนามแล้วแต่ยังไม่ครบ → แจ้งในระบบอย่างเดียว ไม่รบกวนอีเมล)
 EMAIL_KINDS = {"sign_turn", "sign_reminder", "sign_rejected", "sign_completed", "sign_cancelled", "sign_overdue",
                "sign_invite"}
-
-_SUBJECTS = {
-    "sign_turn": "ถึงคิวคุณลงนาม: {title}",
-    "sign_reminder": "เตือน: รอคุณลงนาม \"{title}\"",
-    "sign_rejected": "มีผู้ปฏิเสธการลงนาม: {title}",
-    "sign_completed": "ลงนามครบทุกคนแล้ว: {title}",
-    "sign_cancelled": "ยกเลิกคำขอลงนาม: {title}",
-    "sign_overdue": "เลยกำหนดลงนาม: {title}",
-    "sign_invite": "คุณได้รับเชิญให้ลงนามเอกสาร: {title}",
-}
 
 _BUTTON = {
     "sign_turn": "เปิดเอกสารเพื่อลงนาม",
@@ -82,30 +73,37 @@ def format_due(due_at) -> str:
     return local.strftime("%d/%m/%Y %H:%M")
 
 
-def _details(item: OutgoingEmail, request: SigningRequest) -> list[str]:
+def _details(item: OutgoingEmail, request: SigningRequest, lang: str = "th") -> list[str]:
     details = list(item.lines)
     if request.message and item.kind in ("sign_turn", "sign_reminder", "sign_invite"):
-        details.append(f"ข้อความจากผู้ส่ง: {request.message}")
+        details.append(i18n_t(lang, "signing.sender_message", message=request.message))
     if request.due_at is not None and item.kind in ("sign_turn", "sign_reminder", "sign_overdue", "sign_invite"):
-        details.append(f"ครบกำหนด: {format_due(request.due_at)}")
+        details.append(i18n_t(lang, "signing.due_at", due=format_due(request.due_at)))
     return details
 
 
-def _render(item: OutgoingEmail, request: SigningRequest, recipient_email: str, recipient_name: str,
-            actor: Optional[User]) -> mailer.Mail:
-    url = register_url(recipient_email) if item.kind == "sign_invite" else request_url(request.id)
-    subject = _SUBJECTS[item.kind].format(title=request.title)
-    details = _details(item, request)
-    greeting = f"เรียน {recipient_name}"
-    footer_hint = "" if item.kind == "sign_invite" else " — ปิดการรับอีเมลแจ้งเตือนได้ที่หน้า \"การลงนาม\""
+def _button_label(kind: str, lang: str = "th") -> str:
+    if kind in _BUTTON:
+        return i18n_t(lang, f"signing.button.{kind}")
+    return i18n_t(lang, "signing.button.default")
 
-    text = "\n".join([greeting, "", item.title, *details, "", f"เปิดดู: {url}", "",
-                      f"อีเมลนี้ส่งอัตโนมัติจาก {settings.APP_NAME}" + footer_hint])
+
+def _render(item: OutgoingEmail, request: SigningRequest, recipient_email: str, recipient_name: str,
+            actor: Optional[User], lang: str = "th") -> mailer.Mail:
+    url = register_url(recipient_email) if item.kind == "sign_invite" else request_url(request.id)
+    subject = i18n_t(lang, f"signing.subject.{item.kind}", title=request.title)
+    details = _details(item, request, lang=lang)
+    greeting = i18n_t(lang, "signing.greeting", name=recipient_name)
+    footer_hint = "" if item.kind == "sign_invite" else i18n_t(lang, "signing.footer_disable")
+
+    text = "\n".join([greeting, "", item.title, *details, "", i18n_t(lang, "signing.open_link", url=url), "",
+                      i18n_t(lang, "signing.footer_auto", app_name=settings.APP_NAME) + footer_hint])
     esc = html.escape
-    login_note = ("สมัครด้วยอีเมลนี้เท่านั้น ระบบจึงจะผูกเอกสารกับบัญชีของคุณ" if item.kind == "sign_invite"
-                  else "ต้องเข้าสู่ระบบด้วยบัญชีของคุณก่อนเปิดเอกสาร")
+    login_note = i18n_t(lang, "signing.login_note.invite" if item.kind == "sign_invite" else "signing.login_note.default")
     detail_html = "".join(f'<p style="margin:4px 0;color:#444">{esc(line)}</p>' for line in details)
-    button = _BUTTON.get(item.kind, "เปิดคำขอลงนาม")
+    button = _button_label(item.kind, lang=lang)
+    link_label = i18n_t(lang, "signing.link_label")
+    footer_short = i18n_t(lang, "signing.footer_auto_short")
     body = f"""<html><body style="font-family:Arial,sans-serif;color:#333;line-height:1.6;padding:20px">
 <div style="max-width:600px;margin:0 auto;border:1px solid #ddd;border-radius:8px;padding:28px">
 <h2 style="color:#2563eb;margin:0 0 16px">{esc(settings.APP_NAME)}</h2>
@@ -113,8 +111,8 @@ def _render(item: OutgoingEmail, request: SigningRequest, recipient_email: str, 
 <p style="font-size:16px;font-weight:bold">{esc(item.title)}</p>
 {detail_html}
 <p style="text-align:center;margin:28px 0"><a href="{esc(url)}" style="background:#2563eb;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block">{esc(button)}</a></p>
-<p style="font-size:13px;color:#666">ลิงก์: <a href="{esc(url)}" style="color:#2563eb">{esc(url)}</a><br>{esc(login_note)}</p>
-<p style="font-size:12px;color:#999;margin-top:24px">อีเมลนี้ส่งอัตโนมัติ{esc(footer_hint)}</p>
+<p style="font-size:13px;color:#666">{esc(link_label)} <a href="{esc(url)}" style="color:#2563eb">{esc(url)}</a><br>{esc(login_note)}</p>
+<p style="font-size:12px;color:#999;margin-top:24px">{esc(footer_short)}{esc(footer_hint)}</p>
 </div></body></html>"""
     return mailer.Mail(
         to=recipient_email,
@@ -138,20 +136,21 @@ def flush(db: Session) -> int:
         if item.user_id is None:  # ผู้ถูกเชิญ (ยังไม่มีบัญชี)
             if not item.to_email:
                 continue
-            mailer.send(_render(item, request, item.to_email, item.to_email, actor))
+            mailer.send(_render(item, request, item.to_email, item.to_email, actor, lang=user_lang(actor)))
             sent += 1
             continue
         recipient = db.get(User, item.user_id)
         if recipient is None or not recipient.is_active:
             continue
+        r_lang = user_lang(recipient)
         mail = None
         if recipient.signing_email_notifications:
-            mail = _render(item, request, recipient.email, recipient.display_name or recipient.email, actor)
+            mail = _render(item, request, recipient.email, recipient.display_name or recipient.email, actor, lang=r_lang)
         if line_service.uses_line(recipient):
             if item.kind == "sign_completed" and recipient.id != request.owner_id:
                 continue  # ผู้ลงนาม: แจ้งในระบบอย่างเดียว
-            message = line_service.signing_message(item.kind, item.title, _details(item, request),
-                                                   request_url(request.id), _BUTTON.get(item.kind, "เปิดคำขอลงนาม"))
+            message = line_service.signing_message(item.kind, item.title, _details(item, request, lang=r_lang),
+                                                   request_url(request.id), _button_label(item.kind, lang=r_lang))
             fallback = (lambda m=mail: mailer.send(m)) if mail is not None else None
             line_service.push(recipient.line_user_id, [message], fallback=fallback)
             sent += 1

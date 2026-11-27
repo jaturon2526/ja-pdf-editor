@@ -314,9 +314,12 @@ def approve(db: Session, donation: Donation, admin: Optional[User], *, amount=No
     donation.admin_note = (note or "").strip()[:255] or None
     delete_slip(donation)
     if user:
-        perk = f" — ได้รับสิทธิ์ {plan.capitalize()} {days} วัน" if donation.granted_plan else ""
+        from app.core.i18n import t as i18n_t, user_lang
+
+        lang = user_lang(user)
+        perk = i18n_t(lang, "donation.approved_perk", plan=plan.capitalize(), days=days) if donation.granted_plan else ""
         db.add(Notification(user_id=user.id, kind="donation_approved",
-                            title=f"ขอบคุณที่สนับสนุน {value:,.2f} บาท{perk}"))
+                            title=i18n_t(lang, "donation.approved", amount=f"{value:,.2f}", perk=perk)))
     db.commit()
     db.refresh(donation)
     return donation
@@ -331,9 +334,13 @@ def reject(db: Session, donation: Donation, admin: User, note: Optional[str] = N
     donation.admin_note = (note or "").strip()[:255] or None
     delete_slip(donation)
     if donation.user_id:
+        from app.core.i18n import t as i18n_t, user_lang
+
+        recipient = db.get(User, donation.user_id)
+        lang = user_lang(recipient)
         reason = f" ({donation.admin_note})" if donation.admin_note else ""
         db.add(Notification(user_id=donation.user_id, kind="donation_rejected",
-                            title=f"ไม่พบยอดโอนที่แจ้งไว้{reason} — ติดต่อผู้ดูแลระบบได้"))
+                            title=i18n_t(lang, "donation.rejected", reason=reason)))
     db.commit()
     db.refresh(donation)
     return donation
@@ -355,13 +362,15 @@ def effective_plan(user: User, now: Optional[dt.datetime] = None) -> str:
 
 def expire_plans(db: Session) -> int:
     """ปรับผู้ใช้ที่แพ็กเกจหมดอายุกลับเป็น free + แจ้งเตือนในระบบ คืนจำนวนที่ปรับ"""
+    from app.core.i18n import t as i18n_t, user_lang
+
     now = dt.datetime.now(dt.timezone.utc)
     users = db.query(User).filter(User.plan_type != "free", User.expire_date.isnot(None), User.expire_date <= now).all()
     for u in users:
         old = u.plan_type
         u.plan_type, u.expire_date = "free", None
         db.add(Notification(user_id=u.id, kind="plan_expired",
-                            title=f"สิทธิ์ผู้สนับสนุน ({(old or '').capitalize()}) ครบกำหนดแล้ว — ขอบคุณที่ร่วมสนับสนุน"))
+                            title=i18n_t(user_lang(u), "donation.plan_expired", plan=(old or "").capitalize())))
     if users:
         db.commit()
     return len(users)

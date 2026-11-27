@@ -1,7 +1,9 @@
 // แถบค้นหาข้อความในเอกสาร (Ctrl+F, v1.42.0) — เดสก์ท็อปลอยมุมขวาบน, มือถือกว้างเต็มขอบ
 import { useEffect, useRef } from "react";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
 export default function FindBar({ find }) {
+  const { t } = useI18n();
   const inputRef = useRef(null);
   const {
     open,
@@ -56,7 +58,7 @@ export default function FindBar({ find }) {
   return (
     <div
       role="search"
-      aria-label="ค้นหาข้อความในเอกสาร"
+      aria-label={t("modals.findPlaceholder")}
       data-testid="find-bar"
       className="fixed top-[92px] right-4 z-50 phone:inset-x-2 phone:right-auto bg-white border border-slate-300 rounded-xl shadow-xl px-2.5 py-2 flex items-center gap-1.5 max-w-full"
     >

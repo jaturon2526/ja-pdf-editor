@@ -47,7 +47,7 @@ def test_reset_link_single_use_and_logs_out_everywhere(client, make_user, monkey
     from app.api import routes_auth
 
     links = []
-    monkeypatch.setattr(routes_auth, "send_reset_password_email", lambda to, link: links.append(link) or True)
+    monkeypatch.setattr(routes_auth, "send_reset_password_email", lambda _to, link, **_kw: links.append(link) or True)
     u, h = make_user()
     email = _email(client, h)
     assert client.post("/auth/forgot-password", json={"email": email.upper()}).status_code == 200
@@ -143,6 +143,6 @@ def test_initial_admin_emails(client, monkeypatch):
 def test_make_admin_script(client):
     from scripts.make_admin import main
 
-    client.post("/auth/register", json={"email": "promote-me@example.com", "password": "Strong-Pass1"})
+    client.post("/auth/register", json={"email": "promote-me@example.com", "password": "Strong-Pass1"})  # pragma: allowlist secret
     assert main("PROMOTE-ME@example.com") == 0
     assert main("nobody@example.com") == 1

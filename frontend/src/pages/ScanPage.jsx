@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 import { createScan, getScanStatus, openFile } from "../api.js";
 import { getAiQuota } from "../api/auth.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import CornerEditor from "../components/scan/CornerEditor.jsx";
 import useWordConversion from "../hooks/useWordConversion.jsx";
 import { cameraSupported, capturePhoto, isInAppBrowser, openRearCamera, setTorch, stopStream, toImageData } from "../scan/camera.js";
@@ -16,14 +17,14 @@ import { clearPages, deletePage, loadPages, savePage } from "../scan/scanStore.j
 
 const MAX_PAGES = 50;
 const MODES = [
-  { value: "bw", label: "ขาวดำ" },
-  { value: "gray", label: "สีเทา" },
-  { value: "color", label: "สี" },
+  { value: "bw", labelKey: "scan.modeBw" },
+  { value: "gray", labelKey: "scan.modeGray" },
+  { value: "color", labelKey: "scan.modeColor" },
 ];
 const STRENGTHS = [
-  { value: "light", label: "จาง" },
-  { value: "normal", label: "ปกติ" },
-  { value: "dark", label: "เข้ม" },
+  { value: "light", labelKey: "scan.strengthLight" },
+  { value: "normal", labelKey: "scan.strengthNormal" },
+  { value: "dark", labelKey: "scan.strengthDark" },
 ];
 
 function drawLiveQuad(canvas, video, corners) {
@@ -63,6 +64,7 @@ function Btn({ children, className = "", ...props }) {
 }
 
 export default function ScanPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const overlayRef = useRef(null);
@@ -457,9 +459,9 @@ export default function ScanPage() {
 
       {/* แถบบน */}
       <div className="flex items-center gap-2 px-3 py-2 bg-black/70 z-10">
-        <button type="button" className="min-h-[44px] min-w-[44px] text-2xl" aria-label="ปิดหน้าสแกน" onClick={exitScan}>×</button>
-        <h1 className="font-semibold">สแกนเอกสาร</h1>
-        {pages.length > 0 && screen !== "done" && <span className="ml-auto text-sm text-slate-300">{pages.length} หน้า</span>}
+        <button type="button" className="min-h-[44px] min-w-[44px] text-2xl" aria-label={t("common.close")} onClick={exitScan}>×</button>
+        <h1 className="font-semibold">{t("scan.title")}</h1>
+        {pages.length > 0 && screen !== "done" && <span className="ml-auto text-sm text-slate-300">{t("scan.pagesCount", { count: pages.length })}</span>}
       </div>
 
       {notice && (
@@ -588,16 +590,16 @@ export default function ScanPage() {
           <div className="bg-black px-3 py-3 space-y-3">
             <div className="flex flex-wrap gap-2 items-center">
               {MODES.map((m) => (
-                <button key={m.value} type="button" className={`min-h-[40px] px-3 rounded-lg text-sm ${mode === m.value ? "bg-blue-600" : "bg-white/10"}`} onClick={() => setMode(m.value)}>{m.label}</button>
+                <button key={m.value} type="button" className={`min-h-[40px] px-3 rounded-lg text-sm ${mode === m.value ? "bg-blue-600" : "bg-white/10"}`} onClick={() => setMode(m.value)}>{t(m.labelKey)}</button>
               ))}
               {mode === "bw" && <span className="w-px h-6 bg-white/20 mx-1" />}
               {mode === "bw" && STRENGTHS.map((s) => (
-                <button key={s.value} type="button" className={`min-h-[40px] px-3 rounded-lg text-sm ${strength === s.value ? "bg-blue-600" : "bg-white/10"}`} onClick={() => setStrength(s.value)}>{s.label}</button>
+                <button key={s.value} type="button" className={`min-h-[40px] px-3 rounded-lg text-sm ${strength === s.value ? "bg-blue-600" : "bg-white/10"}`} onClick={() => setStrength(s.value)}>{t(s.labelKey)}</button>
               ))}
               {busy && <span className="text-xs text-slate-400">{busy}</span>}
             </div>
             <div className="space-y-2">
-              <span className="block text-xs text-slate-400">รูปแบบผลลัพธ์ PDF</span>
+              <span className="block text-xs text-slate-400">{t("scan.outputFormat")}</span>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -605,8 +607,8 @@ export default function ScanPage() {
                   className={`min-h-[48px] px-3 py-2 rounded-xl text-left border transition ${outputMode === "image" ? "bg-blue-600/25 border-blue-400 text-white" : "bg-white/5 border-white/10 text-slate-300"}`}
                   onClick={() => setOutputMode("image")}
                 >
-                  <div className="text-sm font-medium">ภาพสแกน + OCR</div>
-                  <div className="text-[11px] text-slate-300/80">รูปแบบเดิม · ค้นหาคำได้</div>
+                  <div className="text-sm font-medium">{t("scan.outputImage")}</div>
+                  <div className="text-[11px] text-slate-300/80">{t("scan.outputImageHint")}</div>
                 </button>
                 <button
                   type="button"
@@ -614,13 +616,13 @@ export default function ScanPage() {
                   className={`min-h-[48px] px-3 py-2 rounded-xl text-left border transition ${outputMode === "rebuild" ? "bg-emerald-600/25 border-emerald-400 text-white" : "bg-white/5 border-white/10 text-slate-300"}`}
                   onClick={() => setOutputMode("rebuild")}
                 >
-                  <div className="text-sm font-medium">วาดใหม่เป็น PDF</div>
-                  <div className="text-[11px] text-slate-300/80">ข้อความ/ตารางแก้ไขได้</div>
+                  <div className="text-sm font-medium">{t("scan.outputRebuild")}</div>
+                  <div className="text-[11px] text-slate-300/80">{t("scan.outputRebuildHint")}</div>
                 </button>
               </div>
               {outputMode === "rebuild" && (
                 <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 space-y-2 text-xs">
-                  <p className="text-emerald-300">✓ วาดข้อความ ตาราง และรูปย่อยเป็น PDF Object พร้อมตรวจคำไทยอัตโนมัติ</p>
+                  <p className="text-emerald-300">{t("scan.rebuildAutoThai")}</p>
                   {aiAvailable !== false && (
                     <div className="flex items-start gap-2.5 pt-1 border-t border-white/10">
                       <input
@@ -632,8 +634,8 @@ export default function ScanPage() {
                         className="mt-0.5 h-4 w-4 rounded accent-emerald-500"
                       />
                       <label htmlFor="scan-use-ai" className="cursor-pointer select-none">
-                        <span className="block text-slate-100 font-medium">ให้ AI ช่วยตรวจแก้คำไทยเพิ่มเติม</span>
-                        <span className="block text-[11px] text-slate-400">ใช้โควต้า AI ประจำวัน หรือ API Key ส่วนตัว</span>
+                        <span className="block text-slate-100 font-medium">{t("scan.useAiTitle")}</span>
+                        <span className="block text-[11px] text-slate-400">{t("scan.useAiHint")}</span>
                       </label>
                     </div>
                   )}
@@ -641,12 +643,12 @@ export default function ScanPage() {
               )}
             </div>
             <label className="block text-xs text-slate-400">
-              ชื่อไฟล์
+              {t("scan.filename")}
               <input value={filename} onChange={(e) => setFilename(e.target.value)} className="mt-1 w-full rounded-lg bg-white/10 px-3 py-2 text-base text-white" />
             </label>
             <div className="flex gap-2">
-              <Btn className="bg-white/10 text-sm" onClick={() => void startOver()}>เริ่มใหม่</Btn>
-              <Btn className="flex-1 bg-emerald-500 text-black" disabled={!pages.length || !!busy} onClick={() => void save()}>บันทึก PDF ({pages.length} หน้า)</Btn>
+              <Btn className="bg-white/10 text-sm" onClick={() => void startOver()}>{t("scan.startOver")}</Btn>
+              <Btn className="flex-1 bg-emerald-500 text-black" disabled={!pages.length || !!busy} onClick={() => void save()}>{t("scan.savePdf", { count: pages.length })}</Btn>
             </div>
           </div>
         </>
@@ -654,11 +656,11 @@ export default function ScanPage() {
 
       {screen === "saving" && (
         <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6" data-testid="scan-saving">
-          <p className="text-slate-200">{progress?.label || "กำลังบันทึก..."}</p>
+          <p className="text-slate-200">{progress?.label || t("common.saving")}</p>
           <div className="w-full max-w-sm h-2 rounded-full bg-white/10 overflow-hidden">
             <div className="h-full bg-emerald-400 transition-all" style={{ width: `${Math.round((progress?.value || 0) * 100)}%` }} />
           </div>
-          <p className="text-xs text-slate-400">อย่าเพิ่งปิดหน้านี้</p>
+          <p className="text-xs text-slate-400">{t("scan.doNotClose")}</p>
         </div>
       )}
 
@@ -666,30 +668,30 @@ export default function ScanPage() {
         <div className="flex-1 flex flex-col items-center justify-center gap-5 p-6 text-center" data-testid="scan-done">
           <div className="text-5xl">✓</div>
           <div>
-            <p className="text-lg font-semibold">บันทึกแล้ว</p>
+            <p className="text-lg font-semibold">{t("scan.savedTitle")}</p>
             <p className="text-slate-300 break-all mt-1">{result.filename}</p>
             {result.outputMode === "rebuild" ? (
               <div className="mt-2 space-y-1">
-                <p className="text-xs text-slate-300">วาดข้อความ ตาราง และรูปย่อยเป็น PDF Object แล้ว — แก้ไขข้อความ/ตารางต่อใน Editor ได้ทันที</p>
+                <p className="text-xs text-slate-300">{t("scan.savedRebuildDesc")}</p>
                 {result.aiStatus === "ai" && (
-                  <p className="text-xs text-emerald-300">✨ ตรวจแก้คำไทยด้วย AI เรียบร้อยแล้ว</p>
+                  <p className="text-xs text-emerald-300">{t("scan.savedAiOk")}</p>
                 )}
                 {result.aiStatus === "fallback" && (
-                  <p className="text-xs text-amber-300">⚠️ AI ไม่พร้อมใช้งานหรือโควต้าหมด — ตรวจคำไทยด้วยพจนานุกรมในเครื่องแทน</p>
+                  <p className="text-xs text-amber-300">{t("scan.savedAiFallback")}</p>
                 )}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 mt-1">ค้นหาคำและเซ็นเซอร์ข้อความในไฟล์นี้ได้ · เปลี่ยนชื่อได้จากเมนู ☰ ในเอกสารของฉัน</p>
+              <p className="text-xs text-slate-400 mt-1">{t("scan.savedImageDesc")}</p>
             )}
           </div>
           <div className="flex flex-col w-full max-w-xs gap-2">
-            <Btn className="bg-blue-600" onClick={openResult}>เปิดไฟล์</Btn>
+            <Btn className="bg-blue-600" onClick={() => void openResult()}>{t("scan.openFile")}</Btn>
             <Btn className="bg-white/10" data-testid="scan-to-word"
               onClick={() => wordConversion.request({ fileId: result.id, filename: result.filename })}>
-              แปลงเป็น Word (ข้อความแก้ไขได้)
+              {t("scan.convertToWord")}
             </Btn>
-            <Btn className="bg-white/10" onClick={() => navigate("/dashboard")}>กลับเอกสารของฉัน</Btn>
-            <Btn className="bg-white/10" onClick={() => { setPages([]); setResult(null); startedAtRef.current = null; setScreen("camera"); }}>สแกนเอกสารใหม่</Btn>
+            <Btn className="bg-white/10" onClick={() => void navigate("/dashboard")}>{t("scan.backToDocs")}</Btn>
+            <Btn className="bg-white/10" onClick={() => { setPages([]); setResult(null); startedAtRef.current = null; setScreen("camera"); }}>{t("scan.scanNew")}</Btn>
           </div>
         </div>
       )}

@@ -2,10 +2,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getNotifications, markNotificationsRead } from "../../api/signing.js";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
 const POLL_MS = 60000;
 
 export default function NotificationBell() {
+  const { lang, t } = useI18n();
   const navigate = useNavigate();
   const [data, setData] = useState({ unread: 0, items: [] });
   const [open, setOpen] = useState(false);
@@ -37,7 +39,7 @@ export default function NotificationBell() {
     <div className="relative">
       <button
         type="button"
-        aria-label="การแจ้งเตือน"
+        aria-label={t("notifications.title")}
         onClick={() => setOpen((v) => !v)}
         className="relative p-2 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50"
       >
@@ -53,30 +55,30 @@ export default function NotificationBell() {
       {open && (
         <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1rem)] max-h-96 overflow-y-auto bg-white rounded-xl shadow-lg border border-gray-100 z-20">
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
-            <span className="text-sm font-semibold text-gray-800">การแจ้งเตือน</span>
+            <span className="text-sm font-semibold text-gray-800">{t("notifications.title")}</span>
             {data.unread > 0 && (
               <button
                 type="button"
                 className="text-xs text-blue-600 hover:underline"
-                onClick={() => markNotificationsRead().then(refresh).catch(() => {})}
+                onClick={() => void markNotificationsRead().then(refresh).catch(() => { /* ไม่สำเร็จ — รอรอบถัดไป */ })}
               >
-                อ่านทั้งหมด
+                {t("notifications.markAllRead")}
               </button>
             )}
           </div>
           {data.items.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-gray-400 text-center">ยังไม่มีการแจ้งเตือน</p>
+            <p className="px-4 py-6 text-sm text-gray-400 text-center">{t("notifications.empty")}</p>
           ) : (
             data.items.map((item) => (
               <button
                 type="button"
                 key={item.id}
-                onClick={() => openItem(item)}
+                onClick={() => void openItem(item)}
                 className={`w-full text-left px-4 py-3 text-sm border-b border-gray-50 hover:bg-blue-50 ${item.read ? "text-gray-500" : "text-gray-900 font-medium bg-blue-50/40"}`}
               >
                 {item.title}
                 <span className="block text-xs text-gray-400 mt-0.5">
-                  {item.created_at ? new Date(item.created_at).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) : ""}
+                  {item.created_at ? new Date(item.created_at).toLocaleString(lang === "en" ? "en-US" : "th-TH", { dateStyle: "medium", timeStyle: "short" }) : ""}
                 </span>
               </button>
             ))

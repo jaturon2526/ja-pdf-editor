@@ -17,6 +17,7 @@ import logging
 import secrets
 import uuid
 from app.core import ratelimit
+from app.core.i18n import request_lang
 from app.core.auth_session import auth_session_manager
 from app.core.auth_cookies import bearer_token, clear_auth_cookies, request_token, set_auth_cookies
 from app.core.security import verify_password, get_password_hash, create_access_token, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
@@ -111,7 +112,7 @@ def register(user: UserCreate, request: Request, db: Session = Depends(get_db)):
     
     # Send verification email
     token = create_access_token({"sub": f"verify:{new_user.email}"}, expires_delta=timedelta(hours=24))
-    send_verification_email(new_user.email, token)
+    send_verification_email(new_user.email, token, lang=request_lang(request, new_user))
     return new_user
 
 # รหัสผ่านที่บัญชี Google เคยถูกตั้งให้ (เดาได้จากอีเมล) — ห้ามใช้ login เด็ดขาด ดู login_with_google
@@ -248,7 +249,7 @@ def forgot_password(req: ForgotPasswordRequest, request: Request, db: Session = 
     )
     
     reset_link = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
-    send_reset_password_email(user.email, reset_link)
+    send_reset_password_email(user.email, reset_link, lang=request_lang(request, user))
 
     return {"msg": "ถ้าอีเมลนี้มีบัญชีอยู่ ระบบได้ส่งลิงก์ตั้งรหัสผ่านใหม่ไปแล้ว"}
 
@@ -371,7 +372,7 @@ def resend_verification(req: ResendVerificationRequest, request: Request, db: Se
         raise HTTPException(status_code=400, detail="อีเมลนี้ยืนยันแล้ว — เข้าสู่ระบบได้เลย")
         
     token = create_access_token({"sub": f"verify:{user.email}"}, expires_delta=timedelta(hours=24))
-    success = send_verification_email(user.email, token)
+    success = send_verification_email(user.email, token, lang=request_lang(request, user))
     if not success:
         raise HTTPException(status_code=500, detail="ส่งอีเมลไม่สำเร็จ — ลองใหม่ภายหลัง หรือติดต่อผู้ดูแลระบบ")
     return {"status": "ok"}

@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom";
 import { comparePageUrl, downloadCompareReport, getCompare, saveBlob } from "../api";
 import { PHONE_LAYOUT_QUERY } from "../utils/viewport.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 export const KIND = {
   replace: { label: "แก้ไข", color: "#ea580c", bg: "bg-orange-100 text-orange-800" },
@@ -137,6 +138,7 @@ function ChangeItem({ change, active, onPick }) {
 }
 
 function Viewer({ taskId, data }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const result = data.result;
   const phone = useMedia(PHONE_LAYOUT_QUERY);
@@ -261,7 +263,7 @@ function Viewer({ taskId, data }) {
         <button type="button" onClick={() => navigate(-1)} className="px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100" aria-label="ย้อนกลับ">←</button>
         {/* มือถือ: ชื่อไฟล์เต็มแถว ปุ่มควบคุมขึ้นแถวถัดไป */}
         <div className="min-w-0 flex-1 phone:basis-[calc(100%-3rem)]">
-          <h1 className="text-base font-bold text-gray-900 truncate">เปรียบเทียบเอกสาร</h1>
+          <h1 className="text-base font-bold text-gray-900 truncate">{t("pages.compareTitle")}</h1>
           <p className="text-xs text-gray-500 truncate" title={`${data.name_a} → ${data.name_b}`}>
             <span className="text-red-700">A: {data.name_a}</span> → <span className="text-green-700">B: {data.name_b}</span>
           </p>
@@ -381,6 +383,7 @@ function Viewer({ taskId, data }) {
 }
 
 export default function ComparePage() {
+  const { t } = useI18n();
   const { taskId } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
@@ -409,7 +412,7 @@ export default function ComparePage() {
   return (
     <div className="min-h-dvh flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-6" data-testid="compare-progress">
-        <h1 className="text-lg font-bold text-gray-900">เปรียบเทียบเอกสาร</h1>
+        <h1 className="text-lg font-bold text-gray-900">{t("pages.compareTitle")}</h1>
         {data && <p className="mt-1 text-sm text-gray-500 break-words">{data.name_a} → {data.name_b}</p>}
         {failed ? (
           <>

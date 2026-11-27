@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { changePassword } from "../api";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import { validatePassword } from "../utils/password";
 import PasskeySection from "../components/security/PasskeySection.jsx";
 import CertificatesSection from "../components/security/CertificatesSection.jsx";
@@ -9,6 +10,7 @@ import LineSection from "../components/security/LineSection.jsx";
 import LineLoginSection from "../components/security/LineLoginSection.jsx";
 
 export default function SecurityPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -51,10 +53,10 @@ export default function SecurityPage() {
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-5 sm:p-8">
         <div className="flex items-center gap-4 mb-8 border-b pb-4">
-          <button onClick={() => navigate("/dashboard")} className="text-gray-500 hover:text-gray-800">
-            ← กลับหน้าเอกสาร
+          <button type="button" onClick={() => void navigate("/dashboard")} className="text-gray-500 hover:text-gray-800">
+            {t("profile.backToDashboard")}
           </button>
-          <h1 className="text-2xl font-bold">ความปลอดภัย</h1>
+          <h1 className="text-2xl font-bold">{t("pages.securityTitle")}</h1>
         </div>
 
         <PasskeySection onChanged={() => setPasskeyVersion((v) => v + 1)} />
@@ -67,7 +69,7 @@ export default function SecurityPage() {
 
         <LineSection />
 
-        <h2 className="text-lg font-semibold text-gray-900 mt-10 mb-4 pt-6 border-t border-gray-200">เปลี่ยนรหัสผ่าน</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mt-10 mb-4 pt-6 border-t border-gray-200">{t("pages.changePasswordTitle")}</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
           {success && <div className="p-3 bg-green-100 text-green-700 rounded text-sm">{success}</div>}
