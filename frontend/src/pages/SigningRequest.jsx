@@ -20,7 +20,8 @@ import ElectronicSignModal from "../components/ElectronicSignModal.jsx";
 import SignaturePagePreview from "../components/signing/SignaturePagePreview.jsx";
 import SigningHeader from "../components/signing/SigningHeader.jsx";
 import { previewScale, previewZoom, useElementWidth } from "../components/signing/useElementWidth.js";
-import { DueDate, EVENT_LABELS, SIGN_TYPES, STEP_STATUS, StatusBadge, formatDateTime } from "../components/signing/labels.jsx";
+import { DueDate, StatusBadge, formatDateTime } from "../components/signing/labels.jsx";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 const BOX_STYLE = {
   signed: "border-green-600 bg-green-100/70 text-green-900",
@@ -29,6 +30,27 @@ const BOX_STYLE = {
   rejected: "border-red-500 bg-red-100/70 text-red-800",
   skipped: "border-gray-300 bg-gray-50/70 text-gray-500 border-dashed",
 };
+
+const KNOWN_EVENTS = new Set(["created", "viewed", "signed", "rejected", "cancelled", "completed", "reminded", "invite_accepted"]);
+
+function stepStatusClass(status) {
+  if (status === "signed") return "text-green-700";
+  if (status === "rejected") return "text-red-600";
+  if (status === "pending") return "text-blue-700";
+  return "text-gray-500";
+}
+
+function reportItemClass(r) {
+  if (!r.signed) return "text-gray-500";
+  if (r.intact && r.valid && r.modification_ok) return "text-green-700";
+  return "text-red-600";
+}
+
+function reportItemText(r, t) {
+  if (!r.signed) return t("signingFlow.detail.verifyUnsigned");
+  if (r.intact && r.valid && r.modification_ok) return t("signingFlow.detail.verifyValid", { signer: r.signer });
+  return t("signingFlow.detail.verifyInvalid");
+}
 
 function dataUrlToBlob(dataUrl) {
   const [head, body] = dataUrl.split(",");
@@ -40,6 +62,7 @@ function dataUrlToBlob(dataUrl) {
 }
 
 export default function SigningRequest() {
+  const { lang, t } = useI18n();
   const { id } = useParams();
   const [req, setReq] = useState(null);
   const [error, setError] = useState("");
@@ -68,7 +91,7 @@ export default function SigningRequest() {
   }, [id]);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   const myStep = useMemo(() => (req?.my_turn ? req.steps.find((s) => s.order === req.my_step_order) : null), [req]);
@@ -105,7 +128,7 @@ export default function SigningRequest() {
     }
     if (!prepared || Date.now() - prepared.at > 4 * 60 * 1000) {
       preparePasskey();
-      setError("กำลังเตรียมการยืนยันด้วย passkey — กรุณากดอีกครั้ง");
+      setError(t("signingFlow.detail.passkeyPreparing"));
       return;
     }
     const flow = prepared;
@@ -115,10 +138,10 @@ export default function SigningRequest() {
       setVerified({ flowId: flow.flow_id, credential });
       setModal(kind);
     } catch (err) {
-      const msg = passkeyErrorMessage(err) || (err?.name === "NotAllowedError" ? "ยกเลิกการยืนยันด้วย passkey แล้ว" : null);
+      const fallbackCancel = err?.name === "NotAllowedError" ? t("signingFlow.detail.passkeyCancelled") : null;
+      const msg = passkeyErrorMessage(err) || fallbackCancel;
       if (msg) {
-        setError(passkeyRequired ? msg
-          : `${msg} — ถ้าอุปกรณ์นี้ไม่มี passkey ให้เอาติ๊ก "ยืนยันตัวตนด้วย Passkey" ออก แล้วกดลงนามอีกครั้ง`);
+        setError(passkeyRequired ? msg : t("signingFlow.detail.passkeyFallback", { msg }));
       }
       preparePasskey();
     }
@@ -139,7 +162,7 @@ export default function SigningRequest() {
       const res = await action();
       setModal(null);
       setVerified(null);
-      setNotice(res?.warning ? `${success} — หมายเหตุ: ${res.warning}` : success);
+      setNotice(res?.warning ? t("signingFlow.detail.noticeWithWarning", { success, warning: res.warning }) : success);
       setReport(null);
       setVersion((v) => v + 1);
       await load();
@@ -159,8 +182,8 @@ export default function SigningRequest() {
   if (!req) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <SigningHeader title="คำขอลงนาม" />
-        <main className="max-w-6xl mx-auto px-4 py-6 text-sm">{error ? <p className="text-red-600">{error}</p> : <p className="text-gray-500">กำลังโหลด...</p>}</main>
+        <SigningHeader title={t("signingFlow.detail.defaultTitle")} />
+        <main className="max-w-6xl mx-auto px-4 py-6 text-sm">{error ? <p className="text-red-600">{error}</p> : <p className="text-gray-500">{t("common.loading")}</p>}</main>
       </div>
     );
   }
@@ -172,12 +195,48 @@ export default function SigningRequest() {
     .map((s) => ({
       id: s.order,
       rect: s.rect,
-      label: `${s.stage}. ${s.signer.name}${myStep?.order === s.order ? " (คุณ)" : ""}`,
+      label: `${s.stage}. ${s.signer.name}${myStep?.order === s.order ? t("signingFlow.detail.youParen") : ""}`,
       className: BOX_STYLE[s.status],
     }));
-  const currentSignerName = req.waiting_for?.length ? req.waiting_for.join(", ") : "ผู้ลงนาม";
-  const signTypeAllowed = (t) => myStep && (myStep.sign_type === "either" || myStep.sign_type === t);
+  const currentSignerName = req.waiting_for?.length ? req.waiting_for.join(", ") : t("signingFlow.create.defaultSigner");
+  const signTypeAllowed = (type) => myStep && (myStep.sign_type === "either" || myStep.sign_type === type);
   const hasTop = Boolean(error || notice || myStep);
+
+  function renderPasskeyNotice() {
+    if (passkeyRequired && hasPasskey === false) {
+      return (
+        <div className="p-2.5 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 text-xs" data-testid="passkey-needed">
+          {t("signingFlow.detail.passkeyNeededBefore")}
+          <strong>{t("signingFlow.detail.passkeyNeededStrong")}</strong>
+          {t("signingFlow.detail.passkeyNeededMid")}
+          <Link to="/security" className="underline font-medium">{t("signingFlow.detail.passkeyNeededLink")}</Link>
+          {t("signingFlow.detail.passkeyNeededAfter")}
+        </div>
+      );
+    }
+    if (passkeyRequired) {
+      return <p className="text-xs text-blue-900" data-testid="passkey-required">{t("signingFlow.detail.passkeyRequired")}</p>;
+    }
+    if (hasPasskey) {
+      return (
+        <label className="flex items-start gap-2 text-xs text-blue-900">
+          <input type="checkbox" className="mt-0.5" checked={usePasskey} onChange={(e) => setUsePasskey(e.target.checked)} />
+          <span>{t("signingFlow.detail.passkeyOptional")}</span>
+        </label>
+      );
+    }
+    return null;
+  }
+
+  function renderStepPasskey(s) {
+    if (s.verified_method === "passkey") {
+      return <p className="text-xs text-indigo-700">{t("signingFlow.detail.verifiedPasskey", { detail: s.verified_detail })}</p>;
+    }
+    if (s.require_passkey && s.status !== "signed") {
+      return <p className="text-xs text-gray-500">{t("signingFlow.detail.mustVerifyPasskey")}</p>;
+    }
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -190,40 +249,28 @@ export default function SigningRequest() {
             {notice && <div className="p-3 rounded-lg bg-green-50 text-green-800 text-sm" role="status">{notice}</div>}
             {myStep && (
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
-                <p className="text-sm font-semibold text-blue-900">ถึงคิวคุณลงนาม (ลำดับที่ {myStep.order})</p>
-                <p className="text-xs text-blue-800">ประเภท: {SIGN_TYPES[myStep.sign_type]} · กล่องลายเซ็นอยู่หน้า {myStep.page + 1}</p>
-                {passkeyRequired && hasPasskey === false ? (
-                  <div className="p-2.5 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 text-xs" data-testid="passkey-needed">
-                    ผู้ส่งกำหนดให้<strong>ยืนยันตัวตนด้วย Passkey</strong> ก่อนลงนาม แต่บัญชีนี้ยังไม่มี passkey —{" "}
-                    <Link to="/security" className="underline font-medium">เพิ่ม passkey ที่หน้าความปลอดภัย</Link> แล้วกลับมาที่หน้านี้
-                  </div>
-                ) : passkeyRequired ? (
-                  <p className="text-xs text-blue-900" data-testid="passkey-required">🔑 ผู้ส่งกำหนดให้ยืนยันตัวตนด้วย Passkey (สแกนหน้า/นิ้ว) ก่อนลงนาม</p>
-                ) : hasPasskey ? (
-                  <label className="flex items-start gap-2 text-xs text-blue-900">
-                    <input type="checkbox" className="mt-0.5" checked={usePasskey} onChange={(e) => setUsePasskey(e.target.checked)} />
-                    <span>ยืนยันตัวตนด้วย Passkey ก่อนลงนาม (บันทึกในหนังสือรับรองการลงนาม)</span>
-                  </label>
-                ) : null}
+                <p className="text-sm font-semibold text-blue-900">{t("signingFlow.detail.yourTurnTitle", { order: myStep.order })}</p>
+                <p className="text-xs text-blue-800">{t("signingFlow.detail.typeAndPage", { type: t(`signingFlow.signTypes.${myStep.sign_type}`), page: myStep.page + 1 })}</p>
+                {renderPasskeyNotice()}
                 <div className="flex flex-wrap gap-2">
                   {signTypeAllowed("electronic") && (
-                    <button className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm disabled:opacity-50" disabled={busy || (passkeyRequired && !hasPasskey)} onClick={() => startSigning("electronic")}>
-                      ลงนามอิเล็กทรอนิกส์
+                    <button className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm disabled:opacity-50" disabled={busy || (passkeyRequired && !hasPasskey)} onClick={() => void startSigning("electronic")}>
+                      {t("signingFlow.detail.signElectronic")}
                     </button>
                   )}
                   {signTypeAllowed("digital") && (
-                    <button className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm disabled:opacity-50" disabled={busy || (passkeyRequired && !hasPasskey)} onClick={() => startSigning("digital")}>
-                      ลงนามดิจิทัล (ใบรับรอง)
+                    <button className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm disabled:opacity-50" disabled={busy || (passkeyRequired && !hasPasskey)} onClick={() => void startSigning("digital")}>
+                      {t("signingFlow.detail.signDigital")}
                     </button>
                   )}
                   <button className="px-3 py-2 rounded-lg border border-red-300 text-red-600 text-sm bg-white disabled:opacity-50" disabled={busy} onClick={() => setModal("reject")}>
-                    ปฏิเสธ
+                    {t("signingFlow.detail.declineBtn")}
                   </button>
                 </div>
                 {myStep.page !== page && (
-                  <button className="text-xs text-blue-700 underline" onClick={() => setPage(myStep.page)}>ไปหน้าที่มีกล่องลายเซ็นของคุณ</button>
+                  <button className="text-xs text-blue-700 underline" onClick={() => setPage(myStep.page)}>{t("signingFlow.detail.goToMyBox")}</button>
                 )}
-                {busy && <p className="text-xs text-blue-800">กำลังลงนาม...</p>}
+                {busy && <p className="text-xs text-blue-800">{t("signingFlow.detail.signingBusy")}</p>}
               </div>
             )}
           </div>
@@ -233,10 +280,10 @@ export default function SigningRequest() {
           <div className="flex items-center justify-between gap-2 mb-3 text-sm">
             <StatusBadge status={req.status} />
             {req.page_sizes.length > 1 && (
-              <div className="flex items-center gap-1.5" aria-label="เปลี่ยนหน้า">
-                <button className="w-9 h-9 rounded-lg border border-gray-300 bg-white disabled:opacity-40" aria-label="หน้าก่อน" disabled={page === 0} onClick={() => setPage(page - 1)}>‹</button>
-                <span className="min-w-[4.5rem] text-center text-gray-700">หน้า {page + 1} / {req.page_sizes.length}</span>
-                <button className="w-9 h-9 rounded-lg border border-gray-300 bg-white disabled:opacity-40" aria-label="หน้าถัดไป" disabled={page >= req.page_sizes.length - 1} onClick={() => setPage(page + 1)}>›</button>
+              <div className="flex items-center gap-1.5" aria-label={t("signingFlow.detail.pageNavAria")}>
+                <button className="w-9 h-9 rounded-lg border border-gray-300 bg-white disabled:opacity-40" aria-label={t("signingFlow.detail.prevPageAria")} disabled={page === 0} onClick={() => setPage(page - 1)}>‹</button>
+                <span className="min-w-[4.5rem] text-center text-gray-700">{t("signingFlow.create.pageOf", { current: page + 1, total: req.page_sizes.length })}</span>
+                <button className="w-9 h-9 rounded-lg border border-gray-300 bg-white disabled:opacity-40" aria-label={t("signingFlow.detail.nextPageAria")} disabled={page >= req.page_sizes.length - 1} onClick={() => setPage(page + 1)}>›</button>
               </div>
             )}
           </div>
@@ -254,17 +301,17 @@ export default function SigningRequest() {
         <aside className={`min-w-0 space-y-4 lg:col-start-2 ${hasTop ? "lg:row-start-2" : "lg:row-start-1"}`}>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4 text-sm space-y-1">
-            <p><span className="text-gray-500">ผู้ส่ง:</span> {req.is_owner ? "คุณ" : `${req.owner.name} (${req.owner.email})`}</p>
-            <p><span className="text-gray-500">ส่งเมื่อ:</span> {formatDateTime(req.created_at)}</p>
-            {req.due_at && <p><span className="text-gray-500">ครบกำหนด:</span> <DueDate request={req} /></p>}
-            {req.completed_at && <p><span className="text-gray-500">ครบเมื่อ:</span> {formatDateTime(req.completed_at)}</p>}
+            <p><span className="text-gray-500">{t("signingFlow.detail.senderLabel")}</span> {req.is_owner ? t("signingFlow.inbox.you") : `${req.owner.name} (${req.owner.email})`}</p>
+            <p><span className="text-gray-500">{t("signingFlow.detail.sentAtLabel")}</span> {formatDateTime(req.created_at, lang)}</p>
+            {req.due_at && <p><span className="text-gray-500">{t("signingFlow.detail.dueAtLabel")}</span> <DueDate request={req} /></p>}
+            {req.completed_at && <p><span className="text-gray-500">{t("signingFlow.detail.completedAtLabel")}</span> {formatDateTime(req.completed_at, lang)}</p>}
             {req.message && <p className="mt-2 p-2 bg-gray-50 rounded whitespace-pre-wrap">{req.message}</p>}
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h2 className="text-sm font-semibold text-gray-800 mb-3">ลำดับผู้ลงนาม</h2>
+            <h2 className="text-sm font-semibold text-gray-800 mb-3">{t("signingFlow.detail.signersOrder")}</h2>
             {req.steps.some((s) => s.stage !== s.order) && (
-              <p className="text-xs text-gray-500 -mt-2 mb-3">ตัวเลขคือขั้น — คนที่อยู่ขั้นเดียวกันลงนามพร้อมกันได้</p>
+              <p className="text-xs text-gray-500 -mt-2 mb-3">{t("signingFlow.detail.parallelNote")}</p>
             )}
             <ol className="space-y-3" data-testid="signing-steps">
               {req.steps.map((s) => (
@@ -273,24 +320,20 @@ export default function SigningRequest() {
                     <span className={`mt-0.5 w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-xs font-bold border-2 ${BOX_STYLE[s.status]}`}>{s.stage}</span>
                     <div className="min-w-0">
                       <p className="font-medium text-gray-900 truncate">{s.signer.name}</p>
-                      <p className="text-xs text-gray-500 truncate">{s.signer.email} · {SIGN_TYPES[s.sign_type]}</p>
+                      <p className="text-xs text-gray-500 truncate">{s.signer.email} · {t(`signingFlow.signTypes.${s.sign_type}`)}</p>
                       {s.signer.invited && (
-                        <p className="text-xs text-amber-700">✉ ส่งคำเชิญแล้ว — รอสมัครสมาชิกด้วยอีเมลนี้</p>
+                        <p className="text-xs text-amber-700">{t("signingFlow.detail.invitedStatus")}</p>
                       )}
                       <p className="text-xs mt-0.5">
-                        <span className={s.status === "signed" ? "text-green-700" : s.status === "rejected" ? "text-red-600" : s.status === "pending" ? "text-blue-700" : "text-gray-500"}>
-                          {STEP_STATUS[s.status]}
+                        <span className={stepStatusClass(s.status)}>
+                          {t(`signingFlow.stepStatus.${s.status}`)}
                         </span>
-                        {s.signed_at && <span className="text-gray-500"> · {formatDateTime(s.signed_at)}</span>}
-                        {s.signed_type && <span className="text-gray-500"> · {s.signed_type === "digital" ? "ดิจิทัล" : "อิเล็กทรอนิกส์"}</span>}
+                        {s.signed_at && <span className="text-gray-500"> · {formatDateTime(s.signed_at, lang)}</span>}
+                        {s.signed_type && <span className="text-gray-500"> · {s.signed_type === "digital" ? t("signingFlow.detail.typeDigitalShort") : t("signingFlow.detail.typeElectronicShort")}</span>}
                       </p>
-                      {s.verified_method === "passkey" ? (
-                        <p className="text-xs text-indigo-700">🔑 ยืนยันตัวตนด้วย Passkey ({s.verified_detail})</p>
-                      ) : s.require_passkey && s.status !== "signed" ? (
-                        <p className="text-xs text-gray-500">🔑 ต้องยืนยันด้วย Passkey</p>
-                      ) : null}
-                      {s.cert_subject && <p className="text-xs text-gray-500 truncate" title={s.cert_subject}>ผู้ลงนามในใบรับรอง: {s.cert_subject}</p>}
-                      {s.comment && <p className="text-xs text-red-600 mt-0.5">เหตุผล: {s.comment}</p>}
+                      {renderStepPasskey(s)}
+                      {s.cert_subject && <p className="text-xs text-gray-500 truncate" title={s.cert_subject}>{t("signingFlow.detail.certSubject", { subject: s.cert_subject })}</p>}
+                      {s.comment && <p className="text-xs text-red-600 mt-0.5">{t("signingFlow.detail.rejectReasonLabel", { reason: s.comment })}</p>}
                     </div>
                   </div>
                 </li>
@@ -301,36 +344,36 @@ export default function SigningRequest() {
           <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
             <button
               className="w-full py-2 rounded-lg border border-gray-300 text-sm hover:bg-gray-50"
-              onClick={() => downloadSigningDocument(req.id, `${req.title}.pdf`).then(({ blob, filename }) => saveBlob(blob, filename)).catch((e) => setError(e.message))}
+              onClick={() => void downloadSigningDocument(req.id, `${req.title}.pdf`).then(({ blob, filename }) => saveBlob(blob, filename)).catch((e) => setError(e.message))}
             >
-              ดาวน์โหลดเอกสาร (เวอร์ชันล่าสุด)
+              {t("signingFlow.detail.downloadLatest")}
             </button>
             <button
               className="w-full py-2 rounded-lg border border-gray-300 text-sm hover:bg-gray-50"
-              onClick={() => verifySigningRequest(req.id).then((r) => setReport(r.signatures)).catch((e) => setError(e.message))}
+              onClick={() => void verifySigningRequest(req.id).then((r) => setReport(r.signatures)).catch((e) => setError(e.message))}
             >
-              ตรวจสอบลายเซ็นในเอกสาร
+              {t("signingFlow.detail.verifySignatures")}
             </button>
             <button
               className="w-full py-2 rounded-lg border border-gray-300 text-sm hover:bg-gray-50"
-              title="สรุปผู้ลงนาม เวลา IP และค่า SHA-256 ของเอกสาร (PDF แยก ลงนามโดยระบบ)"
+              title={t("signingFlow.detail.downloadEvidenceTitle")}
               onClick={() =>
-                downloadSigningEvidence(req.id, `${req.title} (หลักฐานการลงนาม).pdf`)
+                void downloadSigningEvidence(req.id, `${req.title} (${t("signingFlow.detail.evidenceFilenameSuffix")}).pdf`)
                   .then(({ blob, filename }) => saveBlob(blob, filename))
                   .catch((e) => setError(e.message))
               }
             >
-              ดาวน์โหลดหนังสือรับรองการลงนาม
+              {t("signingFlow.detail.downloadEvidence")}
             </button>
             {report && (
               <ul className="text-xs space-y-1" data-testid="verify-report">
                 {report.map((r) => (
-                  <li key={r.field_name} className={!r.signed ? "text-gray-500" : r.intact && r.valid && r.modification_ok ? "text-green-700" : "text-red-600"}>
-                    {r.field_name}: {!r.signed ? "ยังไม่ลงนาม" : r.intact && r.valid && r.modification_ok ? `ถูกต้อง (${r.signer})` : "ลายเซ็นไม่ถูกต้อง หรือเอกสารถูกแก้หลังลงนาม"}
-                    {r.timestamp && <span className="text-gray-500"> · ประทับเวลาโดย TSA {formatDateTime(r.timestamp)}</span>}
+                  <li key={r.field_name} className={reportItemClass(r)}>
+                    {r.field_name}: {reportItemText(r, t)}
+                    {r.timestamp && <span className="text-gray-500">{t("signingFlow.detail.verifyTsa", { time: formatDateTime(r.timestamp, lang) })}</span>}
                   </li>
                 ))}
-                <li className="text-gray-500">* ตรวจความครบถ้วนของเอกสารและลายเซ็น ไม่ได้ตรวจว่าผู้ออกใบรับรองเป็นหน่วยงานที่เชื่อถือได้</li>
+                <li className="text-gray-500">{t("signingFlow.detail.verifyDisclaimer")}</li>
               </ul>
             )}
             {req.is_owner && req.status === "in_progress" && (
@@ -338,31 +381,31 @@ export default function SigningRequest() {
                 <button
                   className="w-full py-2 rounded-lg border border-blue-200 text-blue-700 text-sm hover:bg-blue-50 disabled:opacity-50"
                   disabled={busy}
-                  onClick={() => run(() => remindSigningRequest(req.id), `ส่งเตือน ${currentSignerName} แล้ว`)}
+                  onClick={() => void run(() => remindSigningRequest(req.id), t("signingFlow.detail.remindedSuccess", { names: currentSignerName }))}
                 >
-                  ส่งเตือนผู้ลงนาม
+                  {t("signingFlow.detail.remindBtn")}
                 </button>
                 {req.last_reminded_at && (
-                  <p className="text-xs text-gray-500">เตือนล่าสุด: {formatDateTime(req.last_reminded_at)}</p>
+                  <p className="text-xs text-gray-500">{t("signingFlow.detail.lastReminded", { time: formatDateTime(req.last_reminded_at, lang) })}</p>
                 )}
               </>
             )}
             {req.is_owner && req.status === "in_progress" && (
               <button className="w-full py-2 rounded-lg border border-red-200 text-red-600 text-sm hover:bg-red-50" onClick={() => setModal("cancel")}>
-                ยกเลิกคำขอนี้
+                {t("signingFlow.detail.cancelReqBtn")}
               </button>
             )}
             {req.is_owner && req.status === "completed" && (
-              <p className="text-xs text-green-700">ไฟล์ที่ลงนามครบแล้วอยู่ในหน้า "เอกสารของฉัน" — อย่าแก้ไขเนื้อหาไฟล์นั้น เพราะลายเซ็นจะไม่ถูกต้อง</p>
+              <p className="text-xs text-green-700">{t("signingFlow.detail.completedHint")}</p>
             )}
           </div>
 
           <details className="bg-white rounded-xl border border-gray-200 p-4 text-xs">
-            <summary className="cursor-pointer text-sm font-semibold text-gray-800">ประวัติ (หลักฐาน)</summary>
+            <summary className="cursor-pointer text-sm font-semibold text-gray-800">{t("signingFlow.detail.historyTitle")}</summary>
             <ul className="mt-2 space-y-1.5">
               {(req.events || []).map((e, i) => (
                 <li key={i} className="text-gray-600">
-                  <span className="text-gray-400">{formatDateTime(e.created_at)}</span> · {EVENT_LABELS[e.action] || e.action}
+                  <span className="text-gray-400">{formatDateTime(e.created_at, lang)}</span> · {KNOWN_EVENTS.has(e.action) ? t(`signingFlow.events.${e.action}`) : e.action}
                   {e.detail ? ` — ${e.detail}` : ""}
                   {e.sha256_after && <span className="block text-gray-400 break-all">SHA-256: {e.sha256_after}</span>}
                 </li>
@@ -376,7 +419,7 @@ export default function SigningRequest() {
         <ElectronicSignModal
           onCancel={() => { setModal(null); setVerified(null); if (wantPasskey) preparePasskey(); }}
           onConfirm={(_base64, dataUrl) =>
-            run(() => signSigningRequest(req.id, { signType: "electronic", signatureBlob: dataUrlToBlob(dataUrl), passkey: verified }), "ลงนามเรียบร้อยแล้ว")
+            void run(() => signSigningRequest(req.id, { signType: "electronic", signatureBlob: dataUrlToBlob(dataUrl), passkey: verified }), t("signingFlow.detail.signedElectronicSuccess"))
           }
         />
       )}
@@ -384,34 +427,34 @@ export default function SigningRequest() {
         <DigitalSignModal
           onCancel={() => { setModal(null); setVerified(null); if (wantPasskey) preparePasskey(); }}
           onConfirm={(file, password, reason, _location, _contact, _name, imageFile) =>
-            run(() => signSigningRequest(req.id, { signType: "digital", pfxFile: file, password, reason, signatureBlob: imageFile, passkey: verified }), "ลงนามดิจิทัลเรียบร้อยแล้ว")
+            void run(() => signSigningRequest(req.id, { signType: "digital", pfxFile: file, password, reason, signatureBlob: imageFile, passkey: verified }), t("signingFlow.detail.signedDigitalSuccess"))
           }
         />
       )}
       {(modal === "reject" || modal === "cancel") && (
         <div className="modal-overlay">
           <div className="modal-card">
-            <h2 className="modal-title">{modal === "reject" ? "ปฏิเสธการลงนาม" : "ยกเลิกคำขอลงนาม"}</h2>
+            <h2 className="modal-title">{modal === "reject" ? t("signingFlow.detail.rejectModalTitle") : t("signingFlow.detail.cancelModalTitle")}</h2>
             {modal === "reject" ? (
               <>
-                <p className="modal-subtitle">ผู้ส่งจะได้รับแจ้งพร้อมเหตุผล และคำขอนี้จะสิ้นสุด</p>
-                <textarea className="modal-input" rows={3} placeholder="เหตุผล" value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+                <p className="modal-subtitle">{t("signingFlow.detail.rejectModalDesc")}</p>
+                <textarea className="modal-input" rows={3} placeholder={t("signingFlow.detail.rejectReasonPlaceholder")} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
               </>
             ) : (
-              <p className="modal-subtitle">ผู้ลงนามที่ยังไม่ได้ลงนามจะลงนามต่อไม่ได้ ต้องการยกเลิกหรือไม่?</p>
+              <p className="modal-subtitle">{t("signingFlow.detail.cancelModalDesc")}</p>
             )}
             <div className="modal-actions">
-              <button className="secondary-btn" onClick={() => setModal(null)}>ปิด</button>
+              <button className="secondary-btn" onClick={() => setModal(null)}>{t("common.close")}</button>
               <button
                 className="primary-btn"
                 disabled={busy || (modal === "reject" && !rejectReason.trim())}
                 onClick={() =>
-                  modal === "reject"
-                    ? run(() => rejectSigningRequest(req.id, rejectReason.trim()), "ปฏิเสธการลงนามแล้ว")
-                    : run(() => cancelSigningRequest(req.id), "ยกเลิกคำขอแล้ว")
+                  void (modal === "reject"
+                    ? run(() => rejectSigningRequest(req.id, rejectReason.trim()), t("signingFlow.detail.rejectedSuccess"))
+                    : run(() => cancelSigningRequest(req.id), t("signingFlow.detail.cancelledSuccess")))
                 }
               >
-                ยืนยัน
+                {t("common.confirm")}
               </button>
             </div>
           </div>

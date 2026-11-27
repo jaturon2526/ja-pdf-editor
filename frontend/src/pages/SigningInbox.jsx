@@ -5,11 +5,12 @@ import { getSigningPreferences, listSigningRequests, setSigningPreferences } fro
 import { getLineStatus } from "../api/line.js";
 import SigningHeader from "../components/signing/SigningHeader.jsx";
 import { DueDate, StatusBadge, formatDateTime } from "../components/signing/labels.jsx";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 const TABS = [
-  { key: "to_sign", label: "รอฉันลงนาม" },
-  { key: "sent", label: "ที่ฉันส่ง" },
-  { key: "all", label: "ทั้งหมด" },
+  { key: "to_sign", labelKey: "signingFlow.inbox.tabToSign" },
+  { key: "sent", labelKey: "signingFlow.inbox.tabSent" },
+  { key: "all", labelKey: "signingFlow.inbox.tabAll" },
 ];
 
 function progress(r) {
@@ -22,8 +23,9 @@ function nextSigner(r) {
 }
 
 export default function SigningInbox() {
+  const { lang, t } = useI18n();
   const [params, setParams] = useSearchParams();
-  const box = TABS.some((t) => t.key === params.get("box")) ? params.get("box") : "to_sign";
+  const box = TABS.some((tab) => tab.key === params.get("box")) ? params.get("box") : "to_sign";
   const [items, setItems] = useState(null);
   const [error, setError] = useState("");
   const [emailOn, setEmailOn] = useState(null); // null = ยังโหลดไม่เสร็จ
@@ -65,49 +67,49 @@ export default function SigningInbox() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <SigningHeader title="การลงนามเอกสาร" backTo="/dashboard" />
+      <SigningHeader title={t("signingFlow.inbox.title")} backTo="/dashboard" />
       <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div className="flex gap-1 bg-white rounded-lg border border-gray-200 p-1 w-full sm:w-auto" role="tablist">
-            {TABS.map((t) => (
+            {TABS.map((tab) => (
               <button
-                key={t.key}
+                key={tab.key}
                 role="tab"
-                aria-selected={box === t.key}
-                onClick={() => setParams({ box: t.key })}
-                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium whitespace-nowrap ${box === t.key ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+                aria-selected={box === tab.key}
+                onClick={() => setParams({ box: tab.key })}
+                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium whitespace-nowrap ${box === tab.key ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
               >
-                {t.label}
+                {t(tab.labelKey)}
               </button>
             ))}
           </div>
           <div className="flex flex-col items-start sm:items-end gap-1">
-          {emailOn !== null && (
-            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-              <input
-                type="checkbox"
-                className="h-4 w-4"
-                checked={emailOn}
-                disabled={savingPref}
-                onChange={(e) => toggleEmail(e.target.checked)}
-              />
-              รับอีเมลแจ้งเตือนการลงนาม
-            </label>
-          )}
-          {line && (
-            <Link to="/security" className="text-xs text-green-700 hover:underline">
-              {line.linked && line.notifications ? "แจ้งเตือนส่งทาง LINE แทนอีเมล · ตั้งค่า →" : "รับแจ้งเตือนทาง LINE แทน →"}
-            </Link>
-          )}
+            {emailOn !== null && (
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={emailOn}
+                  disabled={savingPref}
+                  onChange={(e) => void toggleEmail(e.target.checked)}
+                />
+                {t("signingFlow.inbox.emailNotif")}
+              </label>
+            )}
+            {line && (
+              <Link to="/security" className="text-xs text-green-700 hover:underline">
+                {line.linked && line.notifications ? t("signingFlow.inbox.lineActive") : t("signingFlow.inbox.lineSetup")}
+              </Link>
+            )}
           </div>
         </div>
-        <p className="text-sm text-gray-500 mb-4">ส่งเอกสารให้ลงนามได้จากการ์ด "ส่งเอกสารให้ลงนาม" หรือเมนู ☰ ของไฟล์ในหน้าเอกสารของฉัน</p>
+        <p className="text-sm text-gray-500 mb-4">{t("signingFlow.inbox.hint")}</p>
 
         {error && <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm mb-4">{error}</div>}
-        {items === null && !error && <p className="text-sm text-gray-500">กำลังโหลด...</p>}
+        {items === null && !error && <p className="text-sm text-gray-500">{t("common.loading")}</p>}
         {items && items.length === 0 && (
           <div className="bg-white rounded-xl border border-gray-200 p-10 text-center text-gray-500 text-sm">
-            {box === "to_sign" ? "ไม่มีเอกสารที่รอคุณลงนาม" : "ยังไม่มีรายการ"}
+            {box === "to_sign" ? t("signingFlow.inbox.emptyToSign") : t("signingFlow.inbox.emptyAll")}
           </div>
         )}
         {items && items.length > 0 && (
@@ -119,26 +121,26 @@ export default function SigningInbox() {
                     <p className="font-semibold text-gray-900 leading-snug min-w-0 break-words">{r.title}</p>
                     <StatusBadge status={r.status} />
                   </div>
-                  {r.my_turn && <span className="inline-block mt-2 text-xs text-white bg-blue-600 rounded px-1.5 py-0.5">ถึงคิวคุณ</span>}
+                  {r.my_turn && <span className="inline-block mt-2 text-xs text-white bg-blue-600 rounded px-1.5 py-0.5">{t("signingFlow.inbox.myTurnBadge")}</span>}
                   <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-                    <dt className="text-gray-500">ผู้ส่ง</dt>
-                    <dd className="text-gray-800 truncate">{r.is_owner ? "คุณ" : r.owner.name}</dd>
-                    <dt className="text-gray-500">ลงนามแล้ว</dt>
+                    <dt className="text-gray-500">{t("signingFlow.inbox.colSender")}</dt>
+                    <dd className="text-gray-800 truncate">{r.is_owner ? t("signingFlow.inbox.you") : r.owner.name}</dd>
+                    <dt className="text-gray-500">{t("signingFlow.inbox.colSigned")}</dt>
                     <dd className="text-gray-800">{progress(r)}</dd>
                     {r.status === "in_progress" && (
                       <>
-                        <dt className="text-gray-500">รอ</dt>
+                        <dt className="text-gray-500">{t("signingFlow.inbox.colWaiting")}</dt>
                         <dd className="text-gray-800 truncate">{nextSigner(r)}</dd>
                         {r.due_at && (
                           <>
-                            <dt className="text-gray-500">ครบกำหนด</dt>
+                            <dt className="text-gray-500">{t("signingFlow.inbox.colDue")}</dt>
                             <dd><DueDate request={r} /></dd>
                           </>
                         )}
                       </>
                     )}
-                    <dt className="text-gray-500">ส่งเมื่อ</dt>
-                    <dd className="text-gray-600">{formatDateTime(r.created_at)}</dd>
+                    <dt className="text-gray-500">{t("signingFlow.inbox.colSentAt")}</dt>
+                    <dd className="text-gray-600">{formatDateTime(r.created_at, lang)}</dd>
                   </dl>
                 </Link>
               </li>
@@ -150,13 +152,13 @@ export default function SigningInbox() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">เอกสาร</th>
-                  <th className="text-left px-4 py-3 font-medium">ผู้ส่ง</th>
-                  <th className="text-left px-4 py-3 font-medium">สถานะ</th>
-                  <th className="text-left px-4 py-3 font-medium">ลงนามแล้ว</th>
-                  <th className="text-left px-4 py-3 font-medium">รอ</th>
-                  <th className="text-left px-4 py-3 font-medium">ครบกำหนด</th>
-                  <th className="text-left px-4 py-3 font-medium">ส่งเมื่อ</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("signingFlow.inbox.colDoc")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("signingFlow.inbox.colSender")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("signingFlow.inbox.colStatus")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("signingFlow.inbox.colSigned")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("signingFlow.inbox.colWaiting")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("signingFlow.inbox.colDue")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("signingFlow.inbox.colSentAt")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -164,14 +166,14 @@ export default function SigningInbox() {
                   <tr key={r.id} className="hover:bg-blue-50/40">
                     <td className="px-4 py-3">
                       <Link to={`/signing/${r.id}`} className="font-medium text-blue-700 hover:underline">{r.title}</Link>
-                      {r.my_turn && <span className="ml-2 text-xs text-white bg-blue-600 rounded px-1.5 py-0.5">ถึงคิวคุณ</span>}
+                      {r.my_turn && <span className="ml-2 text-xs text-white bg-blue-600 rounded px-1.5 py-0.5">{t("signingFlow.inbox.myTurnBadge")}</span>}
                     </td>
-                    <td className="px-4 py-3 text-gray-700">{r.is_owner ? "คุณ" : r.owner.name}</td>
+                    <td className="px-4 py-3 text-gray-700">{r.is_owner ? t("signingFlow.inbox.you") : r.owner.name}</td>
                     <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                     <td className="px-4 py-3 text-gray-700">{progress(r)}</td>
                     <td className="px-4 py-3 text-gray-700">{r.status === "in_progress" ? nextSigner(r) : "-"}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{r.status === "in_progress" ? <DueDate request={r} /> : "-"}</td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDateTime(r.created_at)}</td>
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDateTime(r.created_at, lang)}</td>
                   </tr>
                 ))}
               </tbody>

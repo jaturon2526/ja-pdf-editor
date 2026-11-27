@@ -4,6 +4,7 @@
 // - กล่องที่ editable ลากย้าย/ปรับขนาด (มุมขวาล่าง) ได้ (onBoxChange(id, rect))
 import { useRef, useState } from "react";
 import { useAuthedImage } from "./useAuthedImage.js";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
 const MIN_W = 40;
 const MIN_H = 20;
@@ -19,6 +20,7 @@ export default function SignaturePagePreview({
   onPlace,
   onBoxChange,
 }) {
+  const { t } = useI18n();
   const src = useAuthedImage(imageUrl);
   const sheetRef = useRef(null);
   const [hover, setHover] = useState(null); // ตำแหน่งเมาส์ (pt) ระหว่างวางกล่อง
@@ -83,7 +85,7 @@ export default function SignaturePagePreview({
       {src ? (
         <img src={src} alt="" draggable={false} className="w-full h-full select-none pointer-events-none" />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">กำลังโหลด...</div>
+        <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">{t("common.loading")}</div>
       )}
       {placing && ghost && hover && (() => {
         // จุดเมาส์อยู่กลางกล่อง และกล่องไม่ล้นขอบหน้า (ตรงกับตำแหน่งที่จะวางจริงเมื่อคลิก)
