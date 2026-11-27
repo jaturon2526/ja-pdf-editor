@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { createScan, getScanStatus, openFile } from "../api.js";
+import { getAiQuota } from "../api/auth.js";
 import CornerEditor from "../components/scan/CornerEditor.jsx";
 import useWordConversion from "../hooks/useWordConversion.jsx";
 import { cameraSupported, capturePhoto, isInAppBrowser, openRearCamera, setTorch, stopStream, toImageData } from "../scan/camera.js";
@@ -83,6 +84,9 @@ export default function ScanPage() {
   const [qualityWarn, setQualityWarn] = useState(null); // หน้าที่แปลงแล้วแต่ภาพเบลอ/มีแสงสะท้อน — รอผู้ใช้ตัดสินใจ
   const [mode, setMode] = useState("bw");
   const [strength, setStrength] = useState("normal");
+  const [outputMode, setOutputMode] = useState("image"); // image | rebuild
+  const [useAi, setUseAi] = useState(false);
+  const [aiAvailable, setAiAvailable] = useState(null);
   const [busy, setBusy] = useState("");
   const [filename, setFilename] = useState("");
   const [progress, setProgress] = useState(null); // {label, value}
@@ -324,6 +328,16 @@ export default function ScanPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, engineReady, mode, strength, pages.length]);
 
+  // ตรวจสิทธิ์ AI เมื่อเข้าหน้าตรวจสอบเอกสาร (ครั้งเดียว)
+  useEffect(() => {
+    if (screen !== "review" || aiAvailable !== null) return undefined;
+    let cancelled = false;
+    getAiQuota()
+      .then((q) => { if (!cancelled) setAiAvailable(q.ai_available !== false); })
+      .catch(() => { if (!cancelled) setAiAvailable(false); });
+    return () => { cancelled = true; };
+  }, [screen, aiAvailable]);
+
   function movePage(index, delta) {
     setPages((ps) => {
       const next = [...ps];
@@ -385,13 +399,29 @@ export default function ScanPage() {
         ocrBlobs.push(mode === "bw" ? await ocrImage(p) : null);
       }
       const name = filename.trim() || scanFilename(startedAtRef.current || new Date());
-      const { task_id: taskId } = await createScan(name, blobs, (f) => setProgress({ label: "กำลังอัปโหลด...", value: 0.2 + f * 0.3 }), ocrBlobs);
+      const aiEnabled = outputMode === "rebuild" && useAi && aiAvailable !== false;
+      let savingLabel = "กำลังสร้าง PDF และอ่านข้อความ (OCR)...";
+      if (outputMode === "rebuild") {
+        savingLabel = aiEnabled
+          ? "กำลังวาด PDF ใหม่และให้ AI ตรวจคำไทย..."
+          : "กำลังวาด PDF ใหม่และตรวจคำไทย...";
+      }
+      const { task_id: taskId } = await createScan(
+        name,
+        blobs,
+        (f) => setProgress({ label: "กำลังอัปโหลด...", value: 0.2 + f * 0.3 }),
+        ocrBlobs,
+        { outputMode, useAi: aiEnabled },
+      );
       for (;;) {
         await new Promise((r) => setTimeout(r, 1500));
         const st = await getScanStatus(taskId);
         if (st.status === "failed") throw new Error(st.error_message || "สร้าง PDF ไม่สำเร็จ");
-        if (st.status === "completed") { setResult(st.file); break; }
-        setProgress({ label: "กำลังสร้าง PDF และอ่านข้อความ (OCR)...", value: 0.5 + (st.progress / 100) * 0.5 });
+        if (st.status === "completed") {
+          setResult({ ...st.file, outputMode: st.output_mode || outputMode, aiStatus: st.ai_status || null });
+          break;
+        }
+        setProgress({ label: savingLabel, value: 0.5 + (st.progress / 100) * 0.5 });
       }
       await clearPages();
       setScreen("done");
@@ -566,13 +596,57 @@ export default function ScanPage() {
               ))}
               {busy && <span className="text-xs text-slate-400">{busy}</span>}
             </div>
+            <div className="space-y-2">
+              <span className="block text-xs text-slate-400">รูปแบบผลลัพธ์ PDF</span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  data-testid="scan-output-image"
+                  className={`min-h-[48px] px-3 py-2 rounded-xl text-left border transition ${outputMode === "image" ? "bg-blue-600/25 border-blue-400 text-white" : "bg-white/5 border-white/10 text-slate-300"}`}
+                  onClick={() => setOutputMode("image")}
+                >
+                  <div className="text-sm font-medium">ภาพสแกน + OCR</div>
+                  <div className="text-[11px] text-slate-300/80">รูปแบบเดิม · ค้นหาคำได้</div>
+                </button>
+                <button
+                  type="button"
+                  data-testid="scan-output-rebuild"
+                  className={`min-h-[48px] px-3 py-2 rounded-xl text-left border transition ${outputMode === "rebuild" ? "bg-emerald-600/25 border-emerald-400 text-white" : "bg-white/5 border-white/10 text-slate-300"}`}
+                  onClick={() => setOutputMode("rebuild")}
+                >
+                  <div className="text-sm font-medium">วาดใหม่เป็น PDF</div>
+                  <div className="text-[11px] text-slate-300/80">ข้อความ/ตารางแก้ไขได้</div>
+                </button>
+              </div>
+              {outputMode === "rebuild" && (
+                <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 space-y-2 text-xs">
+                  <p className="text-emerald-300">✓ วาดข้อความ ตาราง และรูปย่อยเป็น PDF Object พร้อมตรวจคำไทยอัตโนมัติ</p>
+                  {aiAvailable !== false && (
+                    <div className="flex items-start gap-2.5 pt-1 border-t border-white/10">
+                      <input
+                        id="scan-use-ai"
+                        type="checkbox"
+                        data-testid="scan-use-ai"
+                        checked={useAi}
+                        onChange={(e) => setUseAi(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded accent-emerald-500"
+                      />
+                      <label htmlFor="scan-use-ai" className="cursor-pointer select-none">
+                        <span className="block text-slate-100 font-medium">ให้ AI ช่วยตรวจแก้คำไทยเพิ่มเติม</span>
+                        <span className="block text-[11px] text-slate-400">ใช้โควต้า AI ประจำวัน หรือ API Key ส่วนตัว</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             <label className="block text-xs text-slate-400">
               ชื่อไฟล์
               <input value={filename} onChange={(e) => setFilename(e.target.value)} className="mt-1 w-full rounded-lg bg-white/10 px-3 py-2 text-base text-white" />
             </label>
             <div className="flex gap-2">
-              <Btn className="bg-white/10 text-sm" onClick={startOver}>เริ่มใหม่</Btn>
-              <Btn className="flex-1 bg-emerald-500 text-black" disabled={!pages.length || !!busy} onClick={save}>บันทึก PDF ({pages.length} หน้า)</Btn>
+              <Btn className="bg-white/10 text-sm" onClick={() => void startOver()}>เริ่มใหม่</Btn>
+              <Btn className="flex-1 bg-emerald-500 text-black" disabled={!pages.length || !!busy} onClick={() => void save()}>บันทึก PDF ({pages.length} หน้า)</Btn>
             </div>
           </div>
         </>
@@ -594,7 +668,19 @@ export default function ScanPage() {
           <div>
             <p className="text-lg font-semibold">บันทึกแล้ว</p>
             <p className="text-slate-300 break-all mt-1">{result.filename}</p>
-            <p className="text-xs text-slate-400 mt-1">ค้นหาคำและเซ็นเซอร์ข้อความในไฟล์นี้ได้ · เปลี่ยนชื่อได้จากเมนู ☰ ในเอกสารของฉัน</p>
+            {result.outputMode === "rebuild" ? (
+              <div className="mt-2 space-y-1">
+                <p className="text-xs text-slate-300">วาดข้อความ ตาราง และรูปย่อยเป็น PDF Object แล้ว — แก้ไขข้อความ/ตารางต่อใน Editor ได้ทันที</p>
+                {result.aiStatus === "ai" && (
+                  <p className="text-xs text-emerald-300">✨ ตรวจแก้คำไทยด้วย AI เรียบร้อยแล้ว</p>
+                )}
+                {result.aiStatus === "fallback" && (
+                  <p className="text-xs text-amber-300">⚠️ AI ไม่พร้อมใช้งานหรือโควต้าหมด — ตรวจคำไทยด้วยพจนานุกรมในเครื่องแทน</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 mt-1">ค้นหาคำและเซ็นเซอร์ข้อความในไฟล์นี้ได้ · เปลี่ยนชื่อได้จากเมนู ☰ ในเอกสารของฉัน</p>
+            )}
           </div>
           <div className="flex flex-col w-full max-w-xs gap-2">
             <Btn className="bg-blue-600" onClick={openResult}>เปิดไฟล์</Btn>

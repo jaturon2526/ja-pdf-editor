@@ -53,8 +53,14 @@ def _scan_dir(task_id: str):
     return settings.WORKING_DIR / f"scan_{task_id}"
 
 
-def process_scan_task(task_id: str, filename: str) -> None:
+def process_scan_task(
+    task_id: str,
+    filename: str,
+    output_mode: str = "image",
+    use_ai: bool = False,
+) -> None:
     from app.db.database import SessionLocal
+    from app.services import scan_pdf_rebuild
 
     db = SessionLocal()
     folder = _scan_dir(task_id)
@@ -72,9 +78,22 @@ def process_scan_task(task_id: str, filename: str) -> None:
             task.progress = 5 + int(85 * done / total)
             db.commit()
 
-        title = filename[:-4]
-        pdf_bytes = pdf_service.build_scan_pdf(images, title=title, progress=progress, ocr_images=ocr_images)
         user = db.query(User).filter(User.id == task.user_id).first()
+        title = filename[:-4]
+        meta_note: str | None = None
+        if output_mode == "rebuild":
+            pdf_bytes, ai_status = scan_pdf_rebuild.build_rebuilt_scan_pdf(
+                images,
+                title=title,
+                progress=progress,
+                ocr_images=ocr_images,
+                user=user,
+                use_ai=use_ai,
+            )
+            meta_note = f"rebuild:{ai_status}"
+        else:
+            pdf_bytes = pdf_service.build_scan_pdf(images, title=title, progress=progress, ocr_images=ocr_images)
+
         check_storage_quota(db, user, len(pdf_bytes))
 
         storage_id = uuid.uuid4().hex
@@ -86,6 +105,7 @@ def process_scan_task(task_id: str, filename: str) -> None:
         db.flush()
         task.file_record_id = record.id
         task.status, task.progress = "completed", 100
+        task.error_message = meta_note
         db.commit()
     except Exception as exc:  # noqa: BLE001 — รายงานให้ผู้ใช้เห็นในหน้าสแกน
         db.rollback()
@@ -108,9 +128,14 @@ async def create_scan(
     pages: list[UploadFile] = File(...),
     # ภาพเทาสำหรับอ่านข้อความ (ไม่บังคับ) เรียงตามหน้า — ไฟล์ชื่อ ocr-NNN.* ระบุหน้าที่ (เริ่ม 1) หน้าที่ไม่มีใช้ภาพหน้าเอง
     ocr_pages: list[UploadFile] | None = File(None),
+    # image = รูปแบบเดิม (ภาพสแกน + ชั้นข้อความ OCR ล่องหน) · rebuild = วาดใหม่เป็น PDF Object (ข้อความ/ตารางแก้ไขได้)
+    output_mode: str = Form("image"),
+    use_ai: bool = Form(False),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
+    if output_mode not in ("image", "rebuild"):
+        raise HTTPException(status_code=400, detail="รูปแบบผลลัพธ์ไม่ถูกต้อง (รองรับ image หรือ rebuild)")
     if not pages:
         raise HTTPException(status_code=400, detail="ไม่มีภาพสแกน")
     if len(pages) > pdf_service.SCAN_MAX_PAGES:
@@ -145,8 +170,14 @@ async def create_scan(
         (folder / f"{i:03d}.ocr").write_bytes(data)
     db.add(ConversionTask(id=task_id, user_id=current_user.id, status="pending", progress=0))
     db.commit()
-    background_tasks.add_task(process_scan_task, task_id, clean_scan_filename(filename))
-    return {"task_id": task_id, "pages": len(contents)}
+    background_tasks.add_task(
+        process_scan_task,
+        task_id,
+        clean_scan_filename(filename),
+        output_mode,
+        bool(use_ai) if output_mode == "rebuild" else False,
+    )
+    return {"task_id": task_id, "pages": len(contents), "output_mode": output_mode}
 
 
 @router.get("/scan/status/{task_id}")
@@ -160,5 +191,14 @@ def scan_status(task_id: str, db: Session = Depends(get_db), current_user: User 
         if record:
             file = {"id": record.id, "filename": record.filename, "session_id": record.storage_path,
                     "file_size": record.file_size}
-    return {"task_id": task.id, "status": task.status, "progress": task.progress,
-            "error_message": task.error_message, "file": file}
+    meta = task.error_message if task.status == "completed" else None
+    is_rebuild = bool(meta and meta.startswith("rebuild:"))
+    return {
+        "task_id": task.id,
+        "status": task.status,
+        "progress": task.progress,
+        "error_message": task.error_message if task.status == "failed" else None,
+        "output_mode": "rebuild" if is_rebuild else "image",
+        "ai_status": meta.split(":", 1)[1] if is_rebuild else None,
+        "file": file,
+    }

@@ -158,6 +158,129 @@ def accept_ai_text(local: str, ai) -> str | None:
     return ai
 
 
+def fix_thai_text_groups(
+    groups_list: list[list[str]],
+    user: User | None = None,
+    progress_callback=None,
+    source: str = "ocr",
+) -> tuple[list[list[str]], str]:
+    """แก้คำไทยในรายการกลุ่มข้อความ (1 รายการ = 1 ย่อหน้า, ภายในเป็นรายการช่วงข้อความที่ต้องคงจำนวนเท่าเดิม)
+    ด้วย thai_text.normalize + AI (ถ้ามีโควต้า/API key) พร้อมตัวกรอง accept_ai_text กัน AI แต่งคำเอง
+    คืนค่า (fixed_groups, status) โดย status = 'ai' | 'fallback' | 'basic'"""
+    local = [[_normalize_thai_text(t) for t in groups] for groups in groups_list]
+    if not local:
+        if progress_callback:
+            progress_callback(100)
+        return local, "ai"
+
+    chosen = [list(x) for x in local]
+    user_ai = ai_client.personal_config(user)
+    system_ai = ai_client.system_config()
+    if not user_ai and not system_ai:
+        if progress_callback:
+            progress_callback(100)
+        return chosen, "basic"
+
+    system_key_allowed = bool(
+        system_ai and user is not None
+        and ai_usage.try_reserve(user.id, ai_usage.SYSTEM_CONVERSION, settings.AI_SYSTEM_DAILY_LIMIT)
+    )
+    reserved_system_quota = system_key_allowed
+    if not user_ai and not system_key_allowed:
+        if progress_callback:
+            progress_callback(100)
+        return chosen, "fallback"
+
+    ai_cfg = system_ai if system_key_allowed else user_ai
+    try:
+        model_name = ai_client.resolve_model(ai_cfg)
+    except Exception as e:
+        logger.error("ตั้งค่า AI (%s) ไม่ครบ: %s", ai_cfg.provider, e)
+        if reserved_system_quota:
+            ai_usage.release(user.id, ai_usage.SYSTEM_CONVERSION)
+        if progress_callback:
+            progress_callback(100)
+        return chosen, "fallback"
+
+    status = "ai"
+    batch_size = 30
+    ai_batches = personal_batches = accepted = rejected = 0
+    total_batches = (len(local) + batch_size - 1) // batch_size
+    origin = (
+        "recognized by OCR from a scanned page; some words may be misread "
+        "(look-alike Thai letters swapped, missing or wrong vowels/tone marks)"
+    ) if source == "ocr" else (
+        "extracted from a PDF and already normalized; some words may still be misspelled "
+        "(wrong or missing vowels/tone marks, broken Sara Am, characters swapped by bad font encoding)"
+    )
+
+    try:
+        for start in range(0, len(local), batch_size):
+            if progress_callback:
+                progress_callback(int((start // batch_size + 1) / total_batches * 100))
+            idx = list(range(start, min(start + batch_size, len(local))))
+            texts = ["\n".join(local[i]) for i in idx]
+            prompt = f"""You are a Thai text fixing tool.
+The Thai text below was {origin}.
+Fix only the Thai spelling of each paragraph. DO NOT translate, summarize, reorder, add or remove words.
+DO NOT change numbers, English text, punctuation or line breaks ("\\n") — keep the same number of lines.
+Return EXACTLY a JSON array of strings of length {len(texts)}, in the same order.
+
+Input JSON:
+{json.dumps(texts, ensure_ascii=False)}"""
+            for attempt in range(3):
+                try:
+                    resp_text = ai_client.generate(ai_cfg, prompt, model=model_name).strip()
+                    if resp_text.startswith("```"):
+                        resp_text = resp_text.split("\n", 1)[1] if "\n" in resp_text else resp_text[3:]
+                        resp_text = resp_text.rsplit("```", 1)[0]
+                    fixed = json.loads(resp_text.strip())
+                    if not isinstance(fixed, list) or len(fixed) != len(idx):
+                        raise ValueError("JSON length mismatch")
+                    for i, out in zip(idx, fixed):
+                        lines = out.split("\n") if isinstance(out, str) else None
+                        if lines is None or len(lines) != len(local[i]):
+                            rejected += len(local[i])
+                            continue
+                        for k, line in enumerate(lines):
+                            ok = accept_ai_text(local[i][k], line)
+                            if ok is None:
+                                rejected += 1
+                            else:
+                                chosen[i][k] = ok
+                                accepted += 1
+                    ai_batches += 1
+                    if not system_key_allowed:
+                        personal_batches += 1
+                    break
+                except Exception as e:
+                    if ai_client.is_rate_limited(e) and attempt < 2:
+                        import time
+
+                        time.sleep(2)
+                        continue
+                    logger.error("AI (%s) fix failed for batch (attempt %d): %s", ai_cfg.provider, attempt + 1, e)
+                    status = "fallback"
+                    break
+
+        if rejected:
+            logger.info("AI แก้คำไทย (scan rebuild): ใช้ %d ช่วง ปฏิเสธ %d ช่วง", accepted, rejected)
+        user_id = getattr(user, "id", None)
+        ai_usage.add(user_id, ai_usage.AI_REQUEST, ai_batches)
+        ai_usage.add(user_id, ai_usage.PERSONAL_REQUEST, personal_batches)
+        if reserved_system_quota and status == "fallback":
+            ai_usage.release(user.id, ai_usage.SYSTEM_CONVERSION)
+        reserved_system_quota = False
+        if progress_callback:
+            progress_callback(100)
+        return chosen, status
+    except Exception as e:
+        logger.error("AI Thai text fix failed: %s", e)
+        if reserved_system_quota and user is not None:
+            ai_usage.release(user.id, ai_usage.SYSTEM_CONVERSION)
+        return chosen, "fallback"
+
+
 def _thai_paragraphs(doc) -> list[list]:
     """กลุ่มข้อความ (paragraph_text_groups) ของทุกย่อหน้าที่มีภาษาไทย — รวมในตาราง/กล่องข้อความ ตามลำดับเอกสาร"""
     from docx.oxml.ns import qn

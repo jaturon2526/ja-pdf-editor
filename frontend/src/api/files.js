@@ -197,10 +197,12 @@ export async function scanStoredFilePii(fileId, password = null) {
   return handle(res);
 }
 
-// สแกนเอกสาร: ส่งภาพทุกหน้า (เรียงตามลำดับ) → งานเบื้องหลังสร้าง PDF + OCR — ดู backend api/pdf/scan.py
-export async function createScan(filename, blobs, onUploadProgress, ocrBlobs = []) {
+// สแกนเอกสาร: ส่งภาพทุกหน้า (เรียงตามลำดับ) → งานเบื้องหลังสร้าง PDF + OCR (หรือวาดใหม่เป็น PDF Object) — ดู backend api/pdf/scan.py
+export async function createScan(filename, blobs, onUploadProgress, ocrBlobs = [], options = {}) {
   const form = new FormData();
   form.append("filename", filename);
+  form.append("output_mode", options.outputMode === "rebuild" ? "rebuild" : "image");
+  form.append("use_ai", options.useAi ? "true" : "false");
   const ext = (b) => (b.type === "image/png" ? "png" : "jpg");
   blobs.forEach((b, i) => form.append("pages", b, `page-${String(i + 1).padStart(3, "0")}.${ext(b)}`));
   // ภาพสำหรับอ่านข้อความ (ไม่บังคับ) — ชื่อไฟล์ระบุหน้าที่ (เริ่ม 1) หน้าที่ไม่มีใช้ภาพหน้าเอง
