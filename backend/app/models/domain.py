@@ -35,6 +35,7 @@ class User(Base):
     max_sessions = Column(Integer, default=1)
     
     # User's Personal Settings
+    language = Column(String(10), nullable=False, default="th", server_default="th")
     # API key ส่วนตัวสำหรับ AI (ชื่อคอลัมน์เดิม — เก็บ key ของทุกค่าย) + ค่ายที่เลือก (ว่าง = gemini) — ดู services/ai_client.py
     encrypted_gemini_key = Column(String, nullable=True)
     ai_provider = Column(String(20), nullable=True)

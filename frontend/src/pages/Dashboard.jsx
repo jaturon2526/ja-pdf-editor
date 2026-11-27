@@ -25,6 +25,7 @@ import QuickFileAction, { formatFileSize } from '../components/dashboard/QuickFi
 import StoredFileProperties from '../components/dashboard/StoredFileProperties.jsx';
 import { listSigningRequests } from '../api/signing.js';
 import { downloadStoredFile, saveBlob } from '../api.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 const UPLOAD_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
 // ไฟล์ Office แปลงเป็น PDF ที่เซิร์ฟเวอร์ (LibreOffice) แล้วเก็บเป็น PDF — ต้องตรงกับ OFFICE_EXTS ใน backend/app/api/pdf/files.py
@@ -41,6 +42,7 @@ function isSupportedUpload(file) {
 }
 
 export default function Dashboard() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [files, setFiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -499,25 +501,27 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-1 sm:gap-3 relative">
               <NotificationBell />
-              <button 
+              <button
+                type="button"
                 onClick={() => window.open("/manual.html", "_blank")}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                title="คู่มือการใช้งาน"
-                aria-label="คู่มือการใช้งาน"
+                title={t("auth.manual")}
+                aria-label={t("auth.manual")}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                <span className="hidden sm:inline">คู่มือ</span>
+                <span className="hidden sm:inline">{t("dashboard.manual")}</span>
               </button>
               {user && (
                 <div className="relative">
-                  <button 
+                  <button
+                    type="button"
                     aria-label="เมนูบัญชี"
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
                     className="flex items-center gap-2 focus:outline-none"
                   >
                     <UserAvatar user={user} size={40} className="hover:bg-blue-700 transition-colors" />
                   </button>
-                  
+
                   {isProfileOpen && (
                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg py-1 z-10 border border-gray-100 overflow-hidden transform opacity-100 scale-100 transition-all origin-top-right">
                       <div className="px-4 py-3 border-b border-gray-50 bg-gray-50/50">
@@ -525,29 +529,29 @@ export default function Dashboard() {
                         {user.display_name && <p className="text-xs text-gray-500 truncate mt-0.5">{user.email}</p>}
                         <p className="text-xs text-blue-600 mt-1 font-medium uppercase tracking-wider">Plan: {user.plan_type}{user.plan_type !== "free" && user.expire_date ? ` · ถึง ${new Date(user.expire_date).toLocaleDateString("th-TH", { dateStyle: "medium" })}` : ""}</p>
                       </div>
-                      <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/profile"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                        โปรไฟล์ส่วนตัว
+                      <a href="/profile" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/profile"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                        {t("profile.title")}
                       </a>
-                      {donationsOn && !user.is_admin && <a href="#" data-testid="menu-support" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/support"); }} className="block px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 transition-colors">
-                        ☕ สนับสนุนผู้พัฒนา
+                      {donationsOn && !user.is_admin && <a href="/support" data-testid="menu-support" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/support"); }} className="block px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 transition-colors">
+                        {t("auth.supportDev")}
                       </a>}
-                      <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/security"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                        ความปลอดภัย
+                      <a href="/security" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/security"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                        {t("dashboard.security")}
                       </a>
                       {/* ไม่มี AI ของระบบและไม่เปิดให้ใช้ key ส่วนตัว = ไม่มีอะไรให้ตั้ง → ซ่อนเมนู */}
                       {(aiQuota?.system_ai || aiQuota?.user_keys_enabled) && (
-                        <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/ai-config"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                          ตั้งค่า AI (API Key)
+                        <a href="/ai-config" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/ai-config"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                          {t("dashboard.aiConfig")}
                         </a>
                       )}
                       {user.is_admin && (
-                        <a href="#" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/admin"); }} className="block px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition-colors font-medium">
-                          จัดการระบบ (Admin)
+                        <a href="/admin" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/admin"); }} className="block px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition-colors font-medium">
+                          {t("dashboard.admin")}
                         </a>
                       )}
                       <div className="border-t border-gray-100"></div>
-                      <a href="#" onClick={(e) => { e.preventDefault(); void handleLogout(); }} className="block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 font-medium transition-colors">
-                        ออกจากระบบ
+                      <a href="/login" onClick={(e) => { e.preventDefault(); void handleLogout(); }} className="block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 font-medium transition-colors">
+                        {t("dashboard.logout")}
                       </a>
                     </div>
                   )}
@@ -721,14 +725,14 @@ export default function Dashboard() {
         </div>
 
         <div className="pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between mb-6">
-          <h3 className="text-2xl leading-6 font-bold text-gray-900 whitespace-nowrap shrink-0">
-            เอกสารของฉัน
+          <h3 className="text-2xl leading-6 font-bold text-gray-900 whitespace-nowrap shrink-0" data-testid="dashboard-my-docs-heading">
+            {t("dashboard.myDocuments")}
           </h3>
           <div className="mt-3 sm:mt-0 sm:ml-4 flex items-center gap-2 sm:gap-4 flex-wrap sm:justify-end">
             <div className="relative w-full sm:w-64">
-              <input 
-                type="text" 
-                placeholder="ค้นหาเอกสาร..." 
+              <input
+                type="text"
+                placeholder={t("dashboard.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors"

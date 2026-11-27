@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { resetPassword } from "../api";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import { validatePassword } from "../utils/password";
 
 export default function ResetPassword() {
+  const { t } = useI18n();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
-  
+
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,7 +19,7 @@ export default function ResetPassword() {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center text-red-600">
-          ไม่พบ Token สำหรับรีเซ็ตรหัสผ่าน กรุณากดลิงก์จากอีเมลอีกครั้ง
+          {t("auth.resetPasswordMissingToken")}
         </div>
       </div>
     );
@@ -26,9 +28,9 @@ export default function ResetPassword() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
-    
+
     if (newPassword !== confirmPassword) {
-      setError("รหัสผ่านไม่ตรงกัน");
+      setError(t("auth.resetPasswordMismatch"));
       return;
     }
     const pwdError = validatePassword(newPassword);
@@ -42,7 +44,7 @@ export default function ResetPassword() {
       await resetPassword(token, newPassword);
       setSuccess(true);
     } catch (err) {
-      setError(err.message || "ตั้งรหัสผ่านใหม่ไม่สำเร็จ");
+      setError(err.message || t("auth.resetPasswordFailed"));
     } finally {
       setLoading(false);
     }
@@ -51,24 +53,24 @@ export default function ResetPassword() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-2xl font-bold text-center mb-6">ตั้งรหัสผ่านใหม่</h2>
-        
+        <h2 className="text-2xl font-bold text-center mb-6">{t("auth.resetPasswordTitle")}</h2>
+
         {success ? (
           <div className="text-center">
             <div className="mb-4 text-green-600 bg-green-50 p-4 rounded">
-              ตั้งรหัสผ่านใหม่สำเร็จแล้ว
+              {t("auth.resetPasswordSuccess")}
             </div>
             <Link to="/login" className="inline-block bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700">
-              ไปหน้าเข้าสู่ระบบ
+              {t("auth.goToLogin")}
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             {error && <div className="text-red-500 text-sm bg-red-50 p-2 rounded">{error}</div>}
-            
+
             <div>
               <label htmlFor="resetpassword-f70" className="block text-sm font-medium text-gray-700 mb-1">
-                รหัสผ่านใหม่
+                {t("auth.resetPasswordNew")}
               </label>
               <input id="resetpassword-f70"
                 type="password"
@@ -78,10 +80,10 @@ export default function ResetPassword() {
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            
+
             <div>
               <label htmlFor="resetpassword-f83" className="block text-sm font-medium text-gray-700 mb-1">
-                ยืนยันรหัสผ่านใหม่
+                {t("auth.resetPasswordConfirm")}
               </label>
               <input id="resetpassword-f83"
                 type="password"
@@ -91,16 +93,16 @@ export default function ResetPassword() {
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <p className="mt-2 text-xs text-rose-500">
-                * ข้อแนะนำ: รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร และประกอบด้วยตัวพิมพ์ใหญ่ (A-Z) ตัวพิมพ์เล็ก (a-z) และตัวเลข (0-9) อย่างน้อย 1 ตัว
+                {t("auth.resetPasswordRule")}
               </p>
             </div>
-            
+
             <button
               type="submit"
               disabled={loading}
               className="w-full bg-blue-600 text-white font-semibold py-2 rounded hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? "กำลังดำเนินการ..." : "บันทึกรหัสผ่านใหม่"}
+              {loading ? t("common.processing") : t("auth.resetPasswordSave")}
             </button>
           </form>
         )}

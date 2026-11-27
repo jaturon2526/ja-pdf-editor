@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 const ICONS = {
   editTable: (
@@ -195,7 +196,7 @@ const ZOOM_MAX_PCT = 500;
 // ช่องกรอกซูมเป็น % ได้ตรงๆ (พิมพ์เลขเอง แทนที่จะกดปุ่ม +/- อย่างเดียว)
 // เก็บ text ที่พิมพ์อยู่แยกจาก zoom จริง เพื่อให้พิมพ์เลขระหว่างทาง (เช่นลบเลขเดิมออกก่อน) ได้อิสระ
 // แล้วค่อย commit (พอ blur หรือกด Enter) — ถ้าเลขไม่ถูกต้องจะ revert กลับไปค่าซูมปัจจุบัน
-function ZoomPercentInput({ zoom, onCommit, disabled }) {
+function ZoomPercentInput({ zoom, onCommit, disabled, title }) {
   const [text, setText] = useState(String(Math.round(zoom * 100)));
 
   useEffect(() => {
@@ -224,7 +225,7 @@ function ZoomPercentInput({ zoom, onCommit, disabled }) {
         onChange={(e) => setText(e.target.value.replace(/[^0-9]/g, ""))}
         onBlur={commit}
         onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-        title="พิมพ์เปอร์เซ็นต์ซูม"
+        title={title}
       />
       <span className="text-xs text-slate-500 pr-1 select-none">%</span>
     </span>
@@ -234,27 +235,27 @@ function ZoomPercentInput({ zoom, onCommit, disabled }) {
 // ปุ่ม "บันทึกการแก้ไข" — ยิง API จริงทีเดียวรวมทุกย่อหน้าที่กด "ตกลง" สะสมไว้ในโหมดแก้ไขข้อความ
 // (ดูหมายเหตุ pendingEdits ใน App.jsx) ผู้ใช้แจ้งว่าอยากบันทึกครั้งเดียวหลังแก้ไขครบทุกจุดแล้ว
 // ไม่ใช่ยิงทีละจุดเหมือนเดิม ปุ่มนี้จึงแยกจากปุ่ม "ดาวน์โหลด" เดิม (ซึ่งแค่ export ไฟล์ปัจจุบันออกไป)
-function ApplyEditsButton({ pendingEditCount, onApplyEdits, applyingEdits, onCancelEdits, showApplyAllButton, onApplyAllPages }) {
+function ApplyEditsButton({ pendingEditCount, onApplyEdits, applyingEdits, onCancelEdits, showApplyAllButton, onApplyAllPages, t }) {
   const disabled = applyingEdits || pendingEditCount === 0;
   return (
     <div className="flex gap-2">
-      <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={onApplyEdits} disabled={disabled} title="บันทึกการแก้ไขทั้งหมดลงไฟล์จริง">
+      <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={onApplyEdits} disabled={disabled} title={t("editor.toolbar.applyEditsTitle")}>
         {ICONS.save}
-        <span>{applyingEdits ? "กำลังบันทึก…" : "ยืนยัน"}</span>
+        <span>{applyingEdits ? t("editor.toolbar.applying") : t("common.confirm")}</span>
         {!applyingEdits && pendingEditCount > 0 && (
           <span className="bg-white text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">{pendingEditCount}</span>
         )}
       </button>
-      
+
       {showApplyAllButton && pendingEditCount > 0 && (
-        <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={onApplyAllPages} disabled={disabled} title="บันทึกและนำไปใช้กับทุกหน้า">
+        <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={onApplyAllPages} disabled={disabled} title={t("editor.toolbar.applyAllTitle")}>
           {ICONS.save}
-          <span>นำไปใช้ทุกหน้า</span>
+          <span>{t("editor.toolbar.applyAll")}</span>
         </button>
       )}
       {onCancelEdits && (
-        <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={onCancelEdits} disabled={applyingEdits} title="ยกเลิกการแก้ไขทั้งหมด">
-          <span>ยกเลิก</span>
+        <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={onCancelEdits} disabled={applyingEdits} title={t("editor.toolbar.cancelEditsTitle")}>
+          <span>{t("common.cancel")}</span>
         </button>
       )}
     </div>
@@ -293,17 +294,18 @@ export default function Toolbar({
   onFindClick,
   onApplyAllPages,
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-nowrap overflow-x-auto items-center gap-1.5 px-3 py-2 bg-white border-b border-slate-200 shadow-sm z-40 relative scrollbar-hide" style={{ scrollbarWidth: "none" }}>
       <div className="flex items-center gap-1 shrink-0">
-        <ToolbarButton icon="open" label="เปิดไฟล์ (Ctrl+O)" onClick={onOpenClick} />
-        <ToolbarButton icon="save" label="บันทึกลงเซิร์ฟเวอร์ (Ctrl+S)" onClick={onSaveClick} disabled={!hasDocument} />
-        <ToolbarButton icon="download" label="ดาวน์โหลดลงเครื่อง" onClick={onDownloadClick} disabled={!hasDocument} />
-        <ToolbarButton icon="print" label="พิมพ์เอกสาร (Ctrl+P)" onClick={onPrintClick} disabled={!hasDocument} />
-        <ToolbarButton icon="close" label="ปิดไฟล์" onClick={onCloseClick} disabled={!hasDocument} />
+        <ToolbarButton icon="open" label={t("editor.toolbar.open")} onClick={onOpenClick} />
+        <ToolbarButton icon="save" label={t("editor.toolbar.save")} onClick={onSaveClick} disabled={!hasDocument} />
+        <ToolbarButton icon="download" label={t("editor.toolbar.download")} onClick={onDownloadClick} disabled={!hasDocument} />
+        <ToolbarButton icon="print" label={t("editor.toolbar.print")} onClick={onPrintClick} disabled={!hasDocument} />
+        <ToolbarButton icon="close" label={t("editor.toolbar.close")} onClick={onCloseClick} disabled={!hasDocument} />
         <ToolbarButton
           icon="properties"
-          label="คุณสมบัติเอกสาร"
+          label={t("editor.toolbar.properties")}
           onClick={onDocPropsClick}
           disabled={!hasDocument}
         />
@@ -312,15 +314,15 @@ export default function Toolbar({
       <div className="w-px h-6 shrink-0 bg-slate-300 mx-1" />
 
       <div className="flex items-center gap-1 shrink-0">
-        <ToolbarButton icon="zoomOut" label="ย่อ" onClick={onZoomOut} disabled={!hasDocument} />
-        <ZoomPercentInput zoom={zoom} onCommit={onZoomSet} disabled={!hasDocument} />
-        <ToolbarButton icon="zoomIn" label="ขยาย" onClick={onZoomIn} disabled={!hasDocument} />
-        <ToolbarButton icon="fitWidth" label="พอดีความกว้าง" onClick={onZoomFitWidth} disabled={!hasDocument} />
-        <ToolbarButton icon="fitHeight" label="พอดีหน้า" onClick={onZoomFitHeight} disabled={!hasDocument} />
+        <ToolbarButton icon="zoomOut" label={t("editor.toolbar.zoomOut")} onClick={onZoomOut} disabled={!hasDocument} />
+        <ZoomPercentInput zoom={zoom} onCommit={onZoomSet} disabled={!hasDocument} title={t("editor.toolbar.zoomInput")} />
+        <ToolbarButton icon="zoomIn" label={t("editor.toolbar.zoomIn")} onClick={onZoomIn} disabled={!hasDocument} />
+        <ToolbarButton icon="fitWidth" label={t("editor.toolbar.fitWidth")} onClick={onZoomFitWidth} disabled={!hasDocument} />
+        <ToolbarButton icon="fitHeight" label={t("editor.toolbar.fitHeight")} onClick={onZoomFitHeight} disabled={!hasDocument} />
         {onToggleContinuousMode && (
           <ToolbarButton
             icon="continuousScroll"
-            label={continuousMode ? "เลื่อนหน้าต่อเนื่อง (คลิกเพื่อดูทีละหน้า)" : "แสดงทีละหน้า (คลิกเพื่อเลื่อนต่อเนื่อง)"}
+            label={continuousMode ? t("editor.toolbar.continuousActive") : t("editor.toolbar.continuousInactive")}
             active={continuousMode}
             onClick={onToggleContinuousMode}
             disabled={!hasDocument}
@@ -333,9 +335,9 @@ export default function Toolbar({
       {/* เลิกทำ/ทำซ้ำ (Undo/Redo) — ผู้ใช้แจ้งให้เพิ่มปุ่มบน toolbar แทรกถัดจากกลุ่มซูม (เดิมมีแค่ใน
           เมนู Edit เท่านั้น — ดู MenuBar.jsx/App.jsx handleUndo/handleRedo ซึ่ง toolbar เรียกใช้ตัวเดียวกัน) */}
       <div className="flex items-center gap-1 shrink-0">
-        <ToolbarButton icon="undo" label="เลิกทำ (Ctrl+Z)" onClick={onUndo} disabled={!hasDocument || !canUndo} />
-        <ToolbarButton icon="redo" label="ทำซ้ำ (Ctrl+Y)" onClick={onRedo} disabled={!hasDocument || !canRedo} />
-        <ToolbarButton icon="search" label="ค้นหาในเอกสาร (Ctrl+F)" active={findOpen} onClick={onFindClick} disabled={!hasDocument} />
+        <ToolbarButton icon="undo" label={t("editor.toolbar.undo")} onClick={onUndo} disabled={!hasDocument || !canUndo} />
+        <ToolbarButton icon="redo" label={t("editor.toolbar.redo")} onClick={onRedo} disabled={!hasDocument || !canRedo} />
+        <ToolbarButton icon="search" label={t("editor.toolbar.find")} active={findOpen} onClick={onFindClick} disabled={!hasDocument} />
       </div>
 
       <div className="w-px h-6 shrink-0 bg-slate-300 mx-1" />
@@ -343,42 +345,42 @@ export default function Toolbar({
       <div className="flex items-center gap-1 shrink-0">
         <ToolbarButton
           icon="select"
-          label="เลือก"
+          label={t("editor.toolbar.select")}
           active={activeTool === null}
           onClick={() => onSelectTool(null)}
           disabled={!hasDocument}
         />
         <ToolbarButton
           icon="hand"
-          label="เลื่อนหน้า"
+          label={t("editor.toolbar.hand")}
           active={activeTool === "hand"}
           onClick={() => onSelectTool(activeTool === "hand" ? null : "hand")}
           disabled={!hasDocument}
         />
         <ToolbarButton
           icon="highlight"
-          label="เน้นข้อความ"
+          label={t("editor.toolbar.highlight")}
           active={activeTool === "highlight"}
           onClick={() => onSelectTool("highlight")}
           disabled={!hasDocument}
         />
         <ToolbarButton
           icon="freetext"
-          label="กล่องข้อความ"
+          label={t("editor.toolbar.freetext")}
           active={activeTool === "freetext"}
           onClick={() => onSelectTool("freetext")}
           disabled={!hasDocument}
         />
         <ToolbarButton
           icon="rect"
-          label="รูปสี่เหลี่ยม"
+          label={t("editor.toolbar.rect")}
           active={activeTool === "rect"}
           onClick={() => onSelectTool("rect")}
           disabled={!hasDocument}
         />
         <ToolbarButton
           icon="note"
-          label="บันทึกย่อ"
+          label={t("editor.toolbar.note")}
           active={activeTool === "text_note"}
           onClick={() => onSelectTool("text_note")}
           disabled={!hasDocument}
@@ -390,42 +392,42 @@ export default function Toolbar({
       <div className="flex items-center gap-1 shrink-0">
         <ToolbarButton
           icon="insertText"
-          label="แทรกข้อความ"
+          label={t("editor.toolbar.insertText")}
           active={activeTool === "insert_text" || activeTool === "edit_text"}
           onClick={() => onSelectTool(activeTool === "insert_text" || activeTool === "edit_text" ? null : "insert_text")}
           disabled={!hasDocument}
         />
         <ToolbarButton
           icon="insertImage"
-          label="แทรกรูปภาพ"
+          label={t("editor.toolbar.insertImage")}
           active={activeTool === "edit_image"}
           onClick={onInsertImage}
           disabled={!hasDocument}
         />
         <ToolbarButton
           icon="redact"
-          label="เซ็นเซอร์"
+          label={t("editor.toolbar.redact")}
           active={activeTool === "redact"}
           onClick={() => onSelectTool("redact")}
           disabled={!hasDocument}
         />
         <ToolbarButton
           icon="editTable"
-          label="แก้ไขตาราง"
+          label={t("editor.toolbar.editTable")}
           active={activeTool === "edit_table"}
           onClick={() => onSelectTool(activeTool === "edit_table" ? null : "edit_table")}
           disabled={!hasDocument}
         />
         <ToolbarButton
           icon="inspectFont"
-          label="ตรวจฟอนต์"
+          label={t("editor.toolbar.inspectFont")}
           active={activeTool === "inspect_font"}
           onClick={() => onSelectTool(activeTool === "inspect_font" ? null : "inspect_font")}
           disabled={!hasDocument}
         />
         <ToolbarButton
           icon="editBarcode"
-          label="ย้าย / ลบบาร์โค้ด"
+          label={t("editor.toolbar.editBarcode")}
           active={activeTool === "edit_barcode"}
           onClick={() => onSelectTool(activeTool === "edit_barcode" ? null : "edit_barcode")}
           disabled={!hasDocument}
@@ -443,6 +445,7 @@ export default function Toolbar({
               onCancelEdits={onCancelEdits}
               showApplyAllButton={editMode === "redact"}
               onApplyAllPages={onApplyAllPages}
+              t={t}
             />
           </div>
         </>

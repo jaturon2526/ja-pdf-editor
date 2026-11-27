@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { forgotPassword } from "../api";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 export default function ForgotPassword() {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -16,7 +18,7 @@ export default function ForgotPassword() {
       await forgotPassword(email);
       setSuccess(true);
     } catch (err) {
-      setError(err.message || "เกิดข้อผิดพลาด");
+      setError(err.message || t("common.errorGeneric"));
     } finally {
       setLoading(false);
     }
@@ -25,24 +27,24 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-2xl font-bold text-center mb-6">ลืมรหัสผ่าน</h2>
-        
+        <h2 className="text-2xl font-bold text-center mb-6">{t("auth.forgotPasswordTitle")}</h2>
+
         {success ? (
           <div className="text-center">
             <div className="mb-4 text-green-600 bg-green-50 p-4 rounded">
-              ระบบได้ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปที่อีเมลของคุณเรียบร้อยแล้ว กรุณาเช็คกล่องข้อความหรือกล่องจดหมายขยะ (Spam)
+              {t("auth.forgotPasswordSent")}
             </div>
             <Link to="/login" className="text-blue-600 hover:underline">
-              กลับไปหน้าเข้าสู่ระบบ
+              {t("auth.backToLogin")}
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             {error && <div className="text-red-500 text-sm bg-red-50 p-2 rounded">{error}</div>}
-            
+
             <div>
               <label htmlFor="forgotpassword-f44" className="block text-sm font-medium text-gray-700 mb-1">
-                อีเมลที่ใช้สมัครสมาชิก
+                {t("auth.forgotPasswordEmailLabel")}
               </label>
               <input id="forgotpassword-f44"
                 type="email"
@@ -53,18 +55,18 @@ export default function ForgotPassword() {
                 placeholder="name@example.com"
               />
             </div>
-            
+
             <button
               type="submit"
               disabled={loading}
               className="w-full bg-blue-600 text-white font-semibold py-2 rounded hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? "กำลังดำเนินการ..." : "ส่งลิงก์รีเซ็ตรหัสผ่าน"}
+              {loading ? t("common.processing") : t("auth.forgotPasswordSubmit")}
             </button>
-            
+
             <div className="text-center mt-4">
               <Link to="/login" className="text-sm text-gray-600 hover:text-blue-600">
-                กลับไปหน้าเข้าสู่ระบบ
+                {t("auth.backToLogin")}
               </Link>
             </div>
           </form>

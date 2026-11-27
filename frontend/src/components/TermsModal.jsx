@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { acceptToS } from '../api';
 import { useAppName } from '../hooks/useAppName.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 // Inline SVG icons (no external dependency needed)
 const IconShield = () => (
@@ -18,6 +19,7 @@ const IconWarning = () => (
 );
 
 export default function TermsModal({ onAccepted, onDecline }) {
+  const { t } = useI18n();
   const appName = useAppName();
   const [loading, setLoading] = useState(false);
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
@@ -51,8 +53,8 @@ export default function TermsModal({ onAccepted, onDecline }) {
             <IconShield />
           </div>
           <div>
-            <h2 className="text-2xl font-bold font-sans">ข้อตกลงและเงื่อนไขการใช้บริการ</h2>
-            <p className="text-sky-100 text-sm mt-1">กรุณาอ่านและยอมรับข้อตกลงก่อนเริ่มต้นใช้งาน {appName}</p>
+            <h2 className="text-2xl font-bold font-sans">{t("termsModal.title")}</h2>
+            <p className="text-sky-100 text-sm mt-1">{t("termsModal.subtitle", { appName })}</p>
           </div>
         </div>
 
@@ -122,9 +124,10 @@ export default function TermsModal({ onAccepted, onDecline }) {
               ผู้พัฒนาขอสงวนสิทธิ์ในการแก้ไขข้อตกลงนี้ได้ตลอดเวลา เราจะแจ้งให้ท่านทราบถึงการเปลี่ยนแปลงที่สำคัญ ผู้พัฒนาขอสงวนสิทธิ์ในการระงับหรือยกเลิกบัญชีผู้ใช้ของท่านทันทีหากพบว่ามีการละเมิดข้อตกลงฉบับนี้
             </p>
             <p className="mt-6 text-sm">
-              อ่านฉบับเต็มได้ที่{" "}
-              <a href="/terms" target="_blank" rel="noreferrer" className="text-sky-700 underline">ข้อกำหนดการใช้งาน</a> และ{" "}
-              <a href="/privacy" target="_blank" rel="noreferrer" className="text-sky-700 underline">นโยบายความเป็นส่วนตัว</a>
+              {t("termsModal.readFull")}{" "}
+              <a href="/terms" target="_blank" rel="noreferrer" className="text-sky-700 underline">{t("auth.terms")}</a>{" "}
+              {t("termsModal.and")}{" "}
+              <a href="/privacy" target="_blank" rel="noreferrer" className="text-sky-700 underline">{t("auth.privacy")}</a>
             </p>
 
           </div>
@@ -133,20 +136,22 @@ export default function TermsModal({ onAccepted, onDecline }) {
         {/* Footer / Actions */}
         <div className="bg-white px-6 py-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className={`text-sm transition-colors duration-300 ${scrolledToBottom ? 'text-green-600 font-medium' : 'text-slate-500'}`}>
-            {scrolledToBottom 
-              ? '✓ คุณได้อ่านข้อตกลงจนครบถ้วนแล้ว' 
-              : '↓ โปรดเลื่อนอ่านข้อตกลงให้ครบถ้วนก่อนกดยอมรับ'}
+            {scrolledToBottom
+              ? t("termsModal.scrollDone")
+              : t("termsModal.scrollPrompt")}
           </p>
           <div className="flex gap-3 w-full sm:w-auto">
             <button
+              type="button"
               onClick={onDecline}
               disabled={loading}
               className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
             >
-              ปฏิเสธและออกจากระบบ
+              {t("termsModal.decline")}
             </button>
             <button
-              onClick={handleAccept}
+              type="button"
+              onClick={() => void handleAccept()}
               disabled={!scrolledToBottom || loading}
               className={`flex-1 sm:flex-none px-8 py-2.5 rounded-xl font-bold text-white transition-all duration-300 ${
                 !scrolledToBottom || loading
@@ -154,7 +159,7 @@ export default function TermsModal({ onAccepted, onDecline }) {
                   : 'bg-sky-600 hover:bg-sky-700 shadow-md hover:shadow-lg'
               }`}
             >
-              {loading ? 'กำลังบันทึก...' : 'ฉันยอมรับข้อตกลง'}
+              {loading ? t("common.saving") : t("termsModal.accept")}
             </button>
           </div>
         </div>

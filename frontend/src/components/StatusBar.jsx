@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 export default function StatusBar({
   currentPage,
@@ -8,6 +9,7 @@ export default function StatusBar({
   onNext,
   hasDocument,
 }) {
+  const { t } = useI18n();
   const [pageInput, setPageInput] = useState(String(currentPage + 1));
 
   useEffect(() => {
@@ -27,17 +29,18 @@ export default function StatusBar({
     <div className="flex items-center justify-between h-8 bg-slate-100 border-t border-slate-200 px-4 text-xs text-slate-600 shrink-0 z-10 select-none shadow-[0_-1px_2px_rgba(0,0,0,0.02)]">
       <div className="flex items-center gap-1">
         <button 
+          type="button"
           className="flex items-center justify-center w-6 h-6 rounded hover:bg-slate-200 disabled:opacity-40 disabled:hover:bg-transparent transition-colors font-bold" 
           onClick={onPrev} 
           disabled={!hasDocument || currentPage <= 0} 
-          title="หน้าก่อนหน้า"
+          title={t("editor.status.prevPage")}
         >
           ‹
         </button>
         <span className="flex items-center mx-1">
           <input
             className="w-10 h-5 text-center text-xs bg-white border border-slate-300 rounded mx-1 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 disabled:bg-slate-50"
-            aria-label="หน้าปัจจุบัน"
+            aria-label={t("editor.status.currentPage")}
             value={pageInput}
             disabled={!hasDocument}
             onChange={(e) => setPageInput(e.target.value)}
@@ -47,15 +50,16 @@ export default function StatusBar({
           <span className="text-slate-500 ml-1">/ {pageCount || 0}</span>
         </span>
         <button
+          type="button"
           className="flex items-center justify-center w-6 h-6 rounded hover:bg-slate-200 disabled:opacity-40 disabled:hover:bg-transparent transition-colors font-bold"
           onClick={onNext}
           disabled={!hasDocument || currentPage >= pageCount - 1}
-          title="หน้าถัดไป"
+          title={t("editor.status.nextPage")}
         >
           ›
         </button>
       </div>
-      <div className="text-[10px] text-slate-400">พร้อมใช้งาน</div>
+      <div className="text-[10px] text-slate-400">{t("common.ready")}</div>
     </div>
   );
 }

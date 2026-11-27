@@ -5,6 +5,8 @@
 // คำขอที่แก้ข้อมูลต้องส่ง cookie `ja_csrf` กลับมาใน header X-CSRF-Token (double-submit — backend app/core/auth_cookies.py)
 // "มี ja_csrf" = น่าจะ login อยู่ (ใช้เลือกลิงก์/ปุ่ม) — ตัวจริงตรวจที่ backend ทุกคำขอ
 
+import { getStoredLanguage } from "../i18n/index.js";
+
 export const BASE = "/api";
 
 const CSRF_COOKIE = "ja_csrf";
@@ -45,6 +47,7 @@ export function authHeaders(extra = {}) {
   const headers = new Headers(extra);
   const csrf = csrfToken();
   if (csrf) headers.set("X-CSRF-Token", csrf);
+  if (!headers.has("Accept-Language")) headers.set("Accept-Language", getStoredLanguage());
   return headers;
 }
 

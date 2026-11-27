@@ -8,6 +8,7 @@ import LineIcon from '../components/LineIcon.jsx';
 import { authLogin, authRegister, authGoogleLogin, resendVerification, browserSupportsWebAuthn, browserSupportsWebAuthnAutofill, loginWithPasskey, passkeyErrorMessage, preparePasskeyLogin } from '../api';
 import { WebAuthnAbortService } from '@simplewebauthn/browser';
 import { validatePassword } from "../utils/password";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 // ความกว้างปุ่ม Google และ LINE (px) — Google รับได้ไม่เกิน 400
 const GOOGLE_BUTTON_WIDTH = 320;
@@ -15,6 +16,7 @@ const GOOGLE_BUTTON_WIDTH = 320;
 const FALLBACK_GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || null;
 
 export default function Login() {
+  const { lang, setLanguage, t, supportedLangs } = useI18n();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -252,22 +254,47 @@ export default function Login() {
     }
   }
 
+  let socialDividerText = t("auth.orLine");
+  if (googleClientId && lineLogin) {
+    socialDividerText = t("auth.orGoogleLine");
+  } else if (googleClientId) {
+    socialDividerText = t("auth.orGoogle");
+  }
+
+  let submitButtonLabel = isRegister ? t("auth.registerSubmit") : t("auth.loginSubmit");
+  if (loading) {
+    submitButtonLabel = t("common.processing");
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative">
+      <div className="absolute top-4 right-4 flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm" data-testid="login-lang-switcher">
+        {supportedLangs.map((item) => (
+          <button
+            key={item.code}
+            type="button"
+            onClick={() => setLanguage(item.code)}
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${lang === item.code ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+            aria-pressed={lang === item.code}
+          >
+            {item.shortLabel}
+          </button>
+        ))}
+      </div>
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center"><AppBrand size="lg" /></div>
-        <p className="mt-2 text-center text-xs text-gray-500">แก้ไข แปลง และส่งเอกสาร PDF ให้ผู้อื่นลงนามออนไลน์</p>
+        <p className="mt-2 text-center text-xs text-gray-500">{t("auth.tagline")}</p>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          {isRegister ? "สร้างบัญชีใหม่" : "เข้าสู่ระบบ"}
+          {isRegister ? t("auth.registerTitle") : t("auth.loginTitle")}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          และเริ่มจัดการเอกสาร PDF ของคุณแบบมืออาชีพ
+          {t("auth.subtitle")}
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-xl sm:rounded-xl sm:px-10 border border-gray-100">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={(e) => void handleSubmit(e)}>
             {errorMsg && (
               <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
                 <div className="flex flex-col">
@@ -276,13 +303,13 @@ export default function Login() {
                   </div>
                   {showResend && !isRegister && (
                     <div className="ml-3 mt-3">
-                      <button 
-                        type="button" 
-                        onClick={handleResend}
+                      <button
+                        type="button"
+                        onClick={() => void handleResend()}
                         disabled={resendCooldown > 0}
-                        className={`text-sm font-medium underline ${resendCooldown > 0 ? 'text-gray-500 cursor-not-allowed' : 'text-blue-600 hover:text-blue-800'}`}
+                        className={`text-sm font-medium underline ${resendCooldown > 0 ? "text-gray-500 cursor-not-allowed" : "text-blue-600 hover:text-blue-800"}`}
                       >
-                        {resendCooldown > 0 ? `กรุณารอ ${resendCooldown} วินาทีเพื่อส่งซ้ำ` : 'ส่งอีเมลยืนยันตัวตนอีกครั้ง'}
+                        {resendCooldown > 0 ? t("auth.resendWait", { seconds: resendCooldown }) : t("auth.resendVerify")}
                       </button>
                     </div>
                   )}
@@ -298,46 +325,46 @@ export default function Login() {
                 </div>
               </div>
             )}
-            
+
             <div>
-              <label htmlFor="login-f304" className="block text-sm font-medium text-gray-700">อีเมล</label>
+              <label htmlFor="login-f304" className="block text-sm font-medium text-gray-700">{t("auth.email")}</label>
               <div className="mt-1">
-                <input id="login-f304" 
-                  type="email" 
+                <input id="login-f304"
+                  type="email"
                   autoComplete={isRegister ? "email" : "username webauthn"}
                   // เริ่มเมื่อผู้ใช้แตะ/พิมพ์ในช่องเอง — ไม่ใช้ onFocus: Safari บน Mac โฟกัสช่องอีเมลให้เองตอนเปิดหน้า
                   // คำขอ autofill จึงค้างอยู่ก่อนผู้ใช้กดปุ่ม Passkey แล้วปุ่มค้าง "รอยืนยันที่อุปกรณ์..."
                   onPointerDown={startPasskeyAutofill}
                   onKeyDown={startPasskeyAutofill}
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required 
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder={isRegister && allowedDomains.length ? `you@${allowedDomains[0]}` : "you@example.com"}
                 />
               </div>
               {isRegister && allowedDomains.length > 0 && !invited && (
                 <p className="mt-1 text-xs text-gray-500" data-testid="register-domain-hint">
-                  ใช้อีเมลขององค์กร: {allowedDomains.map((d) => "@" + d).join(", ")}
+                  {t("auth.orgDomainHint", { domains: allowedDomains.map((d) => "@" + d).join(", ") })}
                 </p>
               )}
             </div>
 
             <div>
               <div className="flex justify-between items-center">
-                <label htmlFor="login-f329" className="block text-sm font-medium text-gray-700">รหัสผ่าน</label>
+                <label htmlFor="login-f329" className="block text-sm font-medium text-gray-700">{t("auth.password")}</label>
                 {!isRegister && (
-                  <a href="#" onClick={(e) => { e.preventDefault(); void navigate("/forgot-password"); }} className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                    ลืมรหัสผ่าน?
+                  <a href="/forgot-password" onClick={(e) => { e.preventDefault(); void navigate("/forgot-password"); }} className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors">
+                    {t("auth.forgotPassword")}
                   </a>
                 )}
               </div>
               <div className="mt-1">
-                <input id="login-f329" 
+                <input id="login-f329"
                   type="password"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required 
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="••••••••"
                 />
@@ -346,30 +373,30 @@ export default function Login() {
 
             {isRegister && (
               <div>
-                <label htmlFor="login-f350" className="block text-sm font-medium text-gray-700">ยืนยันรหัสผ่าน</label>
+                <label htmlFor="login-f350" className="block text-sm font-medium text-gray-700">{t("auth.confirmPassword")}</label>
                 <div className="mt-1">
-                  <input id="login-f350" 
+                  <input id="login-f350"
                     type="password"
                     value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    required 
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="••••••••"
                   />
                   <p className="mt-2 text-xs text-rose-500 leading-relaxed">
-                    * รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร มีตัวพิมพ์ใหญ่ (A-Z) ตัวพิมพ์เล็ก (a-z) และตัวเลข (0-9) อย่างน้อย 1 ตัว
+                    {t("auth.passwordRule")}
                   </p>
                 </div>
               </div>
             )}
 
             <div>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={loading}
-                className={`w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200'}`}
+                className={`w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"}`}
               >
-                {loading ? "กำลังประมวลผล..." : (isRegister ? "สมัครใช้งาน" : "เข้าสู่ระบบ")}
+                {submitButtonLabel}
               </button>
             </div>
           </form>
@@ -379,7 +406,7 @@ export default function Login() {
               <button
                 type="button"
                 onPointerDown={cancelPasskeyAutofill}
-                onClick={handlePasskeyLogin}
+                onClick={() => void handlePasskeyLogin()}
                 disabled={passkeyBusy}
                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-800 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
@@ -387,19 +414,18 @@ export default function Login() {
                   <circle cx="8" cy="15" r="4" />
                   <path d="M10.85 12.15L19 4M17 6l2 2M15 8l2 2" />
                 </svg>
-                {passkeyBusy ? "รอยืนยันที่อุปกรณ์..." : "เข้าสู่ระบบด้วย Passkey"}
+                {passkeyBusy ? t("auth.passkeyWaiting") : t("auth.passkeyLogin")}
               </button>
               {passkeyBusy && (
                 <p className="mt-2 text-center text-xs text-gray-500">
-                  ไม่มีหน้าต่างสแกนนิ้ว/ใบหน้าขึ้นมา?{" "}
+                  {t("auth.passkeyNoPrompt")}{" "}
                   <button type="button" className="text-blue-600 hover:underline" onClick={cancelPasskeyButton} data-testid="passkey-cancel">
-                    ยกเลิกแล้วกดใหม่
+                    {t("auth.passkeyRetry")}
                   </button>
                 </p>
               )}
             </div>
           )}
-
 
           {(googleClientId || lineLogin) && (
           <div className="mt-6" data-testid="social-login">
@@ -409,7 +435,7 @@ export default function Login() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  {googleClientId && lineLogin ? "หรือใช้บัญชี Google / LINE" : googleClientId ? "หรือใช้บัญชี Google" : "หรือใช้บัญชี LINE"}
+                  {socialDividerText}
                 </span>
               </div>
             </div>
@@ -427,11 +453,11 @@ export default function Login() {
                     await authGoogleLogin(credentialResponse.credential); // token อยู่ใน HttpOnly cookie
                     window.location.href = "/dashboard";
                   } catch (err) {
-                    setErrorMsg("เข้าสู่ระบบด้วย Google ไม่สำเร็จ: " + err.message);
+                    setErrorMsg(`${t("auth.googleFailed")}: ${err.message}`);
                   }
                 }}
                 onError={() => {
-                  setErrorMsg("เข้าสู่ระบบด้วย Google ไม่สำเร็จ");
+                  setErrorMsg(t("auth.googleFailed"));
                 }}
               />
             </div>
@@ -441,17 +467,17 @@ export default function Login() {
               <div className={`${googleClientId ? "mt-3" : "mt-6"} flex flex-col items-center`}>
                 <button
                   type="button"
-                  onClick={handleLineLogin}
+                  onClick={() => void handleLineLogin()}
                   disabled={lineBusy}
                   data-testid="line-login-button"
                   style={{ width: GOOGLE_BUTTON_WIDTH }}
                   className="inline-flex items-center justify-center gap-2 max-w-full h-10 px-4 rounded bg-[#06C755] hover:bg-[#05b34c] text-white text-sm font-semibold disabled:opacity-60"
                 >
-                  <LineIcon /> {lineBusy ? "กำลังไปที่ LINE..." : "เข้าสู่ระบบด้วย LINE"}
+                  <LineIcon /> {lineBusy ? t("auth.lineRedirecting") : t("auth.lineLogin")}
                 </button>
                 <p className="mt-2 max-w-[320px] text-center text-xs text-gray-500">
-                  เราขออีเมลจาก LINE เพื่อสร้างบัญชี เชื่อมกับบัญชีเดิม และส่งการแจ้งเตือน — ดู{" "}
-                  <a href="/privacy" className="underline hover:text-gray-700">นโยบายความเป็นส่วนตัว</a>
+                  {t("auth.lineEmailNotice")}{" "}
+                  <a href="/privacy" className="underline hover:text-gray-700">{t("auth.privacy")}</a>
                 </p>
               </div>
             )}
@@ -466,33 +492,34 @@ export default function Login() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  {isRegister ? "มีบัญชีอยู่แล้ว?" : "ยังไม่มีบัญชี?"}
+                  {isRegister ? t("auth.hasAccount") : t("auth.noAccount")}
                 </span>
               </div>
             </div>
 
             <div className="mt-6">
               <button
+                type="button"
                 onClick={() => { setIsRegister(!isRegister); setErrorMsg(""); setSuccessMsg(""); setConfirmPassword(""); setShowResend(false); }}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
               >
-                {isRegister ? "กลับไปหน้าเข้าสู่ระบบ" : "สมัครสมาชิกใหม่"}
+                {isRegister ? t("auth.backToLogin") : t("auth.createNewAccount")}
               </button>
             </div>
           </div>
           )}
           {!selfRegistration && !isRegister && (
             <p className="mt-6 text-center text-sm text-gray-500" data-testid="register-closed">
-              ยังไม่มีบัญชี? ติดต่อผู้ดูแลระบบขององค์กร
+              {t("auth.registerClosed")}
             </p>
           )}
         </div>
-        <nav className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-gray-500" aria-label="ข้อมูลบริการ" data-testid="legal-links">
-          <a href="/privacy" className="hover:text-gray-700 hover:underline">นโยบายความเป็นส่วนตัว</a>
-          <a href="/terms" className="hover:text-gray-700 hover:underline">ข้อกำหนดการใช้งาน</a>
-          <a href="/manual.html" className="hover:text-gray-700 hover:underline">คู่มือการใช้งาน</a>
+        <nav className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-gray-500" aria-label={t("auth.serviceInfo")} data-testid="legal-links">
+          <a href="/privacy" className="hover:text-gray-700 hover:underline">{t("auth.privacy")}</a>
+          <a href="/terms" className="hover:text-gray-700 hover:underline">{t("auth.terms")}</a>
+          <a href="/manual.html" className="hover:text-gray-700 hover:underline">{t("auth.manual")}</a>
           <SourceCodeLink className="hover:text-gray-700 hover:underline" />
-          {donationsOn && <a href="/support" className="text-amber-700 hover:underline" data-testid="login-support-link">☕ สนับสนุนผู้พัฒนา</a>}
+          {donationsOn && <a href="/support" className="text-amber-700 hover:underline" data-testid="login-support-link">{t("auth.supportDev")}</a>}
         </nav>
       </div>
     </div>

@@ -23,6 +23,9 @@ class UserCreate(BaseModel):
     def password_complexity(cls, v):
         return validate_strong_password(v)
 
+SUPPORTED_LANGUAGES = ("th", "en")
+
+
 class UserResponse(BaseModel):
     id: int
     email: str
@@ -30,6 +33,7 @@ class UserResponse(BaseModel):
     profile_picture: Optional[str] = None
     avatar_url: Optional[str] = None
     avatar_emoji: Optional[str] = None
+    language: str = "th"
     plan_type: str
     expire_date: Optional[datetime] = None
     max_sessions: int
@@ -49,6 +53,17 @@ class Token(BaseModel):
 class UpdateProfileRequest(BaseModel):
     display_name: Optional[str] = Field(default=None, max_length=100)  # เดิมไม่จำกัด — ชื่อยาวมากล้นหัวเว็บ/อีเมล
     profile_picture: Optional[str] = None
+    language: Optional[str] = None
+
+    @field_validator("language")
+    @classmethod
+    def validate_language(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        code = v.strip().lower()
+        if code not in SUPPORTED_LANGUAGES:
+            raise ValueError(f"ไม่รองรับรหัสภาษา '{v}' (รองรับ: {', '.join(SUPPORTED_LANGUAGES)})")
+        return code
 
 class PasswordChangeRequest(BaseModel):
     old_password: str

@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMe, updateProfile } from "../api";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import DeleteAccountSection from "../components/profile/DeleteAccountSection.jsx";
 import AvatarSection from "../components/profile/AvatarSection.jsx";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const { lang, setLanguage, syncLanguageFromUser, t, supportedLangs } = useI18n();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [displayName, setDisplayName] = useState("");
+  const [selectedLang, setSelectedLang] = useState(lang);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -18,9 +21,15 @@ export default function ProfilePage() {
       .then((data) => {
         setUser(data);
         setDisplayName(data.display_name || "");
+        if (data.language) {
+          setSelectedLang(data.language);
+          syncLanguageFromUser(data.language);
+        }
       })
-      .catch((err) => setError("โหลดข้อมูลโปรไฟล์ไม่สำเร็จ: " + err.message))
+      .catch((err) => setError(t("profile.loadError", { message: err.message })))
       .finally(() => setLoading(false));
+    // โหลดข้อมูลโปรไฟล์ครั้งเดียวตอนเปิดหน้า
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleSave(e) {
@@ -29,58 +38,81 @@ export default function ProfilePage() {
     setError("");
     setSuccess("");
     try {
-      await updateProfile({ display_name: displayName });
-      setSuccess("บันทึกข้อมูลเรียบร้อยแล้ว");
+      const updated = await updateProfile({ display_name: displayName, language: selectedLang });
+      setUser(updated);
+      setLanguage(updated.language || selectedLang);
+      setSuccess(t("profile.saveSuccess"));
     } catch (err) {
-      setError("บันทึกข้อมูลไม่สำเร็จ: " + err.message);
+      setError(t("profile.saveError", { message: err.message }));
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return <div className="p-8 text-center">กำลังโหลด...</div>;
-  if (!user && !error) return <div className="p-8 text-center text-red-500">ไม่พบข้อมูลผู้ใช้</div>;
+  function handleLanguageSelect(code) {
+    setSelectedLang(code);
+    setLanguage(code);
+  }
+
+  if (loading) return <div className="p-8 text-center">{t("common.loading")}</div>;
+  if (!user && !error) return <div className="p-8 text-center text-red-500">{t("profile.notFound")}</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-8">
         <div className="flex items-center gap-4 mb-8 border-b pb-4">
-          <button onClick={() => navigate("/dashboard")} className="text-gray-500 hover:text-gray-800">
-            ← กลับหน้าเอกสาร
+          <button type="button" onClick={() => void navigate("/dashboard")} className="text-gray-500 hover:text-gray-800">
+            {t("profile.backToDashboard")}
           </button>
-          <h1 className="text-2xl font-bold">โปรไฟล์ส่วนตัว</h1>
+          <h1 className="text-2xl font-bold">{t("profile.title")}</h1>
         </div>
 
-        {user && <AvatarSection user={user} onChange={() => getMe().then(setUser)} />}
+        {user && <AvatarSection user={user} onChange={() => void getMe().then(setUser)} />}
 
-        <form onSubmit={handleSave} className="space-y-6">
+        <form onSubmit={(e) => void handleSave(e)} className="space-y-6">
           {error && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
-          {success && <div className="p-3 bg-green-100 text-green-700 rounded text-sm">{success}</div>}
+          {success && <div className="p-3 bg-green-100 text-green-700 rounded text-sm" data-testid="profile-save-success">{success}</div>}
 
           <div>
-            <label htmlFor="profilepage-f61" className="block text-sm font-medium text-gray-700 mb-1">อีเมล</label>
+            <label htmlFor="profilepage-f61" className="block text-sm font-medium text-gray-700 mb-1">{t("profile.email")}</label>
             <input id="profilepage-f61"
               type="text"
               value={user?.email || ""}
               disabled
               className="w-full border border-gray-300 rounded px-3 py-2 bg-gray-100 text-gray-500"
             />
-            <p className="text-xs text-gray-500 mt-1">อีเมลใช้สำหรับเข้าสู่ระบบ ไม่สามารถเปลี่ยนได้</p>
+            <p className="text-xs text-gray-500 mt-1">{t("profile.emailHint")}</p>
           </div>
 
           <div>
-            <label htmlFor="profilepage-f72" className="block text-sm font-medium text-gray-700 mb-1">ชื่อที่แสดง</label>
+            <label htmlFor="profilepage-f72" className="block text-sm font-medium text-gray-700 mb-1">{t("profile.displayName")}</label>
             <input id="profilepage-f72"
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="กรอกชื่อของคุณ"
+              placeholder={t("profile.displayNamePlaceholder")}
               className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
           <div>
-            <span className="block text-sm font-medium text-gray-700 mb-1">แพ็กเกจปัจจุบัน</span>
+            <label htmlFor="profilepage-lang" className="block text-sm font-medium text-gray-700 mb-1">{t("profile.language")}</label>
+            <select
+              id="profilepage-lang"
+              data-testid="profile-language-select"
+              value={selectedLang}
+              onChange={(e) => handleLanguageSelect(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2 bg-white focus:ring-blue-500 focus:border-blue-500"
+            >
+              {supportedLangs.map((item) => (
+                <option key={item.code} value={item.code}>{item.nativeLabel}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">{t("profile.languageHint")}</p>
+          </div>
+
+          <div>
+            <span className="block text-sm font-medium text-gray-700 mb-1">{t("profile.currentPlan")}</span>
             <div className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold capitalize">
               {user?.plan_type || "free"} Plan
             </div>
@@ -89,17 +121,18 @@ export default function ProfilePage() {
           <div className="pt-4 border-t flex justify-end gap-3">
             <button
               type="button"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => void navigate("/dashboard")}
               className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 text-gray-700"
             >
-              ยกเลิก
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={saving}
+              data-testid="profile-save-button"
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium disabled:opacity-50"
             >
-              {saving ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+              {saving ? t("common.saving") : t("common.save")}
             </button>
           </div>
         </form>

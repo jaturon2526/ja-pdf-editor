@@ -115,7 +115,7 @@ def register(user: UserCreate, request: Request, db: Session = Depends(get_db)):
     return new_user
 
 # รหัสผ่านที่บัญชี Google เคยถูกตั้งให้ (เดาได้จากอีเมล) — ห้ามใช้ login เด็ดขาด ดู login_with_google
-_LEGACY_GOOGLE_PASSWORD_PREFIX = "google_sso_random_password_"
+_LEGACY_GOOGLE_PASSWORD_PREFIX = "google_sso_random_password_"  # pragma: allowlist secret
 
 
 def _claim_signing_invites(db: Session, user: User) -> None:
@@ -214,6 +214,8 @@ def read_users_me(current_user: User = Depends(get_current_active_user)):
 def update_profile(profile_data: UpdateProfileRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     if profile_data.display_name is not None:
         current_user.display_name = " ".join(profile_data.display_name.split()) or None
+    if profile_data.language is not None:
+        current_user.language = profile_data.language
     db.commit()
     db.refresh(current_user)
     return current_user

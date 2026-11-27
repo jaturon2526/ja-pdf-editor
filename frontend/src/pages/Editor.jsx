@@ -59,12 +59,14 @@ import { useApplyEdits } from "../hooks/useApplyEdits.js";
 import { useEscapeStack } from "../hooks/useEscapeStack.js";
 import { buildEditorMenus } from "../components/editor/editorMenus.js";
 import useWordConversion from "../hooks/useWordConversion.jsx";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 // ระยะ padding รอบหน้าเอกสารใน .canvas-area (ดู styles.css)
 const CANVAS_PADDING_X = 40;
 const CANVAS_PADDING_Y = 56;
 
 export default function Editor() {
+  const { t } = useI18n();
   // ---------- Refs ----------
   const canvasAreaRef = useRef(null);
   const pageImgElRef = useRef(null);
@@ -670,6 +672,7 @@ export default function Editor() {
 
   // ======================== Menu (ดู components/editor/editorMenus.js) ========================
   const menus = buildEditorMenus({
+    t,
     session,
     activeTool,
     setActiveTool,
