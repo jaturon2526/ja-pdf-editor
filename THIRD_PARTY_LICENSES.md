@@ -75,6 +75,13 @@ JA PDF Editor เผยแพร่ภายใต้ **GNU Affero General Publi
 | Noto Sans Thai, Prompt, Mitr และฟอนต์จาก Google Fonts ที่ผู้ใช้เลือกติดตั้ง | ดาวน์โหลดจาก Google Fonts ตอนใช้งาน | SIL OFL 1.1 (ตามข้อมูลของแต่ละฟอนต์) |
 | fonts-thai-tlwg, fonts-urw-base35 | ฟอนต์ระบบใน image | GPL-2.0 + font exception / AGPL-3.0 (URW base35) |
 
+## ใบรับรอง CA สาธารณะที่ฝังในระบบ (`backend/app/assets/trusted_certs/`)
+
+| ใบรับรอง | ผู้ออก / แหล่งที่มา | วัตถุประสงค์ |
+|---|---|---|
+| Thailand National Root Certification Authority - G1 (`thailand-nrca-g1.pem`) | สำนักงานพัฒนาธุรกรรมทางอิเล็กทรอนิกส์ (สพธอ. / ETDA) | ใบรับรองรากสาธารณะสำหรับตรวจสอบความน่าเชื่อถือลายเซ็นดิจิทัลภายใต้โครงสร้างพื้นฐานกุญแจสาธารณะของประเทศไทย |
+| Thai Digital ID CA - G3 (`thai-digital-id-ca-g3.pem`) | บริษัท ไทยดิจิทัล ไอดี จำกัด (Thai Digital ID) | ใบรับรอง CA ระดับกลางสาธารณะสำหรับตรวจสอบสายโซ่ใบรับรองลายเซ็นดิจิทัล |
+
 ## สิ่งที่ไม่ใช่ซอร์สโค้ด และไม่อยู่ใน repo
 
 ค่าตั้ง `.env*` (รหัสผ่าน, API key, secret), ฐานข้อมูล, ไฟล์ผู้ใช้, ใบรับรอง/คีย์ลงนามของระบบ

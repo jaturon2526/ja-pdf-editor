@@ -102,14 +102,20 @@ export default function TermsModal({ onAccepted, onDecline }) {
               </p>
             </div>
 
-            <p className="font-semibold text-slate-900 text-lg border-b pb-2 mt-6">5. การใช้งานที่ต้องห้าม</p>
+            <p className="font-semibold text-slate-900 text-lg border-b pb-2 mt-6">5. การใช้งานที่ต้องห้ามและสัญญาอนุญาตซอฟต์แวร์</p>
             <p>ท่านตกลงที่จะไม่:</p>
             <ul className="list-disc pl-5 space-y-2 mt-2 text-slate-600">
               <li>อัปโหลด ซ่อน หรือเผยแพร่ซอฟต์แวร์ที่เป็นอันตราย (Malware, Virus) ภายในไฟล์ PDF</li>
               <li>ใช้ระบบในทางที่ก่อให้เกิดภาระหนักหน่วงผิดปกติกับเซิร์ฟเวอร์ (เช่น การยิง Request สแปม)</li>
               <li>พยายามหลบเลี่ยงระบบจำกัดโควต้าพื้นที่เก็บข้อมูล หรือโควต้าการใช้ AI ประจำวัน</li>
-              <li>วิศวกรรมย้อนกลับ (Reverse Engineer) คัดลอก หรือนำซอร์สโค้ดของแอปพลิเคชันไปใช้โดยไม่ได้รับอนุญาต</li>
+              <li>ใช้บริการส่งเอกสารลงนามเพื่อหลอกลวง ฟิชชิง หรือแอบอ้างเป็นผู้อื่น</li>
+              <li>เจาะระบบ หรือพยายามเข้าถึงบัญชี ไฟล์ หรือข้อมูลของผู้ใช้อื่นโดยไม่ได้รับอนุญาต</li>
             </ul>
+            <p className="mt-3 text-sm text-slate-600">
+              ซอฟต์แวร์ของบริการนี้เป็นโอเพนซอร์สภายใต้สัญญาอนุญาต{" "}
+              <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer" className="text-sky-700 underline">GNU AGPL-3.0</a>{" "}
+              ท่านสามารถดาวน์โหลด ศึกษา แก้ไข และนำไปติดตั้งใช้งานเองได้ตามเงื่อนไขของสัญญาอนุญาตนั้น (ข้อตกลงนี้ใช้บังคับเฉพาะการใช้<em>บริการ</em>บนเว็บไซต์นี้ ไม่จำกัดสิทธิ์ตาม AGPL-3.0)
+            </p>
 
             <p className="font-semibold text-slate-900 text-lg border-b pb-2 mt-6">6. การเปลี่ยนแปลงข้อตกลงและการยกเลิกบัญชี</p>
             <p>
