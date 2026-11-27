@@ -33,6 +33,108 @@ const STATUS = {
 const SOURCE_KEY = { api: "admin.quota.sourceApi", internal: "admin.quota.sourceInternal", system: "admin.quota.sourceSystem" };
 const PERIOD_KEY = { day: "admin.quota.periodDay", month: "admin.quota.periodMonth", plan: "admin.quota.periodPlan" };
 
+const NAME_EN = {
+  "LINE (ข้อความ push)": "LINE (Push Messages)",
+  "อีเมล (SMTP)": "Email (SMTP)",
+  "อีเมล (Brevo)": "Email (Brevo)",
+  "AI — key ส่วนตัวผู้ใช้ (คำขอวันนี้)": "AI — User Personal Keys (Requests Today)",
+  "พื้นที่ดิสก์เซิร์ฟเวอร์": "Server Disk Space",
+  "ฐานข้อมูล": "Database",
+  "หน่วยความจำ (RAM) เครื่อง": "Server Memory (RAM)",
+  "การใช้ CPU (เฉลี่ย 5 นาที)": "CPU Usage (5-min avg)",
+  "Redis (แคช/session)": "Redis (Cache/Session)",
+  "สำรองข้อมูลล่าสุด (ในเครื่อง)": "Last Backup (Local)",
+  "สำรองข้อมูลล่าสุด (นอกเครื่อง)": "Last Backup (Offsite)",
+};
+
+const UNIT_EN = {
+  "ข้อความ": "messages",
+  "ฉบับ": "emails",
+  "คำขอ": "requests",
+  "ชม. ที่แล้ว": "hrs ago",
+};
+
+const NOTE_PART_PATTERNS = [
+  [/^ระบบส่งเอง (\d+)$/, (_, n) => `Sent by system: ${n}`],
+  [/^ส่งอีเมลแทนเมื่อถึง (\d+)$/, (_, n) => `Fallback to email at ${n}`],
+  [/^ส่งผ่าน (.+)$/, (_, host) => `Sent via ${host}`],
+  [/^นับจากระบบเอง \(ไม่มีเพดานรายวัน\)$/, () => "Tracked internally (no daily limit)"],
+  [/^นับจากระบบเอง \(ไม่ได้ตั้ง BREVO_API_KEY\)$/, () => "Tracked internally (BREVO_API_KEY not set)"],
+  [/^แพ็กเกจฟรี$/, () => "Free plan"],
+  [/^ระบบส่งเอง (\d+) วันนี้$/, (_, n) => `System sent ${n} today`],
+  [/^รีเซ็ตทุกวันตามรอบของ Brevo$/, () => "Resets daily on Brevo's cycle"],
+  [/^แพ็กเกจ (.+)$/, (_, plan) => `Plan: ${plan}`],
+  [/^เหลือ ([\d,]+) เครดิต$/, (_, n) => `${n} credits remaining`],
+  [/^แปลงด้วย AI ของระบบ (\d+) ครั้ง$/, (_, n) => `System AI conversions: ${n}`],
+  [/^key ส่วนตัวผู้ใช้ (\d+) คำขอ$/, (_, n) => `User personal keys: ${n} requests`],
+  [/^จำกัด (\d+) ครั้ง\/ผู้ใช้\/วัน$/, (_, n) => `Limit: ${n}/user/day`],
+  [/^รุ่น (.+)$/, (_, model) => `Model: ${model}`],
+  [/^ระบบยังไม่ได้ตั้ง AI_PROVIDER \/ AI_API_KEY$/, () => "AI_PROVIDER / AI_API_KEY not configured"],
+  [/^Google ไม่มี API บอกเครดิตคงเหลือ ดูยอดจริงที่ AI Studio$/, () => "Google provides no credit balance API — check AI Studio"],
+  [/^ดูเครดิต\/ค่าใช้จ่ายจริงที่ Claude Console$/, () => "Check credits & usage in Claude Console"],
+  [/^ดูค่าใช้จ่ายจริงที่หน้า Usage ของผู้ให้บริการ$/, () => "Check actual usage on provider's Usage page"],
+  [/^ดิสก์ที่เก็บไฟล์ผู้ใช้ \(\/data\)$/, () => "User file storage disk (/data)"],
+  [/^รวมทุกโปรแกรมบนเครื่อง$/, () => "All processes on host"],
+  [/^ใกล้เต็ม = ลด BACKEND_WORKERS หรือเพิ่ม RAM$/, () => "Nearly full = reduce BACKEND_WORKERS or add RAM"],
+  [/^(\d+) core$/, (_, n) => `${n} cores`],
+  [/^100% = 1 core เต็ม$/, () => "100% = 1 full core"],
+  [/^สูงต่อเนื่อง = เครื่องรับคนพร้อมกันได้ใกล้เพดาน$/, () => "Sustained high load = approaching concurrency limit"],
+  [/^ใกล้เต็ม = ขยาย REDIS_MAXMEMORY ใน \.env\.prod$/, () => "Nearly full = increase REDIS_MAXMEMORY in .env.prod"],
+  [/^ยังไม่พบประวัติการสำรองข้อมูล — ตั้งสำรองอัตโนมัติรายวัน: \.\/deploy\.sh backup-schedule$/, () => "No backup history found — enable daily backups: ./deploy.sh backup-schedule"],
+  [/^ครั้งล่าสุด ([\d/]+ [\d:]+) น\.$/, (_, dt) => `Last run: ${dt}`],
+];
+
+const ERROR_PATTERNS = [
+  [/^ดึงยอดจาก LINE ไม่ได้ — แสดงตัวนับของระบบ \((.+)\)$/, (_, detail) => `Could not fetch LINE quota — showing internal counter (${detail})`],
+  [/^Brevo ปฏิเสธ API key \((\d+)\) — key อาจหมดอายุ\/ถูกลบ\/สิทธิ์ไม่พอ(.*)$/, (_, code, detail) => `Brevo rejected API key (${code}) — key may be expired, deleted, or lack permissions${detail}`],
+  [/^ติดต่อ Brevo ไม่ได้: (.+)$/, (_, detail) => `Cannot reach Brevo: ${detail}`],
+  [/^ไม่พบข้อมูลเครดิตในบัญชี Brevo$/, () => "No credit info found in Brevo account"],
+  [/^เชื่อมต่อ Redis ไม่ได้ — ระบบใช้หน่วยความจำของแต่ละ worker แทน \(เอกสารอาจหลุดเมื่อสลับ worker\)$/, () => "Cannot connect to Redis — falling back to per-worker memory (sessions may drop across workers)"],
+  [/^อ่านสถานะ Redis ไม่ได้: (.+)$/, (_, detail) => `Could not read Redis status: ${detail}`],
+];
+
+function localizeQuotaName(name, lang) {
+  if (!name || lang !== "en") return name;
+  if (NAME_EN[name]) return NAME_EN[name];
+  const aiMatch = /^(.+) \(คำขอวันนี้\)$/.exec(name);
+  if (aiMatch) return `${aiMatch[1]} (Requests Today)`;
+  return name;
+}
+
+function localizeQuotaUnit(unit, lang) {
+  if (!unit || lang !== "en") return unit;
+  return UNIT_EN[unit] || unit;
+}
+
+function localizeQuotaNote(note, lang) {
+  if (!note || lang !== "en") return note;
+  return note
+    .split(" · ")
+    .map((part) => {
+      for (const [re, format] of NOTE_PART_PATTERNS) {
+        const m = re.exec(part);
+        if (m) return format(...m);
+      }
+      return part;
+    })
+    .join(" · ");
+}
+
+function localizeQuotaError(error, lang) {
+  if (!error || lang !== "en") return error;
+  for (const [re, format] of ERROR_PATTERNS) {
+    const m = re.exec(error);
+    if (m) return format(...m);
+  }
+  return error;
+}
+
+function localizeStatusLabel(label, lang) {
+  if (!label || lang !== "en") return label;
+  if (label === "ขาดหาย") return "Overdue";
+  return label;
+}
+
 function QuotaCard({ item }) {
   const { lang, t } = useI18n();
   const locale = lang === "en" ? "en-US" : "th-TH";
@@ -40,28 +142,33 @@ function QuotaCard({ item }) {
   const pct = item.percent ?? null;
   const periodLabel = PERIOD_KEY[item.period] ? t(PERIOD_KEY[item.period]) : "";
   const sourceLabel = SOURCE_KEY[item.source] ? t(SOURCE_KEY[item.source]) : "";
+  const displayName = localizeQuotaName(item.name, lang);
+  const displayUnit = localizeQuotaUnit(item.unit, lang);
+  const displayNote = localizeQuotaNote(item.note, lang);
+  const displayError = localizeQuotaError(item.error, lang);
+  const displayStatusLabel = localizeStatusLabel(item.status_label, lang);
   return (
     <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col" data-testid={`quota-${item.key}`}>
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0">
-          <div className="font-semibold text-gray-900">{item.name}</div>
+          <div className="font-semibold text-gray-900">{displayName}</div>
           <div className="text-xs text-gray-500">
             {[periodLabel, sourceLabel].filter(Boolean).join(" · ")}
           </div>
         </div>
-        <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${st.badge}`}>{item.status_label || t(st.key)}</span>
+        <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${st.badge}`}>{displayStatusLabel || t(st.key)}</span>
       </div>
 
       {item.limit ? (
         <>
           <div className="flex items-end justify-between gap-2 mt-1">
-            <span className="text-2xl font-bold text-gray-900">{fmt(item.used, item.unit, locale)}</span>
-            <span className="text-sm text-gray-500 mb-0.5">{t("admin.quota.ofLimit", { limit: fmt(item.limit, item.unit, locale) })}</span>
+            <span className="text-2xl font-bold text-gray-900">{fmt(item.used, displayUnit, locale)}</span>
+            <span className="text-sm text-gray-500 mb-0.5">{t("admin.quota.ofLimit", { limit: fmt(item.limit, displayUnit, locale) })}</span>
           </div>
           <div
             className="mt-2 h-2.5 rounded-full bg-gray-100 overflow-hidden"
             role="progressbar"
-            aria-label={t("admin.quota.usedAria", { name: item.name, pct: pct ?? 0 })}
+            aria-label={t("admin.quota.usedAria", { name: displayName, pct: pct ?? 0 })}
             aria-valuenow={Math.min(100, pct ?? 0)}
             aria-valuemin={0}
             aria-valuemax={100}
@@ -70,22 +177,22 @@ function QuotaCard({ item }) {
           </div>
           <div className="mt-1.5 flex justify-between text-xs text-gray-600">
             <span>{t("admin.quota.usedPercent", { pct: pct ?? 0 })}</span>
-            <span>{t("admin.quota.remaining", { val: fmt(item.remaining, item.unit, locale) })}</span>
+            <span>{t("admin.quota.remaining", { val: fmt(item.remaining, displayUnit, locale) })}</span>
           </div>
         </>
       ) : (
         <div className="mt-1">
           <span className="text-2xl font-bold text-gray-900">
-            {item.used !== null && item.used !== undefined ? fmt(item.used, item.unit, locale) : fmt(item.remaining, item.unit, locale)}
+            {item.used !== null && item.used !== undefined ? fmt(item.used, displayUnit, locale) : fmt(item.remaining, displayUnit, locale)}
           </span>
           {item.remaining !== null && item.remaining !== undefined && item.used !== null && item.used !== undefined && (
-            <span className="ml-2 text-sm text-gray-500">{t("admin.quota.remaining", { val: fmt(item.remaining, item.unit, locale) })}</span>
+            <span className="ml-2 text-sm text-gray-500">{t("admin.quota.remaining", { val: fmt(item.remaining, displayUnit, locale) })}</span>
           )}
         </div>
       )}
 
-      {item.error && <p className="mt-2 text-xs text-red-700 bg-red-50 rounded p-2">{item.error}</p>}
-      {item.note && <p className="mt-2 text-xs text-gray-500">{item.note}</p>}
+      {displayError && <p className="mt-2 text-xs text-red-700 bg-red-50 rounded p-2">{displayError}</p>}
+      {displayNote && <p className="mt-2 text-xs text-gray-500">{displayNote}</p>}
       <div className="mt-auto pt-3 flex items-center justify-between text-xs text-gray-500">
         <span>{item.resets_at ? t("admin.quota.resetsAt", { date: fmtDate(item.resets_at, locale) }) : ""}</span>
         {item.link && (
