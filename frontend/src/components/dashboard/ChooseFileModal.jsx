@@ -1,9 +1,12 @@
 // เลือกไฟล์จาก "เอกสารของฉัน" 1 ไฟล์ (ใช้กับ "ส่งเอกสารให้ลงนาม" และ "แปลงเป็น Word" บน Dashboard)
 import { useEffect, useState } from "react";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
-export default function ChooseFileModal({ title, subtitle = "", emptyText = "ยังไม่มีเอกสาร — อัปโหลด PDF ก่อน แล้วค่อยส่งให้ลงนาม", files, onChoose, onCancel }) {
+export default function ChooseFileModal({ title, subtitle = "", emptyText, files, onChoose, onCancel }) {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const shown = files.filter((f) => f?.filename?.toLowerCase().includes(query.toLowerCase()));
+  const emptyMessage = emptyText ?? t("chooseFile.defaultEmpty");
 
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onCancel();
@@ -27,7 +30,7 @@ export default function ChooseFileModal({ title, subtitle = "", emptyText = "ย
             <input
               type="search"
               autoFocus
-              placeholder="ค้นหาเอกสาร..."
+              placeholder={t("chooseFile.searchPlaceholder")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="mt-3 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
@@ -37,7 +40,7 @@ export default function ChooseFileModal({ title, subtitle = "", emptyText = "ย
         <ul className="overflow-y-auto divide-y divide-gray-100">
           {shown.length === 0 && (
             <li className="p-6 text-center text-sm text-gray-500">
-              {files.length === 0 ? emptyText : "ไม่พบเอกสารที่ค้นหา"}
+              {files.length === 0 ? emptyMessage : t("chooseFile.notFound")}
             </li>
           )}
           {shown.map((f) => (
@@ -55,7 +58,7 @@ export default function ChooseFileModal({ title, subtitle = "", emptyText = "ย
         </ul>
         <div className="p-3 border-t border-gray-100 flex justify-end">
           <button type="button" onClick={onCancel} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-            ยกเลิก
+            {t("common.cancel")}
           </button>
         </div>
       </div>

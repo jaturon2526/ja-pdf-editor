@@ -6,6 +6,36 @@ import { useI18n } from "../../i18n/I18nContext.jsx";
 
 const POLL_MS = 60000;
 
+/**
+ * แปลข้อความแจ้งเตือนที่ถูกบันทึกไว้ใน DB (กรณีผู้ใช้สลับภาษาเป็น EN ภายหลัง)
+ * ครอบคลุมทั้งการลงนาม (signing_service) และรับบริจาค/แพ็กเกจ (donation_service)
+ */
+const EN_PATTERNS = [
+  [/^ถึงคิวคุณลงนาม "(.+)" \(ส่งโดย (.+)\)$/, (_, title, owner) => `Your turn to sign "${title}" (sent by ${owner})`],
+  [/^"(.+)" ลงนามครบทุกคนแล้ว$/, (_, title) => `"${title}" has been signed by everyone`],
+  [/^(.+) ลงนาม "(.+)" แล้ว \((.+)\)$/, (_, who, title, progress) => `${who} signed "${title}" (${progress})`],
+  [/^(.+) ลงนาม "(.+)" แล้ว$/, (_, who, title) => `${who} signed "${title}"`],
+  [/^(.+) ปฏิเสธการลงนาม "(.+)"$/, (_, who, title) => `${who} declined to sign "${title}"`],
+  [/^(.+) ยกเลิกคำขอลงนาม "(.+)"$/, (_, who, title) => `${who} cancelled the signing request "${title}"`],
+  [/^(.+) เตือนให้ลงนาม "(.+)"$/, (_, who, title) => `${who} sent a reminder to sign "${title}"`],
+  [/^"(.+)" เกินกำหนดลงนามแล้ว$/, (_, title) => `"${title}" is overdue for signing`],
+  [/^"(.+)" ใกล้ครบกำหนดลงนาม$/, (_, title) => `"${title}" is due soon for signing`],
+  [/^แจ้งเตือนลงนาม "(.+)"$/, (_, title) => `Reminder to sign "${title}"`],
+  [/^มีแจ้งโอนสนับสนุน ฿([\d,.]+) จาก (.+)$/, (_, amt, who) => `New donation report of ฿${amt} from ${who}`],
+  [/^ได้รับเงินสนับสนุนแล้ว — ขอบคุณมากครับ(?: \(ได้รับสิทธิ์ (\S+) (\d+) วัน\))?$/, (_, plan, days) => (plan ? `Donation verified — thank you! (${plan} for ${days} days)` : "Donation verified — thank you!")],
+  [/^ไม่พบยอดโอนสนับสนุน(?:: (.+))?$/, (_, note) => (note ? `Donation transfer not found: ${note}` : "Donation transfer not found")],
+  [/^สิทธิ์ผู้สนับสนุนหมดอายุแล้ว — กลับเป็นแพ็กเกจฟรี$/, () => "Supporter perks expired — reverted to Free plan"],
+];
+
+function localizeNotificationTitle(title, lang) {
+  if (!title || lang !== "en") return title;
+  for (const [re, format] of EN_PATTERNS) {
+    const m = title.match(re);
+    if (m) return format(...m);
+  }
+  return title;
+}
+
 export default function NotificationBell() {
   const { lang, t } = useI18n();
   const navigate = useNavigate();
@@ -76,7 +106,7 @@ export default function NotificationBell() {
                 onClick={() => void openItem(item)}
                 className={`w-full text-left px-4 py-3 text-sm border-b border-gray-50 hover:bg-blue-50 ${item.read ? "text-gray-500" : "text-gray-900 font-medium bg-blue-50/40"}`}
               >
-                {item.title}
+                {localizeNotificationTitle(item.title, lang)}
                 <span className="block text-xs text-gray-400 mt-0.5">
                   {item.created_at ? new Date(item.created_at).toLocaleString(lang === "en" ? "en-US" : "th-TH", { dateStyle: "medium", timeStyle: "short" }) : ""}
                 </span>

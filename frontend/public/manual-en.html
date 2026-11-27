@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Manual - JA PDF Editor</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/manual.css">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .bg-pattern {
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-sky-200 selection:text-sky-900 flex">
+
+    <!-- Sidebar -->
+    <aside class="fixed inset-y-0 left-0 w-72 bg-white/80 backdrop-blur-xl border-r border-slate-200 overflow-y-auto px-6 py-8 hidden lg:block shadow-sm z-10">
+        <h2 class="text-lg font-extrabold text-slate-900 mb-4 flex items-center gap-2">
+            <svg class="w-6 h-6 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            JA PDF Editor Manual
+        </h2>
+        <div class="mb-5 flex items-center gap-1.5 text-xs font-semibold">
+            <a href="/manual.html" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-sky-50 hover:text-sky-700 transition-colors">ไทย</a>
+            <span class="px-2.5 py-1 rounded-full bg-sky-600 text-white">EN</span>
+            <a href="/" class="ml-auto text-sky-600 hover:underline">← Back to App</a>
+        </div>
+        <ul class="space-y-1">
+            <li><a href="#intro" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">Overview</a></li>
+            <li><a href="#open-save" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">1. Open, Save &amp; Print</a></li>
+            <li><a href="#edit-text" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">2. Edit Text, Images &amp; Tables</a></li>
+            <li><a href="#draw-highlight" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">3. Highlights, Notes &amp; Forms</a></li>
+            <li><a href="#page-manage" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">4. Page Management &amp; Crop</a></li>
+            <li><a href="#merge-pdf" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">5. Merge PDFs</a></li>
+            <li><a href="#watermark-pass" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">6. Watermark, Passwords &amp; Numbers</a></li>
+            <li><a href="#barcode" class="block px-3 py-2 pl-6 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">6.2 Barcode / QR Code</a></li>
+            <li><a href="#electronic-sign" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">7. Electronic Signatures</a></li>
+            <li><a href="#digital-sign" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">8. Digital Signatures (PAdES)</a></li>
+            <li><a href="#auto-gen" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">9. Auto-Gen Documents (Mail Merge)</a></li>
+            <li><a href="#compress-pdf" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">10. Compress &amp; Flatten PDF</a></li>
+            <li><a href="#copy-ocr" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">11. Copy Text with AI (Fusion OCR)</a></li>
+            <li><a href="#quick-tools" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">12. Quick Tools, Scan &amp; Compare</a></li>
+            <li><a href="#api-key" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">13. AI API Key Configuration</a></li>
+            <li><a href="#search-redact" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">14. Search Redact &amp; PDPA PII Masking</a></li>
+            <li><a href="#install-font" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">15. Install Custom Fonts</a></li>
+            <li><a href="#keyboard-shortcuts" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">16. Keyboard Shortcuts</a></li>
+            <li><a href="#signing-workflow" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">17. Multi-Signer Document Workflow</a></li>
+            <li><a href="#account" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">18. Account, Language, Passkey &amp; LINE</a></li>
+            <li><a href="#open-source" class="block px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors">19. Open Source License &amp; Support</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 min-w-0 lg:ml-72 min-h-screen bg-pattern relative">
+        <!-- Mobile Top Nav -->
+        <div class="lg:hidden bg-white/80 backdrop-blur border-b border-slate-200 sticky top-0 z-20 px-4 py-4 flex items-center justify-between">
+            <span class="font-bold text-slate-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                JA PDF Editor Manual
+            </span>
+            <div class="flex items-center gap-2">
+                <a href="/manual.html" class="text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 px-2.5 py-1 rounded-full border border-slate-200">ไทย</a>
+                <a href="/" class="text-sm font-medium text-sky-600 bg-sky-50 px-3 py-1 rounded-full border border-sky-100">Back to App</a>
+            </div>
+        </div>
+
+        <div class="max-w-4xl mx-auto px-6 sm:px-10 py-12 lg:py-20 bg-white min-h-screen shadow-sm border-x border-slate-100 relative z-0">
+            <h1 id="intro" class="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-6 scroll-mt-24">JA PDF Editor User Manual</h1>
+            <p class="text-slate-600 leading-relaxed mb-5 text-base sm:text-lg">
+                Welcome to <strong>JA PDF Editor</strong> — an all-in-one PDF workspace for editing text, images, and tables, managing pages, converting PDFs to Word, scanning documents on mobile, redacting sensitive PDPA data, and sending documents for sequential electronic or cryptographic PAdES digital signing. Files uploaded to <em>My Documents</em> are private to your account and can be deleted at any time.
+            </p>
+
+            <div class="my-8 bg-emerald-50 border border-emerald-200 p-5 sm:p-6 rounded-2xl text-emerald-900 shadow-sm leading-relaxed">
+                <strong>✨ What's New (v1.55.0)</strong>
+                <ul class="list-disc list-inside mt-2 space-y-1">
+                    <li><strong>Full Thai / English Multi-Language Support:</strong> Switch languages anytime in <strong>Profile → Language</strong>. Covers Login, Dashboard, all Quick Tool modals, Editor menus/toolbar, Profile/Security/AI Config/Support/Admin pages, notifications, emails, and this bilingual User Manual.</li>
+                    <li><strong>Mobile Document Scanner → Rebuild as Native PDF Objects:</strong> Choose between classic searchable-image OCR PDF or rebuilding scanned pages into editable vector text &amp; tables with Thai spellcheck and optional AI proofreading.</li>
+                    <li><strong>Smooth Continuous Scroll:</strong> Seamless multi-page scrolling without flicker on both desktop and mobile.</li>
+                </ul>
+            </div>
+
+            <section id="open-save" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">1. Open, Save &amp; Print Documents</h2>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 leading-relaxed">
+                    <li><strong>Upload / Drag &amp; Drop:</strong> Upload single or multiple PDFs, images (PNG/JPG), or Office files (Word, Excel, PowerPoint — auto-converted to PDF) from the Dashboard.</li>
+                    <li><strong>Save to Server (<kbd class="px-1.5 py-0.5 bg-slate-100 rounded border text-xs">Ctrl+S</kbd>):</strong> Saves your latest changes back to <em>My Documents</em>.</li>
+                    <li><strong>Download &amp; Print (<kbd class="px-1.5 py-0.5 bg-slate-100 rounded border text-xs">Ctrl+P</kbd>):</strong> Export the edited PDF to your device or print directly.</li>
+                    <li><strong>Undo / Redo (<kbd class="px-1.5 py-0.5 bg-slate-100 rounded border text-xs">Ctrl+Z</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-100 rounded border text-xs">Ctrl+Y</kbd>):</strong> Step backward or forward through every edit in the session.</li>
+                </ul>
+            </section>
+
+            <section id="edit-text" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">2. Edit Text, Images &amp; Tables</h2>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 leading-relaxed">
+                    <li><strong>Insert / Edit Text:</strong> Click existing text to edit inline or place new Thai/English text with HarfBuzz-shaped vector rendering so Thai vowels and tone marks align cleanly.</li>
+                    <li><strong>Images:</strong> Insert PNG/JPG images, resize, rotate, replace, or delete existing images in the PDF.</li>
+                    <li><strong>Edit Tables:</strong> Detect and edit table cells directly, including multi-line Thai text and border preservation.</li>
+                    <li><strong>Inspect Fonts:</strong> Click any text on the page with the Font Inspector tool to see its font family, size, and color.</li>
+                </ul>
+            </section>
+
+            <section id="draw-highlight" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">3. Highlights, Annotations &amp; Fillable Forms</h2>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 leading-relaxed">
+                    <li><strong>Highlight, Text Box, Rectangle &amp; Sticky Notes:</strong> Mark up documents and review comments cleanly.</li>
+                    <li><strong>Create Blank PDF / Form Builder:</strong> From the Dashboard, click <em>Create PDF Form</em> to create an A4/Letter/A5/A3 or custom-size document and immediately open Form Builder mode to add text inputs, checkboxes, radio buttons, and dropdowns.</li>
+                    <li><strong>Fill Existing Forms:</strong> Open any AcroForm PDF to fill fields and save or flatten them.</li>
+                </ul>
+            </section>
+
+            <section id="page-manage" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">4. Page Management, Extract &amp; Crop</h2>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 leading-relaxed">
+                    <li><strong>Sidebar Thumbnails:</strong> Drag to reorder pages, rotate left/right, duplicate, insert pages from another PDF, or delete pages.</li>
+                    <li><strong>Extract Pages:</strong> Export a specific page range (e.g. <code>1-3, 5</code>) as a new PDF file.</li>
+                    <li><strong>Crop Pages:</strong> Trim margins interactively on the current page or apply to all pages.</li>
+                </ul>
+            </section>
+
+            <section id="merge-pdf" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">5. Merge PDFs</h2>
+                <p class="text-slate-600 leading-relaxed">
+                    Click <strong>Merge PDFs</strong> on the Dashboard to combine up to 30 PDF files from your device or <em>My Documents</em>. Drag or use the arrow buttons to arrange the order. The merged result is saved as a new PDF with automatic bookmarks for each source file.
+                </p>
+            </section>
+
+            <section id="watermark-pass" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">6. Watermark, Passwords &amp; Page Numbers</h2>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 leading-relaxed">
+                    <li><strong>Add Watermark:</strong> Customize text, presets, color, angle, size, and opacity with live A4 preview.</li>
+                    <li><strong>Add Page Numbers:</strong> Choose <code>1, 2, 3</code> or <code>1/N</code>, Thai or Arabic digits, prefix/suffix, start/end page, position, and duplex mirroring.</li>
+                    <li><strong>Encrypt PDF:</strong> Protect PDFs with AES-256 (recommended, supports Unicode/Thai passwords) or legacy AES-128. Original files remain untouched when run from Quick Tools.</li>
+                </ul>
+                <h3 id="barcode" class="text-lg font-bold text-slate-800 mt-6 mb-2 scroll-mt-24">6.2 Insert / Move / Delete Barcodes &amp; QR Codes</h3>
+                <p class="text-slate-600 leading-relaxed">
+                    Generate QR Codes (supporting UTF-8 Thai text) or 1D barcodes (Code 128, EAN-13, etc.) and place them anywhere on the page. Use the <strong>Move / Delete Barcode</strong> tool to reposition or remove existing barcodes cleanly.
+                </p>
+            </section>
+
+            <section id="electronic-sign" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">7. Electronic Signatures</h2>
+                <p class="text-slate-600 leading-relaxed">
+                    Draw your signature on screen, type with stylized fonts, or upload a signature image (with automatic white-background removal). You can also save up to 5 encrypted signature images locked with your <strong>Passkey</strong> in <em>Security</em> so the server never sees your raw signature image.
+                </p>
+            </section>
+
+            <section id="digital-sign" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">8. Cryptographic Digital Signatures (PAdES)</h2>
+                <p class="text-slate-600 leading-relaxed">
+                    Sign PDFs using your <code>.p12</code> / <code>.pfx</code> digital certificate with optional RFC 3161 trusted timestamping (TSA). Store up to 5 encrypted certificates under <strong>Security → Digital Signature Certificates</strong> — your password is never stored on the server, and you can optionally bind a Passkey for Face ID / Touch ID unlocking.
+                </p>
+            </section>
+
+            <section id="auto-gen" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">9. Auto-Gen Documents (Mail Merge)</h2>
+                <p class="text-slate-600 leading-relaxed mb-3">
+                    Upload a Word template (<code>.docx</code>) containing <code>{{ column_name }}</code> placeholders and a data file (<code>.xlsx</code>, <code>.csv</code>, <code>.txt</code>, or <code>.json</code>) to generate batch Word or PDF documents in one click.
+                </p>
+                <ul class="list-disc list-inside space-y-1.5 text-slate-600 leading-relaxed">
+                    <li>Supports dynamic tables, conditionals, QR codes, and barcodes inside templates.</li>
+                    <li>Output as individual files in a <code>.zip</code> archive or combined into a single file.</li>
+                    <li>Optional per-file PDF password encryption driven by a data column (e.g. employee ID or birth date).</li>
+                </ul>
+            </section>
+
+            <section id="compress-pdf" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">10. Compress &amp; Flatten PDF</h2>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 leading-relaxed">
+                    <li><strong>Compress PDF:</strong> Choose Screen (smallest), eBook (balanced), or Printer (high quality) to shrink file size while keeping annotations and form fields intact.</li>
+                    <li><strong>Flatten PDF:</strong> Permanently merge form fields and annotations into page content so they can no longer be edited.</li>
+                </ul>
+            </section>
+
+            <section id="copy-ocr" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">11. Copy Text with AI (Fusion OCR)</h2>
+                <p class="text-slate-600 leading-relaxed">
+                    In the Editor, drag a selection box over any scanned region, image, or table to extract clean Thai/English text to your clipboard using OCR and optional AI proofreading.
+                </p>
+            </section>
+
+            <section id="quick-tools" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">12. Quick Tools, Mobile Scan &amp; Compare PDFs</h2>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 leading-relaxed">
+                    <li><strong>Convert PDF to Word:</strong> Auto-detects regular vs. scanned PDFs. Choose <em>Freely Editable Text</em> (with optional AI Thai proofreading) or <em>Preserve Original Layout</em>.</li>
+                    <li><strong>Mobile Document Scanner:</strong> Capture pages with auto edge detection and perspective correction, then save as either a searchable OCR image PDF or rebuild into editable native PDF objects.</li>
+                    <li><strong>Compare Documents:</strong> Highlight added, deleted, and modified text plus visual image differences side-by-side and download a comparison report.</li>
+                </ul>
+            </section>
+
+            <section id="api-key" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">13. AI API Key Configuration</h2>
+                <p class="text-slate-600 leading-relaxed">
+                    Open <strong>Profile Menu → AI Settings (API Key)</strong> to check your daily system AI quota or connect your personal API key (Google Gemini, Anthropic Claude, OpenAI, Azure OpenAI, or self-hosted OpenAI-compatible endpoints like Ollama/vLLM). Personal keys are encrypted at rest and verified before saving.
+                </p>
+            </section>
+
+            <section id="search-redact" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">14. Search &amp; Redact / PDPA Personal Data Masking</h2>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 leading-relaxed">
+                    <li><strong>Search &amp; Redact:</strong> Permanently remove matching words or Regular Expressions across text, form fields, comments, bookmarks, and metadata.</li>
+                    <li><strong>PDPA Auto-Detection:</strong> Scans locally on the server (never sent to external AI) for National IDs, phone numbers, emails, bank accounts, credit cards, and names. Review checkboxes, apply permanent redaction, and download a CSV audit report.</li>
+                </ul>
+            </section>
+
+            <section id="install-font" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">15. Install Custom Fonts</h2>
+                <p class="text-slate-600 leading-relaxed">
+                    Click <strong>Install Fonts</strong> on the Dashboard or in the Editor to add fonts directly from a <strong>Google Fonts</strong> URL/name or by uploading <code>.ttf</code> / <code>.otf</code> / <code>.woff</code> / <code>.woff2</code> files (Regular, Bold, Italic, Bold Italic). Installed fonts become available immediately in the text editor.
+                </p>
+            </section>
+
+            <section id="keyboard-shortcuts" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">16. Keyboard Shortcuts</h2>
+                <div class="grid sm:grid-cols-2 gap-3 text-sm text-slate-700">
+                    <div class="p-3 rounded-lg bg-slate-50 border border-slate-200"><strong>Ctrl+O</strong> — Open file</div>
+                    <div class="p-3 rounded-lg bg-slate-50 border border-slate-200"><strong>Ctrl+S</strong> — Save to server</div>
+                    <div class="p-3 rounded-lg bg-slate-50 border border-slate-200"><strong>Ctrl+P</strong> — Print document</div>
+                    <div class="p-3 rounded-lg bg-slate-50 border border-slate-200"><strong>Ctrl+F</strong> — Find in document</div>
+                    <div class="p-3 rounded-lg bg-slate-50 border border-slate-200"><strong>Ctrl+Z / Ctrl+Y</strong> — Undo / Redo</div>
+                    <div class="p-3 rounded-lg bg-slate-50 border border-slate-200"><strong>Esc</strong> — Close active modal / cancel tool</div>
+                </div>
+            </section>
+
+            <section id="signing-workflow" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">17. Multi-Signer Document Workflow</h2>
+                <p class="text-slate-600 leading-relaxed">
+                    Under <strong>Document Signing</strong> on the Dashboard, send any PDF to one or more signers in sequence (or invite recipients by email even if they don't have an account yet). Track live status, send reminders, receive notifications via the bell, email, or LINE, and download the completed signed PDF along with its Certificate of Completion.
+                </p>
+            </section>
+
+            <section id="account" class="mt-12 scroll-mt-24">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">18. Account, Language, Passkey &amp; LINE</h2>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 leading-relaxed">
+                    <li><strong>Profile &amp; Language:</strong> Update your display name, upload or create an emoji avatar, switch your preferred language (Thai / English), or permanently delete your account.</li>
+                    <li><strong>Passkeys:</strong> Register Face ID, Touch ID, Windows Hello, or security keys under <strong>Security</strong> for phishing-resistant passwordless sign-in.</li>
+                    <li><strong>LINE Integration:</strong> Link your LINE account for one-click sign-in and instant LINE signing notifications.</li>
+                </ul>
+            </section>
+
+            <section id="open-source" class="mt-12 scroll-mt-24 pb-12">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 border-b border-slate-200 pb-2">19. Open Source License &amp; Support</h2>
+                <p class="text-slate-600 leading-relaxed">
+                    JA PDF Editor is free and open-source software licensed under the <strong>GNU Affero General Public License v3.0 (AGPL-3.0)</strong>. If you find it useful, you can support server and development costs via the <strong>Support Developer</strong> page.
+                </p>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

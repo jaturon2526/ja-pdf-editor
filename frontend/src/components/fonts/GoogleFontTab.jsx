@@ -3,8 +3,14 @@
 import { useEffect, useState } from "react";
 
 import { previewFontUrl } from "../../api/edit.js";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
-const STYLE_LABEL = { regular: "ตัวปกติ", bold: "ตัวหนา", italic: "ตัวเอียง", bold_italic: "ตัวหนาเอียง" };
+const STYLE_KEY = {
+  regular: "installFont.styleShortRegular",
+  bold: "installFont.styleShortBold",
+  italic: "installFont.styleShortItalic",
+  bold_italic: "installFont.styleShortBoldItalic",
+};
 const SAMPLE = "สวัสดีครับ ภาษาไทย ฟอนต์สวยงาม ABC abc 0123";
 const GOOGLE_FONTS_THAI = "https://fonts.google.com/?subset=thai";
 
@@ -13,6 +19,7 @@ function kb(n) {
 }
 
 export default function GoogleFontTab({ submitting, error, onInstall }) {
+  const { t } = useI18n();
   const [url, setUrl] = useState("");
   const [checking, setChecking] = useState(false);
   const [checkError, setCheckError] = useState("");
@@ -43,16 +50,17 @@ export default function GoogleFontTab({ submitting, error, onInstall }) {
       setPreview(p);
       setLabel(p.exists ? `${p.family} (Google)` : p.family);
     } catch (err) {
-      setCheckError(err.message || "ตรวจลิงก์ไม่สำเร็จ");
+      setCheckError(err.message || t("installFont.google.checkError"));
     } finally {
       setChecking(false);
     }
   }
 
   async function install() {
-    const ok = await onInstall(preview.token, label.trim() || preview.family);
+    const name = label.trim() || preview.family;
+    const ok = await onInstall(preview.token, name);
     if (ok) {
-      setDone(`ติดตั้ง "${label.trim() || preview.family}" แล้ว (${preview.styles.length} สไตล์) — เลือกใช้ได้ในรายการฟอนต์ตอนแก้ไขข้อความ`);
+      setDone(t("installFont.google.done", { name, count: preview.styles.length }));
       setPreview(null);
       setUrl("");
     }
@@ -60,8 +68,8 @@ export default function GoogleFontTab({ submitting, error, onInstall }) {
 
   return (
     <div className="space-y-5" data-testid="google-font-tab">
-      <form onSubmit={check} className="space-y-2">
-        <label htmlFor="google-font-url" className="block text-sm font-medium text-gray-700">ลิงก์ Google Fonts หรือชื่อฟอนต์</label>
+      <form onSubmit={(e) => void check(e)} className="space-y-2">
+        <label htmlFor="google-font-url" className="block text-sm font-medium text-gray-700">{t("installFont.google.urlLabel")}</label>
         <div className="flex flex-col sm:flex-row gap-2">
           <input
             id="google-font-url"
@@ -71,19 +79,19 @@ export default function GoogleFontTab({ submitting, error, onInstall }) {
             autoCapitalize="none"
             spellCheck={false}
             className="flex-1 min-w-0 px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="https://fonts.google.com/specimen/Kanit หรือ Kanit"
+            placeholder={t("installFont.google.urlPh")}
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
           <button type="submit" disabled={!url.trim() || checking}
             className="px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 whitespace-nowrap">
-            {checking ? "กำลังตรวจ..." : "ตรวจลิงก์"}
+            {checking ? t("installFont.google.checking") : t("installFont.google.checkBtn")}
           </button>
         </div>
         <p className="text-xs text-gray-500">
-          เลือกฟอนต์ที่{" "}
-          <a href={GOOGLE_FONTS_THAI} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Fonts (ฟอนต์ที่รองรับภาษาไทย)</a>
-          {" "}แล้วคัดลอกลิงก์หน้าฟอนต์มาวาง · รับเฉพาะลิงก์ https ของ Google Fonts — ฟอนต์จากแหล่งอื่นให้ดาวน์โหลดไฟล์แล้วใช้แท็บ จากไฟล์
+          {t("installFont.google.hintBefore")}{" "}
+          <a href={GOOGLE_FONTS_THAI} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{t("installFont.google.hintLink")}</a>
+          {" "}{t("installFont.google.hintAfter")}
         </p>
       </form>
 
@@ -94,10 +102,10 @@ export default function GoogleFontTab({ submitting, error, onInstall }) {
         <div className="rounded-xl border border-gray-200 overflow-hidden" data-testid="google-font-preview">
           <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center gap-2">
             <span className="font-semibold text-gray-900">{preview.family}</span>
-            <span className="text-xs text-gray-500">จาก Google Fonts</span>
+            <span className="text-xs text-gray-500">{t("installFont.google.fromGoogle")}</span>
             <span className="ml-auto flex flex-wrap gap-1">
               {preview.styles.map((s) => (
-                <span key={s.style} className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-medium">{STYLE_LABEL[s.style]} · {kb(s.size)}</span>
+                <span key={s.style} className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-medium">{STYLE_KEY[s.style] ? t(STYLE_KEY[s.style]) : s.style} · {kb(s.size)}</span>
               ))}
             </span>
           </div>
@@ -112,28 +120,30 @@ export default function GoogleFontTab({ submitting, error, onInstall }) {
           <div className="px-4 pb-4 space-y-3">
             {!preview.has_thai && (
               <p className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-                ⚠️ ฟอนต์นี้<strong>ไม่มีอักษรไทย</strong> — พิมพ์ภาษาไทยด้วยฟอนต์นี้จะใช้ฟอนต์สำรองแทน (ยังติดตั้งได้ ถ้าใช้กับข้อความอังกฤษ)
+                {t("installFont.google.noThaiBefore")}<strong>{t("installFont.google.noThaiStrong")}</strong> {t("installFont.google.noThaiAfter")}
               </p>
             )}
             {preview.missing_styles?.length > 0 && (
-              <p className="text-xs text-gray-500">ฟอนต์นี้ไม่มี{preview.missing_styles.map((s) => STYLE_LABEL[s]).join(" / ")} — ติดตั้งเฉพาะสไตล์ที่มี</p>
+              <p className="text-xs text-gray-500">
+                {t("installFont.google.missingStyles", { styles: preview.missing_styles.map((s) => (STYLE_KEY[s] ? t(STYLE_KEY[s]) : s)).join(" / ") })}
+              </p>
             )}
             {preview.exists && (
               <p className="text-xs text-amber-700">
-                {preview.exists === "global" ? "มีฟอนต์ชื่อนี้มากับระบบอยู่แล้ว" : "คุณเคยติดตั้งฟอนต์ชื่อนี้แล้ว"} — ตั้งชื่อใหม่เพื่อแยกในรายการฟอนต์
+                {preview.exists === "global" ? t("installFont.google.existsGlobal") : t("installFont.google.existsUser")}{t("installFont.google.existsSuffix")}
               </p>
             )}
             <label className="block text-sm font-medium text-gray-700">
-              ชื่อที่จะแสดงในรายการฟอนต์
+              {t("installFont.google.displayLabel")}
               <input value={label} onChange={(e) => setLabel(e.target.value)} maxLength={80}
                 className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </label>
             {error && <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded text-red-700 text-sm">{error}</div>}
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-gray-500">ติดตั้งเฉพาะฟอนต์ที่คุณมีสิทธิ์ใช้ — ฟอนต์ใน Google Fonts ส่วนใหญ่ใช้ใบอนุญาตแบบเปิด (OFL)</p>
-              <button type="button" onClick={install} disabled={submitting}
+              <p className="text-xs text-gray-500">{t("installFont.google.licenseHint")}</p>
+              <button type="button" onClick={() => void install()} disabled={submitting}
                 className="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
-                {submitting ? "กำลังติดตั้ง..." : `ติดตั้ง ${preview.styles.length} สไตล์`}
+                {submitting ? t("installFont.installing") : t("installFont.google.installStyles", { count: preview.styles.length })}
               </button>
             </div>
           </div>

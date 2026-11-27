@@ -5,6 +5,7 @@ const FEEDBACK_FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLScPacKO8qkTy1nKWqVcBph5uZ0sfEKFoI1miugStIk7OyACpA/viewform?usp=header";
 
 export function buildEditorMenus({
+  lang = "th",
   t = (k) => k,
   session,
   activeTool,
@@ -171,7 +172,7 @@ export function buildEditorMenus({
     {
       label: t("editor.menu.help"),
       items: [
-        { label: t("editor.menu.manual"), onClick: () => window.open("/manual.html", "_blank") },
+        { label: t("editor.menu.manual"), onClick: () => window.open(lang === "en" ? "/manual-en.html" : "/manual.html", "_blank") },
         { label: t("editor.menu.feedback"), onClick: () => window.open(FEEDBACK_FORM_URL, "_blank", "noopener,noreferrer") },
         { divider: true },
         { label: t("editor.menu.about"), onClick: openAbout },

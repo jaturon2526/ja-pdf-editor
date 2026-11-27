@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { getAiQuota } from "../api/auth.js";
 import { checkConversionStatus, downloadConversionResult, inspectConversion, startConversionAsync } from "../api/files.js";
 import ConversionModal, { ConversionModeChooser } from "../components/dashboard/ConversionModal.jsx";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 /**
  * onMessage(type, text): แจ้งผล ("success" | "error")
@@ -14,6 +15,7 @@ import ConversionModal, { ConversionModeChooser } from "../components/dashboard/
  *   beforeStart: async () => void เรียกหลังผู้ใช้เลือกรูปแบบแล้ว ก่อนเริ่มแปลง (Editor ใช้บันทึกการแก้ไขล่าสุดก่อน)
  */
 export default function useWordConversion({ onMessage, onFinished } = {}) {
+  const { t } = useI18n();
   const [choice, setChoice] = useState(null);
   const [task, setTask] = useState(null);
   const [mode, setMode] = useState("editable");
@@ -31,17 +33,17 @@ export default function useWordConversion({ onMessage, onFinished } = {}) {
         clearInterval(intervalId);
         if (statusData.status !== "completed") return;
         if (statusData.error_message === "basic") {
-          onMessage?.("success", "แปลงไฟล์เป็น Word สำเร็จแล้ว!");
+          onMessage?.("success", t("wordConv.msgBasic"));
         } else if (statusData.error_message === "fallback") {
-          onMessage?.("error", "⚠️ การเชื่อมต่อ AI ขัดข้อง ระบบจึงเปลี่ยนไปใช้วิธีจัดเรียงคำแบบพื้นฐานแทน (อาจมีคำผิดพลาดบางส่วน)");
+          onMessage?.("error", t("wordConv.msgFallback"));
         } else if (statusData.error_message === "scan" || statusData.error_message === "scan-ai") {
           onMessage?.("success", statusData.error_message === "scan-ai"
-            ? "แปลงไฟล์สแกนเป็น Word และให้ AI แก้คำไทยแล้ว — ตรวจทานข้อความก่อนนำไปใช้"
-            : "แปลงไฟล์สแกนเป็น Word สำเร็จแล้ว — ตรวจทานข้อความก่อนนำไปใช้ (OCR อาจอ่านผิดบางคำ)");
+            ? t("wordConv.msgScanAi")
+            : t("wordConv.msgScan"));
         } else {
           onMessage?.("success", mode === "layout"
-            ? "แปลงไฟล์แบบรักษาหน้าตาต้นฉบับสำเร็จแล้ว!"
-            : "แปลงไฟล์และแก้คำไทยด้วย AI สำเร็จแล้ว!");
+            ? t("wordConv.msgLayout")
+            : t("wordConv.msgAi"));
         }
         const blob = await downloadConversionResult(statusData.task_id);
         const url = window.URL.createObjectURL(blob);
@@ -87,7 +89,7 @@ export default function useWordConversion({ onMessage, onFinished } = {}) {
       setTask({ task_id: res.task_id, status: "pending", progress: 0 });
       setShowProgress(true);
     } catch (err) {
-      onMessage?.("error", "เริ่มการแปลงไฟล์ล้มเหลว: " + err.message);
+      onMessage?.("error", t("wordConv.msgStartError", { message: err.message }));
     }
   }
 

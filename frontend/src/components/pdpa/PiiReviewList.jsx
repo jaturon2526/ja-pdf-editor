@@ -2,6 +2,7 @@
 // จัดกลุ่มตามประเภท · ประเภทความมั่นใจสูงถูกติ๊กไว้ก่อน ประเภทความมั่นใจกลางให้ผู้ใช้ตรวจแล้วเลือกเอง
 import { useEffect, useRef } from "react";
 import { saveBlob } from "../../api/client.js";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
 export const PII_TYPE_ORDER = ["national_id", "credit_card", "bank_account", "phone", "email", "person_name", "address", "person_name_guess"];
 
@@ -43,6 +44,7 @@ function GroupCheckbox({ checked, indeterminate, onChange, label }) {
 }
 
 export default function PiiReviewList({ scan, selected, onChange, cleanMetadata, onCleanMetadata, activeId = null, onActivate = null, maxHeightClass = "max-h-72" }) {
+  const { t } = useI18n();
   const groups = groupFindings(scan.findings);
 
   function toggle(id) {
@@ -60,11 +62,14 @@ export default function PiiReviewList({ scan, selected, onChange, cleanMetadata,
   }
 
   const noText = scan.pages_without_text || [];
+  const noTextPrefix = noText.length === scan.page_count
+    ? t("piiList.allPages")
+    : t("piiList.somePages", { pages: `${noText.slice(0, 10).map((p) => p + 1).join(", ")}${noText.length > 10 ? " …" : ""}` });
 
   return (
     <div className="space-y-3 text-sm">
       {scan.findings.length === 0 ? (
-        <p className="p-3 rounded-lg bg-green-50 text-green-800 border border-green-200">ไม่พบข้อมูลส่วนบุคคลในชั้นข้อความของเอกสารนี้</p>
+        <p className="p-3 rounded-lg bg-green-50 text-green-800 border border-green-200">{t("piiList.noneFound")}</p>
       ) : (
         <div className={`${maxHeightClass} overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100`} data-testid="pii-list">
           {groups.map((g) => {
@@ -73,7 +78,7 @@ export default function PiiReviewList({ scan, selected, onChange, cleanMetadata,
               <div key={g.type}>
                 <label className="sticky top-0 z-[1] flex items-center gap-2 px-3 py-2 bg-gray-50 font-semibold text-gray-800 cursor-pointer">
                   <GroupCheckbox
-                    label={`เลือก${g.label}ทั้งหมด`}
+                    label={t("piiList.selectGroupAria", { label: g.label })}
                     checked={n === g.items.length}
                     indeterminate={n > 0 && n < g.items.length}
                     onChange={() => toggleGroup(g)}
@@ -81,9 +86,9 @@ export default function PiiReviewList({ scan, selected, onChange, cleanMetadata,
                   <span className="flex-1 min-w-0 truncate">{g.label}</span>
                   <span className="text-xs font-normal text-gray-500">{n}/{g.items.length}</span>
                   {g.confidence === "high" ? (
-                    <span className="text-[11px] font-normal px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">แม่นยำสูง</span>
+                    <span className="text-[11px] font-normal px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">{t("piiList.highConf")}</span>
                   ) : (
-                    <span className="text-[11px] font-normal px-1.5 py-0.5 rounded bg-amber-100 text-amber-800" title="อาจตรวจพบผิด — โปรดตรวจก่อนเลือก">ตรวจก่อนเลือก</span>
+                    <span className="text-[11px] font-normal px-1.5 py-0.5 rounded bg-amber-100 text-amber-800" title={t("piiList.reviewFirstTitle")}>{t("piiList.reviewFirst")}</span>
                   )}
                 </label>
                 <ul>
@@ -95,7 +100,7 @@ export default function PiiReviewList({ scan, selected, onChange, cleanMetadata,
                       <input
                         type="checkbox"
                         className="h-4 w-4 mt-0.5 shrink-0"
-                        aria-label={`เลือก ${f.text}`}
+                        aria-label={t("piiList.selectItemAria", { text: f.text })}
                         checked={selected.has(f.id)}
                         onChange={() => toggle(f.id)}
                       />
@@ -103,11 +108,11 @@ export default function PiiReviewList({ scan, selected, onChange, cleanMetadata,
                         type="button"
                         className={`flex-1 min-w-0 text-left break-words text-gray-800 ${onActivate ? "hover:underline" : "cursor-default"}`}
                         onClick={() => (onActivate ? onActivate(f) : toggle(f.id))}
-                        title={onActivate ? "ไปยังตำแหน่งในเอกสาร" : undefined}
+                        title={onActivate ? t("piiList.jumpToTitle") : undefined}
                       >
                         {f.text}
                       </button>
-                      <span className="shrink-0 text-xs text-gray-500 mt-0.5">หน้า {f.page + 1}</span>
+                      <span className="shrink-0 text-xs text-gray-500 mt-0.5">{t("piiList.pageNum", { page: f.page + 1 })}</span>
                     </li>
                   ))}
                 </ul>
@@ -119,14 +124,13 @@ export default function PiiReviewList({ scan, selected, onChange, cleanMetadata,
 
       {noText.length > 0 && (
         <p className="p-2.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs">
-          {noText.length === scan.page_count ? "ทุกหน้า" : `หน้า ${noText.slice(0, 10).map((p) => p + 1).join(", ")}${noText.length > 10 ? " …" : ""}`}
-          {" "}ไม่มีชั้นข้อความ (อาจเป็นภาพสแกน) จึงตรวจอัตโนมัติไม่ได้ — ใช้เครื่องมือ "เซ็นเซอร์" ลากปิดเองได้
+          {noTextPrefix} {t("piiList.noTextHint")}
         </p>
       )}
 
       <label className="flex items-center gap-2 text-gray-700 cursor-pointer">
         <input type="checkbox" className="h-4 w-4" checked={cleanMetadata} onChange={(e) => onCleanMetadata(e.target.checked)} />
-        ล้างข้อมูลเมตาของไฟล์ด้วย (ชื่อผู้สร้าง, ชื่อเรื่อง ฯลฯ)
+        {t("piiList.cleanMetadata")}
       </label>
     </div>
   );

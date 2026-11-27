@@ -1,23 +1,24 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
+import { useI18n } from "../i18n/I18nContext.jsx";
 import GoogleFontTab from "./fonts/GoogleFontTab.jsx";
 
 const STYLE_DEFS = [
-  { key: "regular", label: "ตัวปกติ (Regular)", required: true },
-  { key: "bold", label: "ตัวหนา (Bold)", required: false },
-  { key: "italic", label: "ตัวเอียง (Italic)", required: false },
-  { key: "bold_italic", label: "ตัวหนาเอียง (Bold Italic)", required: false },
+  { key: "regular", labelKey: "installFont.styleRegular", required: true },
+  { key: "bold", labelKey: "installFont.styleBold", required: false },
+  { key: "italic", labelKey: "installFont.styleItalic", required: false },
+  { key: "bold_italic", labelKey: "installFont.styleBoldItalic", required: false },
 ];
 const STYLE_BADGE = { regular: "R", bold: "B", italic: "I", bold_italic: "BI" };
 
 // ตรงกับ backend fonts.inspect_font_file / MAX_FONT_FILE_BYTES
 export const FONT_ACCEPT = ".ttf,.otf,.woff,.woff2";
 export const MAX_FONT_MB = 20;
-export function fontFileProblem(file) {
+export function fontFileProblem(file, t) {
   if (!file) return null;
-  if (/\.ttc$/i.test(file.name)) return "ไฟล์ .ttc (หลายฟอนต์ในไฟล์เดียว) ยังไม่รองรับ — ใช้ไฟล์ .ttf หรือ .otf ของแต่ละสไตล์";
-  if (!/\.(ttf|otf|woff2?)$/i.test(file.name)) return "รองรับเฉพาะไฟล์ .ttf, .otf, .woff หรือ .woff2";
-  if (file.size > MAX_FONT_MB * 1024 * 1024) return `ไฟล์ฟอนต์ใหญ่เกิน ${MAX_FONT_MB} MB`;
+  if (/\.ttc$/i.test(file.name)) return t ? t("installFont.errTtc") : "ไฟล์ .ttc (หลายฟอนต์ในไฟล์เดียว) ยังไม่รองรับ — ใช้ไฟล์ .ttf หรือ .otf ของแต่ละสไตล์";
+  if (!/\.(ttf|otf|woff2?)$/i.test(file.name)) return t ? t("installFont.errExt") : "รองรับเฉพาะไฟล์ .ttf, .otf, .woff หรือ .woff2";
+  if (file.size > MAX_FONT_MB * 1024 * 1024) return t ? t("installFont.errSize", { max: MAX_FONT_MB }) : `ไฟล์ฟอนต์ใหญ่เกิน ${MAX_FONT_MB} MB`;
   return null;
 }
 
@@ -32,6 +33,7 @@ export default function InstallFontModal({
   notice = [],
   submitting,
 }) {
+  const { t } = useI18n();
   const [label, setLabel] = useState("");
   const [filesByStyle, setFilesByStyle] = useState({});
   const [confirmDeleteKey, setConfirmDeleteKey] = useState(null);
@@ -40,9 +42,17 @@ export default function InstallFontModal({
 
   const [fileProblem, setFileProblem] = useState(null);
 
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape" && !submitting) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, submitting]);
+
   function handleStyleFileChange(styleKey, e) {
     const file = e.target.files?.[0] ?? null;
-    const problem = fontFileProblem(file);
+    const problem = fontFileProblem(file, t);
     setFileProblem(problem);
     if (problem) {
       e.target.value = "";
@@ -70,20 +80,20 @@ export default function InstallFontModal({
   const customFamilies = useMemo(() => fontFamilies.filter((f) => f.removable), [fontFamilies]);
 
   return (
-    <div role="presentation" className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 sm:p-6" onClick={onClose}>
-      <div role="presentation" 
+    <div role="presentation" className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 sm:p-6" onClick={() => !submitting && onClose()}>
+      <div role="dialog" aria-modal="true" aria-labelledby="install-font-title"
         className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-up" 
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">ติดตั้งฟอนต์ใหม่</h2>
+            <h2 id="install-font-title" className="text-xl font-bold text-gray-900">{t("installFont.title")}</h2>
             <p className="text-sm text-gray-500 mt-1">
-              จากลิงก์ Google Fonts หรือไฟล์ .ttf/.otf/.woff/.woff2 — ฟอนต์ 1 ตระกูลมีได้สูงสุด 4 สไตล์
+              {t("installFont.subtitle")}
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-200">
+          <button type="button" onClick={onClose} aria-label={t("common.close")} className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-200">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -93,23 +103,25 @@ export default function InstallFontModal({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="flex gap-1 p-1 mb-6 bg-gray-100 rounded-lg" role="tablist">
-            {[{ key: "google", label: "จาก Google Fonts" }, { key: "file", label: "จากไฟล์" }].map((t) => (
-              <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)}
-                className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === t.key ? "bg-white shadow text-blue-700" : "text-gray-600 hover:text-gray-900"}`}>
-                {t.label}
+            {[{ key: "google", label: t("installFont.tabGoogle") }, { key: "file", label: t("installFont.tabFile") }].map((item) => (
+              <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} onClick={() => setTab(item.key)}
+                className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${tab === item.key ? "bg-white shadow text-blue-700" : "text-gray-600 hover:text-gray-900"}`}>
+                {item.label}
               </button>
             ))}
           </div>
           {tab === "google" && <GoogleFontTab submitting={submitting} error={error} onInstall={onInstallFromUrl} />}
           {tab === "file" && (
-          <form onSubmit={handleSubmitNew} className="space-y-6">
+          <form onSubmit={(e) => void handleSubmitNew(e)} className="space-y-6">
             
             <div>
-              <label htmlFor="installfontmodal-f108" className="block text-sm font-medium text-gray-700 mb-1">ชื่อฟอนต์ที่จะแสดง <span className="text-gray-400 font-normal">(ไม่บังคับ — ไม่ใส่จะใช้ชื่อจากไฟล์)</span></label>
+              <label htmlFor="installfontmodal-f108" className="block text-sm font-medium text-gray-700 mb-1">
+                {t("installFont.displayNameLabel")} <span className="text-gray-400 font-normal">{t("installFont.displayNameOpt")}</span>
+              </label>
               <input id="installfontmodal-f108"
                 type="text"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="เช่น TH Sarabun New"
+                placeholder={t("installFont.displayNamePh")}
                 maxLength={80}
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
@@ -117,12 +129,12 @@ export default function InstallFontModal({
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">อัปโหลดไฟล์ตามสไตล์</h3>
+              <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">{t("installFont.uploadHeading")}</h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 {STYLE_DEFS.map((s) => (
                   <div key={s.key} className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {s.label}
+                      {t(s.labelKey)}
                       {s.required && <span className="text-red-500 ml-1">*</span>}
                     </label>
                     <input
@@ -141,11 +153,11 @@ export default function InstallFontModal({
             {error && <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded text-red-700 text-sm">{error}</div>}
             {notice.length > 0 && (
               <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded text-amber-900 text-sm space-y-1" role="status" data-testid="font-notice">
-                <p className="font-medium">ติดตั้งแล้ว แต่ควรทราบ:</p>
+                <p className="font-medium">{t("installFont.noticeTitle")}</p>
                 {notice.map((n) => <p key={n}>• {n}</p>)}
               </div>
             )}
-            <p className="text-xs text-gray-500">ไฟล์ละไม่เกิน {MAX_FONT_MB} MB · ฟอนต์ที่ไม่มีตัวอักษรไทยใช้ได้กับข้อความภาษาอังกฤษเท่านั้น</p>
+            <p className="text-xs text-gray-500">{t("installFont.fileHint", { max: MAX_FONT_MB })}</p>
 
             <div className="flex justify-end pt-2">
               <button 
@@ -154,9 +166,9 @@ export default function InstallFontModal({
                 disabled={!canSubmitNew}
               >
                 {submitting ? (
-                  <><svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>กำลังติดตั้ง...</>
+                  <><svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>{t("installFont.installing")}</>
                 ) : (
-                  "ติดตั้งฟอนต์"
+                  t("installFont.installBtn")
                 )}
               </button>
             </div>
@@ -166,12 +178,12 @@ export default function InstallFontModal({
           <div className="mt-10">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-              ฟอนต์ที่ติดตั้งเองไว้แล้ว
+              {t("installFont.installedHeading")}
             </h3>
             
             {customFamilies.length === 0 ? (
               <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm">
-                ยังไม่มีฟอนต์ที่ติดตั้งเอง
+                {t("installFont.installedEmpty")}
               </div>
             ) : (
               <div className="space-y-3">
@@ -185,7 +197,7 @@ export default function InstallFontModal({
                             <span
                               key={s.key}
                               className="flex items-center justify-center w-7 h-7 rounded text-xs font-bold bg-blue-100 text-blue-700"
-                              title={`${s.label} — มีไฟล์แล้ว`}
+                              title={t("installFont.styleExistsTitle", { label: t(s.labelKey) })}
                             >
                               {STYLE_BADGE[s.key]}
                             </span>
@@ -194,7 +206,7 @@ export default function InstallFontModal({
                             <label
                               key={s.key}
                               className={`flex items-center justify-center w-7 h-7 rounded text-xs font-bold bg-gray-100 text-gray-400 border border-dashed border-gray-300 ${submitting ? "opacity-50" : "cursor-pointer hover:bg-blue-50 hover:text-blue-600"}`}
-                              title={`${s.label} — ยังไม่มีไฟล์ (คลิกเพื่อเพิ่ม)`}
+                              title={t("installFont.styleMissingTitle", { label: t(s.labelKey) })}
                             >
                               {STYLE_BADGE[s.key]}
                               <input
@@ -205,7 +217,7 @@ export default function InstallFontModal({
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   e.target.value = "";
-                                  const problem = fontFileProblem(file);
+                                  const problem = fontFileProblem(file, t);
                                   setFileProblem(problem);
                                   if (file && !problem) onAddStyle(f.key, s.key, file);
                                 }}
@@ -216,7 +228,7 @@ export default function InstallFontModal({
                       </div>
                       {confirmDeleteKey === f.key ? (
                         <div className="flex items-center gap-2 ml-2">
-                          <span className="text-sm text-red-600 font-medium">ลบฟอนต์นี้?</span>
+                          <span className="text-sm text-red-600 font-medium">{t("installFont.confirmDelete")}</span>
                           <button
                             type="button"
                             className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
@@ -225,21 +237,21 @@ export default function InstallFontModal({
                               setConfirmDeleteKey(null);
                             }}
                           >
-                            ลบ
+                            {t("common.delete")}
                           </button>
                           <button
                             type="button"
                             className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300 transition-colors"
                             onClick={() => setConfirmDeleteKey(null)}
                           >
-                            ยกเลิก
+                            {t("common.cancel")}
                           </button>
                         </div>
                       ) : (
                         <button 
                           type="button" 
                           className="text-gray-400 hover:text-red-600 transition-colors p-1.5 rounded-md hover:bg-red-50 ml-2" 
-                          title="ลบฟอนต์นี้ (ทุกสไตล์)" 
+                          title={t("installFont.deleteFontTitle")} 
                           onClick={() => setConfirmDeleteKey(f.key)}
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>

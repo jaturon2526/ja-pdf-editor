@@ -66,7 +66,7 @@ const CANVAS_PADDING_X = 40;
 const CANVAS_PADDING_Y = 56;
 
 export default function Editor() {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   // ---------- Refs ----------
   const canvasAreaRef = useRef(null);
   const pageImgElRef = useRef(null);
@@ -672,6 +672,7 @@ export default function Editor() {
 
   // ======================== Menu (ดู components/editor/editorMenus.js) ========================
   const menus = buildEditorMenus({
+    lang,
     t,
     session,
     activeTool,

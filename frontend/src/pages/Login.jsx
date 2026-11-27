@@ -517,7 +517,7 @@ export default function Login() {
         <nav className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-gray-500" aria-label={t("auth.serviceInfo")} data-testid="legal-links">
           <a href="/privacy" className="hover:text-gray-700 hover:underline">{t("auth.privacy")}</a>
           <a href="/terms" className="hover:text-gray-700 hover:underline">{t("auth.terms")}</a>
-          <a href="/manual.html" className="hover:text-gray-700 hover:underline">{t("auth.manual")}</a>
+          <a href={lang === "en" ? "/manual-en.html" : "/manual.html"} className="hover:text-gray-700 hover:underline">{t("auth.manual")}</a>
           <SourceCodeLink className="hover:text-gray-700 hover:underline" />
           {donationsOn && <a href="/support" className="text-amber-700 hover:underline" data-testid="login-support-link">{t("auth.supportDev")}</a>}
         </nav>

@@ -31,7 +31,6 @@ const UPLOAD_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/jpg"]
 // ไฟล์ Office แปลงเป็น PDF ที่เซิร์ฟเวอร์ (LibreOffice) แล้วเก็บเป็น PDF — ต้องตรงกับ OFFICE_EXTS ใน backend/app/api/pdf/files.py
 const OFFICE_EXTS = [".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt", ".rtf", ".odt", ".ods", ".odp"];
 const UPLOAD_ACCEPT = [".pdf", ".png", ".jpg", ".jpeg", ...OFFICE_EXTS].join(",");
-const UPLOAD_KINDS = "PDF, รูปภาพ (PNG/JPG) หรือไฟล์ Office (Word/Excel/PowerPoint)";
 function isOfficeFile(file) {
   const name = (file.name || "").toLowerCase();
   return OFFICE_EXTS.some((ext) => name.endsWith(ext));
@@ -146,11 +145,11 @@ export default function Dashboard() {
       // ใช้ชื่อที่เซิร์ฟเวอร์บันทึกจริง (ตัดอักขระที่ใช้ไม่ได้ / เติม .pdf / ชื่อซ้ำเติม (2)) — เดิมแสดงตามที่พิมพ์
       const res = await renameFile(renameTarget.id, newName);
       const saved = res?.filename || newName;
-      setMessage({ type: 'success', text: saved === newName ? 'เปลี่ยนชื่อไฟล์สำเร็จ' : `เปลี่ยนชื่อไฟล์เป็น "${saved}" แล้ว` });
+      setMessage({ type: 'success', text: saved === newName ? t("dash.renameSuccess") : t("dash.renameSavedAs", { name: saved }) });
       setFiles(files.map(f => f.id === renameTarget.id ? { ...f, filename: saved } : f));
       setRenameTarget(null);
     } catch (err) {
-      setMessage({ type: 'error', text: err.message || "เปลี่ยนชื่อไม่สำเร็จ" });
+      setMessage({ type: 'error', text: err.message || t("dash.renameError") });
     }
   };
 
@@ -264,7 +263,7 @@ export default function Dashboard() {
         await deleteFile(file.id);
       } catch (err) {
         console.error(err);
-        failed.push({ file, message: err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ" });
+        failed.push({ file, message: err.message || t("dash.connError") });
       }
     }
     try {
@@ -281,16 +280,17 @@ export default function Dashboard() {
     if (failed.length === 0) {
       setDeleteTargets(null);
       if (deleteTargets.length > 1) {
-        setMessage({ type: 'success', text: `ลบเอกสาร ${deleteTargets.length} ไฟล์เรียบร้อยแล้ว` });
+        setMessage({ type: 'success', text: t("dash.deleteManySuccess", { count: deleteTargets.length }) });
         exitSelectMode();
       }
       return;
     }
     const okCount = deleteTargets.length - failed.length;
+    const okPart = okCount ? t("dash.deleteManyOkPart", { ok: okCount }) : "";
     setDeleteTargets(failed.map(({ file }) => file));
     setDeleteError(deleteTargets.length === 1
-      ? `ไม่สามารถลบไฟล์ได้: ${failed[0].message}`
-      : [`ลบไม่สำเร็จ ${failed.length} ไฟล์${okCount ? ` (ลบสำเร็จ ${okCount} ไฟล์)` : ''}:`,
+      ? t("dash.deleteOneError", { message: failed[0].message })
+      : [t("dash.deleteManyError", { failed: failed.length, okPart }),
          ...failed.map(({ file, message }) => `• ${file.filename}: ${message}`)].join('\n'));
   }
 
@@ -300,7 +300,7 @@ export default function Dashboard() {
       const { blob, filename } = await downloadStoredFile(file.id, file.filename);
       saveBlob(blob, filename);
     } catch (err) {
-      setMessage({ type: 'error', text: 'ดาวน์โหลดไม่สำเร็จ: ' + (err.message || '') });
+      setMessage({ type: 'error', text: t("dash.downloadError", { message: err.message || "" }) });
     }
   }
 
@@ -319,7 +319,7 @@ export default function Dashboard() {
     const file = input.files[0];
     if (!file) return;
     setUploading(true);
-    if (isOfficeFile(file)) setMessage({ type: 'success', text: `กำลังแปลง ${file.name} เป็น PDF... (อาจใช้เวลาสักครู่)` });
+    if (isOfficeFile(file)) setMessage({ type: 'success', text: t("dash.convertingOffice", { name: file.name }) });
     try {
       const data = await uploadPdf(file);
       if (data.status === "password_required") {
@@ -330,7 +330,7 @@ export default function Dashboard() {
       }
       void navigate(`/editor/${data.session_id}`);
     } catch (err) {
-      setMessage({ type: 'error', text: "อัปโหลดไม่สำเร็จ: " + err.message });
+      setMessage({ type: 'error', text: t("dash.uploadError", { message: err.message }) });
       setUploading(false);
     } finally {
       input.value = ""; // อนุญาตให้เลือกไฟล์เดิมซ้ำได้หลังยกเลิก
@@ -346,7 +346,7 @@ export default function Dashboard() {
       }
       void navigate(`/editor/${data.session_id}`);
     } catch (err) {
-      setMessage({ type: 'error', text: "ไม่สามารถเปิดไฟล์ได้: " + err.message });
+      setMessage({ type: 'error', text: t("dash.openError", { message: err.message }) });
     }
   }
 
@@ -356,7 +356,7 @@ export default function Dashboard() {
     try {
       const res = await unlockPdf(passwordState.sessionId, password);
       if (res.status === "invalid_password") {
-        setPasswordState((s) => ({ ...s, submitting: false, error: "รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่" }));
+        setPasswordState((s) => ({ ...s, submitting: false, error: t("dash.invalidPassword") }));
         return;
       }
       const sessionId = passwordState.sessionId;
@@ -385,10 +385,11 @@ export default function Dashboard() {
   async function handleUploadMany(fileList) {
     const all = Array.from(fileList || []);
     if (all.length === 0 || uploading) return;
+    const kinds = t("dash.uploadKinds");
     const accepted = all.filter(isSupportedUpload);
-    const rejected = all.filter((f) => !isSupportedUpload(f)).map((f) => `${f.name}: ไม่ใช่ไฟล์ ${UPLOAD_KINDS}`);
+    const rejected = all.filter((f) => !isSupportedUpload(f)).map((f) => t("dash.unsupportedFile", { name: f.name, kinds }));
     if (accepted.length === 0) {
-      setMessage({ type: 'error', text: `รองรับเฉพาะไฟล์ ${UPLOAD_KINDS} เท่านั้น`, details: rejected });
+      setMessage({ type: 'error', text: t("dash.onlySupportedFiles", { kinds }), details: rejected });
       return;
     }
     setUploading(true);
@@ -396,13 +397,18 @@ export default function Dashboard() {
     let done = 0;
     for (const [i, file] of accepted.entries()) {
       setUploadProgress({ current: i + 1, total: accepted.length, name: file.name });
-      setMessage({ type: 'success', text: `${isOfficeFile(file) ? "กำลังอัปโหลดและแปลงเป็น PDF" : "กำลังอัปโหลด"} ${i + 1}/${accepted.length}: ${file.name}` });
+      setMessage({
+        type: 'success',
+        text: isOfficeFile(file)
+          ? t("dash.uploadingAndConverting", { current: i + 1, total: accepted.length, name: file.name })
+          : t("dash.uploadingOneOfMany", { current: i + 1, total: accepted.length, name: file.name }),
+      });
       try {
         const data = await uploadPdf(file);
         done += 1;
         if (data?.session_id) closeSession(data.session_id).catch(() => {});
       } catch (err) {
-        failed.push(`${file.name}: ${err.message || "อัปโหลดไม่สำเร็จ"}`);
+        failed.push(`${file.name}: ${err.message || t("dash.uploadError", { message: "" }).replace(/: $/, "")}`);
       }
     }
     setUploadProgress(null);
@@ -415,12 +421,12 @@ export default function Dashboard() {
     }
     setUploading(false);
     if (failed.length === 0) {
-      setMessage({ type: 'success', text: done === 1 ? `อัปโหลด ${accepted[0].name} สำเร็จแล้ว` : `อัปโหลดสำเร็จ ${done} ไฟล์` });
+      setMessage({ type: 'success', text: done === 1 ? t("dash.uploadOneSuccess", { name: accepted[0].name }) : t("dash.uploadManySuccess", { count: done }) });
       setTimeout(() => setMessage({ type: '', text: '' }), 5000);
     } else {
       setMessage({
         type: done > 0 ? 'success' : 'error',
-        text: done > 0 ? `อัปโหลดสำเร็จ ${done} ไฟล์ · ไม่สำเร็จ ${failed.length} ไฟล์` : `อัปโหลดไม่สำเร็จ ${failed.length} ไฟล์`,
+        text: done > 0 ? t("dash.uploadPartial", { done, failed: failed.length }) : t("dash.uploadAllFailed", { failed: failed.length }),
         details: failed,
       });
     }
@@ -485,8 +491,8 @@ export default function Dashboard() {
             <div className="bg-blue-100 p-4 rounded-full text-blue-600">
               <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 text-center">วางไฟล์ PDF รูปภาพ หรือไฟล์ Office ที่นี่</h2>
-            <p className="text-gray-500 font-medium text-center">วางได้หลายไฟล์พร้อมกัน — อัปโหลดเก็บไว้ในเอกสารของฉัน</p>
+            <h2 className="text-2xl font-bold text-gray-800 text-center">{t("dash.dropTitle")}</h2>
+            <p className="text-gray-500 font-medium text-center">{t("dash.dropSubtitle")}</p>
           </div>
         </div>
       )}
@@ -503,7 +509,7 @@ export default function Dashboard() {
               <NotificationBell />
               <button
                 type="button"
-                onClick={() => window.open("/manual.html", "_blank")}
+                onClick={() => window.open(lang === "en" ? "/manual-en.html" : "/manual.html", "_blank")}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                 title={t("auth.manual")}
                 aria-label={t("auth.manual")}
@@ -756,21 +762,23 @@ export default function Dashboard() {
                 className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${selectMode ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" /><path strokeLinecap="round" strokeLinejoin="round" d="M8 12l3 3 5-6" /></svg>
-                {selectMode ? 'เสร็จสิ้น' : 'เลือกหลายไฟล์'}
+                {selectMode ? t("dash.selectDone") : t("dash.selectMany")}
               </button>
             )}
             <div className="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200">
               <button
+                type="button"
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'} transition-all`}
-                title="มุมมองแบบกริด"
+                title={t("dash.gridView")}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode('list')}
                 className={`p-1.5 rounded-md ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'} transition-all`}
-                title="มุมมองแบบรายการ"
+                title={t("dash.listView")}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
               </button>
@@ -779,7 +787,9 @@ export default function Dashboard() {
               <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              {uploading ? (uploadProgress ? `กำลังอัปโหลด ${uploadProgress.current}/${uploadProgress.total}...` : "กำลังอัปโหลด...") : <><span className="sm:hidden">อัปโหลด</span><span className="hidden sm:inline">อัปโหลด PDF/รูปภาพ/Office</span></>}
+              {uploading
+                ? (uploadProgress ? t("dash.uploadingProgress", { current: uploadProgress.current, total: uploadProgress.total }) : t("dash.uploading"))
+                : <><span className="sm:hidden">{t("dash.uploadShort")}</span><span className="hidden sm:inline">{t("dash.uploadLong")}</span></>}
               <input type="file" multiple accept={UPLOAD_ACCEPT} className="hidden" onChange={handleFileInput} disabled={uploading} data-testid="upload-input" />
             </label>
           </div>
@@ -796,13 +806,13 @@ export default function Dashboard() {
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">ไม่มีเอกสาร</h3>
-            <p className="mt-1 text-sm text-gray-500">เริ่มต้นใช้งานโดยการอัปโหลดไฟล์ PDF ไฟล์แรกของคุณ</p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">{t("dash.emptyTitle")}</h3>
+            <p className="mt-1 text-sm text-gray-500">{t("dash.emptySubtitle")}</p>
           </div>
         ) : (
           <>
             {selectMode && (
-              <div className="sticky top-2 z-30 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-blue-200 bg-blue-50/95 backdrop-blur px-4 py-3 shadow-sm" role="toolbar" aria-label="จัดการไฟล์ที่เลือก">
+              <div className="sticky top-2 z-30 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-blue-200 bg-blue-50/95 backdrop-blur px-4 py-3 shadow-sm" role="toolbar" aria-label={t("dash.selectToolbarAria")}>
                 <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -811,10 +821,10 @@ export default function Dashboard() {
                     onChange={toggleSelectAllVisible}
                     disabled={filteredFiles.length === 0}
                   />
-                  เลือกทั้งหมด{searchQuery ? 'ที่ค้นพบ' : ''} ({filteredFiles.length})
+                  {searchQuery ? t("dash.selectAllFound") : t("dash.selectAll")} ({filteredFiles.length})
                 </label>
                 <span className="text-sm font-medium text-blue-800" data-testid="selected-count">
-                  เลือกแล้ว {selectedFiles.length} ไฟล์
+                  {t("dash.selectedCount", { count: selectedFiles.length })}
                 </span>
                 <div className="ml-auto flex items-center gap-2">
                   {selectedFiles.length === 2 && (
@@ -823,14 +833,14 @@ export default function Dashboard() {
                       data-testid="compare-selected"
                       onClick={() => {
                         // ไฟล์ที่แก้ไขก่อน = ไฟล์เดิม (A) · ไฟล์ที่แก้ไขล่าสุด = ไฟล์ใหม่ (B)
-                        const t = (f) => new Date(f.updated_at || f.created_at || 0).getTime();
-                        const [older, newer] = [...selectedFiles].sort((x, y) => t(x) - t(y));
+                        const ts = (f) => new Date(f.updated_at || f.created_at || 0).getTime();
+                        const [older, newer] = [...selectedFiles].sort((x, y) => ts(x) - ts(y));
                         const side = (f) => ({ kind: 'file', side: { fileId: f.id, version: 'current' }, fileSide: { fileId: f.id, version: 'current' } });
                         setCompareStart({ a: side(older), b: side(newer) });
                       }}
                       className="px-3 py-1.5 text-sm font-medium text-indigo-700 bg-white border border-indigo-300 rounded-lg hover:bg-indigo-50"
                     >
-                      เปรียบเทียบ 2 ไฟล์
+                      {t("dash.compare2Btn")}
                     </button>
                   )}
                   <button
@@ -838,7 +848,7 @@ export default function Dashboard() {
                     onClick={exitSelectMode}
                     className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
-                    ยกเลิก
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="button"
@@ -847,7 +857,7 @@ export default function Dashboard() {
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    ลบที่เลือก ({selectedFiles.length})
+                    {t("dash.deleteSelected", { count: selectedFiles.length })}
                   </button>
                 </div>
               </div>
@@ -879,7 +889,7 @@ export default function Dashboard() {
                         checked={selectedIds.has(f.id)}
                         onChange={() => toggleSelect(f.id)}
                         onClick={(e) => e.stopPropagation()}
-                        aria-label={`เลือก ${f.filename}`}
+                        aria-label={t("dash.selectFileAria", { name: f.filename })}
                       />
                     )}
                     <div className="bg-gray-50 flex justify-center items-center p-6 border-b border-gray-100 group-hover:bg-blue-50 transition-colors">
@@ -890,17 +900,19 @@ export default function Dashboard() {
                     <div className="p-4 flex items-start gap-2">
                       <div className="min-w-0 flex-1">
                         <h4 className="text-sm font-medium text-gray-900 truncate" title={f.filename}>{f.filename}</h4>
-                        <p className="text-xs text-gray-500 mt-1">แก้ไขล่าสุด: {new Date(f.updated_at || f.created_at).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                        {f.file_size > 0 && <p className="text-xs text-gray-500 mt-0.5">ขนาดไฟล์: {formatFileSize(f.file_size)}</p>}
+                        <p className="text-xs text-gray-500 mt-1">
+                          {t("dash.lastModified", { date: new Date(f.updated_at || f.created_at).toLocaleString(lang === "en" ? "en-US" : "th-TH", { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) })}
+                        </p>
+                        {f.file_size > 0 && <p className="text-xs text-gray-500 mt-0.5">{t("dash.fileSize", { size: formatFileSize(f.file_size) })}</p>}
                       </div>
                       <button
                           type="button"
                           onClick={(e) => handleMenuButton(e, f)}
                           className="-mr-1.5 -mt-1 shrink-0 p-1.5 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
-                          aria-label="เมนูไฟล์"
+                          aria-label={t("dash.fileMenuAria")}
                           aria-haspopup="menu"
                           aria-expanded={contextMenu?.file?.id === f.id}
-                          title="เมนู"
+                          title={t("dash.fileMenuTitle")}
                         >
                           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
                         </button>
@@ -921,13 +933,13 @@ export default function Dashboard() {
                             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             checked={allVisibleSelected}
                             onChange={toggleSelectAllVisible}
-                            aria-label="เลือกทั้งหมด"
+                            aria-label={t("dash.selectAll")}
                           />
                         </th>
                       )}
-                      <th className="px-3 sm:px-6 py-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">ชื่อไฟล์</th>
-                      <th className="hidden sm:table-cell w-56 px-6 py-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">เวลาแก้ไขล่าสุด</th>
-                      <th className="w-14 sm:w-24 px-2 sm:px-6 py-4 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200"><span className="hidden sm:inline">จัดการ</span><span className="sr-only sm:hidden">เมนู</span></th>
+                      <th className="px-3 sm:px-6 py-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">{t("dash.colFilename")}</th>
+                      <th className="hidden sm:table-cell w-56 px-6 py-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">{t("dash.colModified")}</th>
+                      <th className="w-14 sm:w-24 px-2 sm:px-6 py-4 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200"><span className="hidden sm:inline">{t("dash.colManage")}</span><span className="sr-only sm:hidden">{t("dash.fileMenuTitle")}</span></th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -941,7 +953,7 @@ export default function Dashboard() {
                               checked={selectedIds.has(f.id)}
                               onChange={() => toggleSelect(f.id)}
                               onClick={(e) => e.stopPropagation()}
-                              aria-label={`เลือก ${f.filename}`}
+                              aria-label={t("dash.selectFileAria", { name: f.filename })}
                             />
                           </td>
                         )}
@@ -953,14 +965,14 @@ export default function Dashboard() {
                             <div className="ml-3 min-w-0">
                               <p className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors truncate" title={f.filename}>{f.filename}</p>
                               <p className="sm:hidden text-xs text-gray-500 mt-0.5">
-                                {new Date(f.updated_at || f.created_at).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                {new Date(f.updated_at || f.created_at).toLocaleString(lang === "en" ? "en-US" : "th-TH", { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 {f.file_size > 0 && ` · ${formatFileSize(f.file_size)}`}
                               </p>
                             </div>
                           </div>
                         </td>
                         <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(f.updated_at || f.created_at).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          {new Date(f.updated_at || f.created_at).toLocaleString(lang === "en" ? "en-US" : "th-TH", { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           {f.file_size > 0 && <span className="block text-xs text-gray-400">{formatFileSize(f.file_size)}</span>}
                         </td>
                         <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right">
@@ -968,10 +980,10 @@ export default function Dashboard() {
                           type="button"
                           onClick={(e) => handleMenuButton(e, f)}
                           className="p-1.5 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
-                          aria-label="เมนูไฟล์"
+                          aria-label={t("dash.fileMenuAria")}
                           aria-haspopup="menu"
                           aria-expanded={contextMenu?.file?.id === f.id}
-                          title="เมนู"
+                          title={t("dash.fileMenuTitle")}
                         >
                           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
                         </button>
@@ -1016,7 +1028,7 @@ export default function Dashboard() {
 
         {showSignChooser && (
           <ChooseFileModal
-            title="เลือกเอกสารที่จะส่งให้ลงนาม"
+            title={t("dash.chooseSignTitle")}
             files={files}
             onCancel={() => setShowSignChooser(false)}
             onChoose={(f) => { setShowSignChooser(false); void navigate(`/signing/new?file=${f.id}`); }}
@@ -1025,9 +1037,9 @@ export default function Dashboard() {
 
         {showWordChooser && (
           <ChooseFileModal
-            title="เลือกเอกสารที่จะแปลงเป็น Word"
-            subtitle="ใช้ได้ทั้ง PDF ทั่วไปและไฟล์สแกน/รูปถ่ายเอกสาร — ระบบตรวจให้อัตโนมัติ"
-            emptyText="ยังไม่มีเอกสาร — อัปโหลด PDF หรือสแกนเอกสารก่อน แล้วค่อยแปลงเป็น Word"
+            title={t("dash.chooseWordTitle")}
+            subtitle={t("dash.chooseWordSubtitle")}
+            emptyText={t("dash.chooseWordEmpty")}
             files={files}
             onCancel={() => setShowWordChooser(false)}
             onChoose={(f) => { setShowWordChooser(false); wordConversion.request({ fileId: f.id, filename: f.filename || "" }); }}
@@ -1098,7 +1110,7 @@ export default function Dashboard() {
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-            เปลี่ยนชื่อไฟล์
+            {t("dash.ctxRename")}
           </button>
           <button 
             role="menuitem"
@@ -1109,7 +1121,7 @@ export default function Dashboard() {
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12"></path><path d="M7 10l5 5 5-5"></path><path d="M5 21h14"></path></svg>
-            ดาวน์โหลด
+            {t("dash.ctxDownload")}
           </button>
           <button 
             role="menuitem"
@@ -1120,7 +1132,7 @@ export default function Dashboard() {
             }}
           >
             <svg className="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M8 13l1.5 5L12 14l2.5 4L16 13"></path></svg>
-            <span className="flex flex-col leading-tight">แปลงเป็น Word<span className="text-[11px] text-gray-400">รองรับไฟล์สแกน</span></span>
+            <span className="flex flex-col leading-tight">{t("dash.ctxToWord")}<span className="text-[11px] text-gray-400">{t("dash.ctxToWordSub")}</span></span>
           </button>
           <button 
             role="menuitem"
@@ -1131,7 +1143,7 @@ export default function Dashboard() {
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-            ส่งให้ลงนาม
+            {t("dash.ctxSign")}
           </button>
           <button 
             role="menuitem"
@@ -1142,7 +1154,7 @@ export default function Dashboard() {
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
-            เข้ารหัส PDF
+            {t("dash.ctxEncrypt")}
           </button>
           <button 
             role="menuitem"
@@ -1153,7 +1165,7 @@ export default function Dashboard() {
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z"></path><path d="M9 12h6"></path></svg>
-            ปกปิดข้อมูลส่วนบุคคล
+            {t("dash.ctxPdpa")}
           </button>
           <button 
             role="menuitem"
@@ -1164,7 +1176,7 @@ export default function Dashboard() {
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14h6v6"></path><path d="M20 10h-6V4"></path><path d="M14 10l7-7"></path><path d="M3 21l7-7"></path></svg>
-            ลดขนาดไฟล์
+            {t("dash.ctxCompress")}
           </button>
           <button 
             role="menuitem"
@@ -1175,7 +1187,7 @@ export default function Dashboard() {
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg>
-            คุณสมบัติเอกสาร
+            {t("dash.ctxProps")}
           </button>
           <button 
             role="menuitem"
@@ -1186,7 +1198,7 @@ export default function Dashboard() {
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><path d="M8 12l3 3 5-6"></path></svg>
-            {selectMode ? (selectedIds.has(contextMenu.file.id) ? 'ยกเลิกการเลือก' : 'เลือกไฟล์นี้') : 'เลือกหลายไฟล์'}
+            {selectMode ? (selectedIds.has(contextMenu.file.id) ? t("dash.ctxDeselect") : t("dash.ctxSelectThis")) : t("dash.selectMany")}
           </button>
           <button 
             role="menuitem"
@@ -1197,7 +1209,7 @@ export default function Dashboard() {
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-            ลบเอกสาร
+            {t("dash.ctxDelete")}
           </button>
         </div>
       )}
@@ -1233,7 +1245,7 @@ export default function Dashboard() {
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium text-sm px-4 py-2.5 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all group"
-        title="ส่งข้อเสนอแนะหรือแจ้งปัญหาการใช้งาน"
+        title={t("dash.feedbackTitle")}
       >
         <span className="relative flex h-2.5 w-2.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
@@ -1242,7 +1254,7 @@ export default function Dashboard() {
         <svg className="w-4 h-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
         </svg>
-        <span>ข้อเสนอแนะ / แจ้งปัญหา</span>
+        <span>{t("dash.feedbackLabel")}</span>
       </a>
 
     </div>

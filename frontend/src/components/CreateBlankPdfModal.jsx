@@ -1,23 +1,25 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 const PT_PER_MM = 72 / 25.4;
 const MIN_MM = 26; // ≈ 73.7 pt (backend >= 72 pt)
 const MAX_MM = 5000; // ≈ 14,173 pt (backend <= 14,400 pt)
 
 const PAPER_SIZES = [
-  { id: "a4", label: "A4 (210 × 297 มม.)", widthMm: 210, heightMm: 297 },
-  { id: "letter", label: "Letter (216 × 279 มม.)", widthMm: 215.9, heightMm: 279.4 },
-  { id: "a5", label: "A5 (148 × 210 มม.)", widthMm: 148, heightMm: 210 },
-  { id: "a3", label: "A3 (297 × 420 มม.)", widthMm: 297, heightMm: 420 },
-  { id: "custom", label: "กำหนดเอง (มม.)", widthMm: 210, heightMm: 297 },
+  { id: "a4", labelKey: "createBlank.sizeA4", widthMm: 210, heightMm: 297 },
+  { id: "letter", labelKey: "createBlank.sizeLetter", widthMm: 215.9, heightMm: 279.4 },
+  { id: "a5", labelKey: "createBlank.sizeA5", widthMm: 148, heightMm: 210 },
+  { id: "a3", labelKey: "createBlank.sizeA3", widthMm: 297, heightMm: 420 },
+  { id: "custom", labelKey: "createBlank.sizeCustom", widthMm: 210, heightMm: 297 },
 ];
 
 /**
  * หน้าต่างสร้างเอกสาร PDF หน้าเปล่า (v1.47.0, รองรับกำหนดขนาดเอง + แนวตั้ง/แนวนอน v1.47.1)
  */
 export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFormBuilder = true }) {
-  const [filename, setFilename] = useState("แบบฟอร์มใหม่.pdf");
+  const { t } = useI18n();
+  const [filename, setFilename] = useState(() => t("createBlank.defaultFilename"));
   const [sizeId, setSizeId] = useState("a4");
   const [orientation, setOrientation] = useState("portrait"); // "portrait" | "landscape"
   const [customW, setCustomW] = useState("210");
@@ -26,6 +28,14 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
   const [openFormBuilder, setOpenFormBuilder] = useState(defaultOpenFormBuilder);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape" && !submitting) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, submitting]);
 
   function handleSelectOrientation(nextOrient) {
     if (nextOrient === orientation) return;
@@ -48,7 +58,7 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
       const wMm = Number(customW);
       const hMm = Number(customH);
       if (!Number.isFinite(wMm) || !Number.isFinite(hMm) || wMm < MIN_MM || hMm < MIN_MM || wMm > MAX_MM || hMm > MAX_MM) {
-        return { error: `กรุณาระบุความกว้างและความสูงระหว่าง ${MIN_MM}–${MAX_MM} มม.` };
+        return { error: t("createBlank.dimError", { min: MIN_MM, max: MAX_MM }) };
       }
       return {
         width: Math.round(wMm * PT_PER_MM * 100) / 100,
@@ -72,7 +82,7 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
       setError(dims.error);
       return;
     }
-    const cleanName = filename.trim() || "แบบฟอร์มใหม่.pdf";
+    const cleanName = filename.trim() || t("createBlank.defaultFilename");
     const pages = Math.max(1, Math.min(50, Number(pageCount) || 1));
 
     setSubmitting(true);
@@ -86,7 +96,7 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
       });
       onCreated(res, { openFormBuilder });
     } catch (err) {
-      setError(err?.message || "สร้างเอกสารเปล่าไม่สำเร็จ");
+      setError(err?.message || t("createBlank.createError"));
       setSubmitting(false);
     }
   }
@@ -102,20 +112,22 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
   return (
     <div
       className="fixed inset-0 z-50 bg-slate-900/50 flex items-end sm:items-center justify-center sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="สร้างเอกสารเปล่า"
+      role="presentation"
+      onMouseDown={(e) => e.target === e.currentTarget && !submitting && onClose()}
     >
       <form
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("createBlank.ariaLabel")}
         onSubmit={(e) => void handleSubmit(e)}
         className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-xl shadow-2xl border border-slate-200 overflow-hidden"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
-          <h2 className="text-base font-semibold text-slate-800">สร้างเอกสารเปล่า / แบบฟอร์มใหม่</h2>
+          <h2 className="text-base font-semibold text-slate-800">{t("createBlank.title")}</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="ปิดหน้าต่างสร้างเอกสารเปล่า"
+            aria-label={t("createBlank.closeAria")}
             className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
           >
             ✕
@@ -125,7 +137,7 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
         <div className="p-4 space-y-3.5 text-sm">
           <div>
             <label htmlFor="blank-pdf-filename" className="block text-xs font-medium text-slate-600 mb-1">
-              ชื่อไฟล์
+              {t("createBlank.filenameLabel")}
             </label>
             <input
               id="blank-pdf-filename"
@@ -133,7 +145,7 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
               value={filename}
               maxLength={200}
               onChange={(e) => setFilename(e.target.value)}
-              placeholder="เช่น ใบสมัครงาน.pdf"
+              placeholder={t("createBlank.filenamePlaceholder")}
               className="w-full h-10 px-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -141,7 +153,7 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
           <div className="grid grid-cols-3 gap-3 items-end">
             <div className="col-span-2">
               <label htmlFor="blank-pdf-size" className="block text-xs font-medium text-slate-600 mb-1">
-                ขนาดกระดาษ
+                {t("createBlank.paperSizeLabel")}
               </label>
               <select
                 id="blank-pdf-size"
@@ -154,14 +166,14 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
               >
                 {PAPER_SIZES.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.label}
+                    {t(s.labelKey)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
               <label htmlFor="blank-pdf-pages" className="block text-xs font-medium text-slate-600 mb-1">
-                จำนวนหน้า
+                {t("createBlank.pageCountLabel")}
               </label>
               <input
                 id="blank-pdf-pages"
@@ -178,9 +190,9 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
           {/* แนวตั้ง / แนวนอน */}
           <div>
             <div className="flex items-center justify-between text-xs font-medium text-slate-600 mb-1">
-              <span>แนวกระดาษ</span>
+              <span>{t("createBlank.orientationLabel")}</span>
               <span className="text-[11px] font-normal text-slate-500">
-                {previewW} × {previewH} มม.
+                {previewW} × {previewH} {t("createBlank.mmUnit")}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -194,7 +206,7 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
                     : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
                 }`}
               >
-                แนวตั้ง (Portrait)
+                {t("createBlank.portrait")}
               </button>
               <button
                 type="button"
@@ -206,7 +218,7 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
                     : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
                 }`}
               >
-                แนวนอน (Landscape)
+                {t("createBlank.landscape")}
               </button>
             </div>
           </div>
@@ -216,7 +228,7 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
             <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
               <div>
                 <label htmlFor="blank-pdf-custom-w" className="block text-xs font-medium text-slate-600 mb-1">
-                  ความกว้าง (มม.)
+                  {t("createBlank.widthLabel")}
                 </label>
                 <input
                   id="blank-pdf-custom-w"
@@ -234,7 +246,7 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
               </div>
               <div>
                 <label htmlFor="blank-pdf-custom-h" className="block text-xs font-medium text-slate-600 mb-1">
-                  ความสูง (มม.)
+                  {t("createBlank.heightLabel")}
                 </label>
                 <input
                   id="blank-pdf-custom-h"
@@ -260,7 +272,7 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
               onChange={(e) => setOpenFormBuilder(e.target.checked)}
               className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             />
-            <span>เปิดโหมดออกแบบแบบฟอร์ม (เพิ่มช่องกรอก) ทันที</span>
+            <span>{t("createBlank.openFormBuilder")}</span>
           </label>
 
           {error && (
@@ -276,14 +288,14 @@ export default function CreateBlankPdfModal({ onClose, onCreated, defaultOpenFor
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200/70 rounded-lg"
           >
-            ยกเลิก
+            {t("common.cancel")}
           </button>
           <button
             type="submit"
             disabled={submitting}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg shadow-sm"
           >
-            {submitting ? "กำลังสร้าง..." : "สร้างเอกสาร"}
+            {submitting ? t("createBlank.creating") : t("createBlank.createBtn")}
           </button>
         </div>
       </form>

@@ -3,15 +3,17 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { startCompare } from "../../api";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
-const OPTION_LABELS = [
-  ["text", "เทียบข้อความ", "คำที่เพิ่ม ลบ หรือแก้"],
-  ["visual", "เทียบภาพ", "รูป ลายเซ็น ตราประทับ เส้นตาราง"],
-  ["ocr", "อ่านหน้าสแกนด้วย OCR", "หน้าที่เป็นภาพจะอ่านข้อความก่อนเทียบ (ช้ากว่า)"],
-  ["ignore_case", "ไม่สนตัวพิมพ์เล็ก/ใหญ่", "A กับ a ถือว่าเหมือนกัน"],
+const OPTION_KEYS = [
+  ["text", "compareModal.optText", "compareModal.optTextNote"],
+  ["visual", "compareModal.optVisual", "compareModal.optVisualNote"],
+  ["ocr", "compareModal.optOcr", "compareModal.optOcrNote"],
+  ["ignore_case", "compareModal.optIgnoreCase", "compareModal.optIgnoreCaseNote"],
 ];
 
 function SidePicker({ id, title, hint, files, presets, value, onChange }) {
+  const { t } = useI18n();
   const kind = value?.kind || "file";
   return (
     <fieldset className="border border-gray-200 rounded-lg p-3" aria-labelledby={`${id}-legend`}>
@@ -29,15 +31,15 @@ function SidePicker({ id, title, hint, files, presets, value, onChange }) {
           <input type="radio" name={id} className="mt-1" checked={kind === "file"}
             onChange={() => onChange({ kind: "file", side: value?.fileSide || null })} />
           <span className="flex-1 min-w-0">
-            ไฟล์ในเอกสารของฉัน
-            <select aria-label={`${title}: เลือกไฟล์`} className="mt-1 block w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+            {t("compareModal.fromMyDocs")}
+            <select aria-label={t("compareModal.selectFileAria", { title })} className="mt-1 block w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
               value={value?.kind === "file" && value.side ? String(value.side.fileId) : ""}
               onChange={(e) => {
                 const side = e.target.value ? { fileId: Number(e.target.value), version: "current" } : null;
                 onChange({ kind: "file", side, fileSide: side });
               }}
               onFocus={() => kind !== "file" && onChange({ kind: "file", side: value?.fileSide || null })}>
-              <option value="">— เลือกไฟล์ —</option>
+              <option value="">{t("compareModal.selectPlaceholder")}</option>
               {files.map((f) => <option key={f.id} value={f.id}>{f.filename}</option>)}
             </select>
           </span>
@@ -46,8 +48,8 @@ function SidePicker({ id, title, hint, files, presets, value, onChange }) {
           <input type="radio" name={id} className="mt-1" checked={kind === "upload"}
             onChange={() => onChange({ kind: "upload", side: value?.uploadSide || null })} />
           <span className="flex-1 min-w-0">
-            อัปโหลดไฟล์ PDF
-            <input type="file" accept="application/pdf,.pdf" aria-label={`${title}: อัปโหลดไฟล์`}
+            {t("compareModal.uploadPdf")}
+            <input type="file" accept="application/pdf,.pdf" aria-label={t("compareModal.uploadAria", { title })}
               className="mt-1 block w-full text-sm text-gray-600 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-gray-100"
               onChange={(e) => {
                 const file = e.target.files?.[0];
@@ -71,6 +73,7 @@ function firstPreset(presets) {
  * initialA / initialB: {kind, side} ค่าเริ่มต้น (เช่น Dashboard เลือก 2 ไฟล์ไว้แล้ว)
  */
 export default function CompareStartModal({ files = [], presetsA = [], presetsB = [], initialA = null, initialB = null, onClose }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [a, setA] = useState(() => initialA || firstPreset(presetsA));
   const [b, setB] = useState(() => initialB || firstPreset(presetsB));
@@ -94,41 +97,41 @@ export default function CompareStartModal({ files = [], presetsA = [], presetsB 
       const res = await startCompare(a.side, b.side, options);
       void navigate(`/compare/${res.task_id}`);
     } catch (err) {
-      setError(err.message || "เริ่มเปรียบเทียบไม่สำเร็จ");
+      setError(err.message || t("compareModal.startError"));
       setBusy(false);
     }
   }
 
   return (
     <div role="presentation" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm" onClick={() => !busy && onClose()}>
-      <form role="dialog" aria-modal="true" aria-labelledby="compare-start-title" onSubmit={submit}
+      <form role="dialog" aria-modal="true" aria-labelledby="compare-start-title" onSubmit={(e) => void submit(e)}
         className="bg-white w-full sm:max-w-2xl rounded-t-2xl sm:rounded-xl shadow-xl flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()} data-testid="compare-start">
         <div className="p-4 border-b border-gray-100">
-          <h3 id="compare-start-title" className="text-lg font-bold text-gray-900">เปรียบเทียบเอกสาร</h3>
-          <p className="mt-1 text-sm text-gray-500">เลือกไฟล์เดิมและไฟล์ใหม่ ระบบจะไฮไลต์ข้อความที่เพิ่ม ลบ แก้ และจุดที่ภาพต่างกัน</p>
+          <h3 id="compare-start-title" className="text-lg font-bold text-gray-900">{t("compareModal.title")}</h3>
+          <p className="mt-1 text-sm text-gray-500">{t("compareModal.subtitle")}</p>
         </div>
         <div className="p-4 overflow-y-auto space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
-            <SidePicker id="cmp-a" title="ไฟล์เดิม (A)" hint="ฉบับก่อนแก้ไข" files={files} presets={presetsA} value={a} onChange={setA} />
-            <SidePicker id="cmp-b" title="ไฟล์ใหม่ (B)" hint="ฉบับที่ต้องการตรวจ" files={files} presets={presetsB} value={b} onChange={setB} />
+            <SidePicker id="cmp-a" title={t("compareModal.sideATitle")} hint={t("compareModal.sideAHint")} files={files} presets={presetsA} value={a} onChange={setA} />
+            <SidePicker id="cmp-b" title={t("compareModal.sideBTitle")} hint={t("compareModal.sideBHint")} files={files} presets={presetsB} value={b} onChange={setB} />
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
-            {OPTION_LABELS.map(([key, label, note]) => (
+            {OPTION_KEYS.map(([key, labelKey, noteKey]) => (
               <label key={key} className="flex items-start gap-2 text-sm cursor-pointer">
                 <input type="checkbox" className="mt-1" checked={options[key]}
                   onChange={(e) => setOptions((o) => ({ ...o, [key]: e.target.checked }))} />
-                <span>{label}<span className="block text-xs text-gray-500">{note}</span></span>
+                <span>{t(labelKey)}<span className="block text-xs text-gray-500">{t(noteKey)}</span></span>
               </label>
             ))}
           </div>
-          {!options.text && !options.visual && <p className="text-sm text-amber-700">เลือกเทียบข้อความหรือภาพอย่างน้อย 1 อย่าง</p>}
+          {!options.text && !options.visual && <p className="text-sm text-amber-700">{t("compareModal.needOneOption")}</p>}
           {error && <p className="text-sm text-red-700 bg-red-50 rounded p-2" role="alert">{error}</p>}
         </div>
         <div className="p-4 border-t border-gray-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} disabled={busy} className="px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50">ยกเลิก</button>
+          <button type="button" onClick={onClose} disabled={busy} className="px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50">{t("common.cancel")}</button>
           <button type="submit" disabled={!ready || busy} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
-            {busy ? "กำลังเริ่ม..." : "เปรียบเทียบ"}
+            {busy ? t("compareModal.starting") : t("compareModal.compareBtn")}
           </button>
         </div>
       </form>
