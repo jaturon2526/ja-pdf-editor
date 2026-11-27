@@ -7,7 +7,8 @@ import DonationsPanel from "../components/admin/DonationsPanel.jsx";
 import { useI18n } from "../i18n/I18nContext.jsx";
 
 export default function AdminDashboard() {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
+  const locale = lang === "en" ? "en-US" : "th-TH";
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
@@ -71,7 +72,7 @@ export default function AdminDashboard() {
     try {
       await updateAdminPlanConfig(planType, Number.parseInt(maxSessions, 10), Number.parseInt(maxStorageMb, 10));
       await fetchData(false);
-      setSuccessMessage(`บันทึกแพ็กเกจ ${planType.toUpperCase()} เรียบร้อยแล้ว`);
+      setSuccessMessage(t("admin.planSaved", { plan: planType.toUpperCase() }));
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
       setError("Error: " + err.message);
@@ -107,11 +108,11 @@ export default function AdminDashboard() {
       setEditingUser(null);
       void fetchData(false); // Sync in background
     } catch (err) {
-      setError(`บันทึกแพ็กเกจไม่สำเร็จ: ${err.message}`); // เดิมเก็บใน errorMsg ซึ่งไม่ได้แสดงบนหน้าจอ
+      setError(t("admin.planSaveError", { message: err.message }));
     }
   }
 
-  if (loading) return <div className="p-8 text-center text-gray-500">กำลังโหลดข้อมูล...</div>;
+  if (loading) return <div className="p-8 text-center text-gray-500">{t("admin.loadingData")}</div>;
   if (!user || !user.is_admin) return null;
 
   const filteredUsers = users.filter(u => 
@@ -128,16 +129,18 @@ export default function AdminDashboard() {
           <h1 className="text-2xl font-bold text-gray-800">{t("pages.adminTitle")}</h1>
           <div className="flex items-center gap-4">
             <button 
+              type="button"
               onClick={() => setShowPlanConfig(true)}
               className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
             >
-              ตั้งค่าข้อจำกัด (Session/Disk)
+              {t("admin.planLimitsBtn")}
             </button>
             <button 
-              onClick={() => navigate("/dashboard")}
+              type="button"
+              onClick={() => void navigate("/dashboard")}
               className="text-blue-600 hover:text-blue-800 font-medium"
             >
-              &larr; กลับหน้าหลัก
+              {t("profile.backToDashboard")}
             </button>
           </div>
         </div>
@@ -147,15 +150,15 @@ export default function AdminDashboard() {
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="text-gray-500 text-sm mb-1">ผู้ใช้ทั้งหมด</div>
+              <div className="text-gray-500 text-sm mb-1">{t("admin.totalUsers")}</div>
               <div className="text-3xl font-bold text-gray-800">{stats.total_users}</div>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="text-gray-500 text-sm mb-1">ไฟล์ทั้งหมดในระบบ</div>
+              <div className="text-gray-500 text-sm mb-1">{t("admin.totalFiles")}</div>
               <div className="text-3xl font-bold text-gray-800">{stats.total_files}</div>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="text-gray-500 text-sm mb-1">พื้นที่ถูกใช้งานรวม</div>
+              <div className="text-gray-500 text-sm mb-1">{t("admin.totalStorage")}</div>
               <div className="text-3xl font-bold text-blue-600">{formatBytes(stats.total_storage)}</div>
             </div>
           </div>
@@ -171,7 +174,7 @@ export default function AdminDashboard() {
             </div>
             <input
               type="text"
-              placeholder="ค้นหาผู้ใช้ด้วยอีเมล หรือชื่อ..."
+              placeholder={t("admin.searchPlaceholder")}
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors"
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
@@ -183,17 +186,33 @@ export default function AdminDashboard() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">บัญชีผู้ใช้</th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">สถานะ</th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">แพ็กเกจ</th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">ประเภท License</th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">พื้นที่การใช้งาน</th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">ไฟล์</th>
-                <th className="px-6 py-3 bg-gray-50 border-b border-gray-200 relative"><span className="sr-only">จัดการ</span></th>
+                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">{t("admin.colUser")}</th>
+                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">{t("admin.colStatus")}</th>
+                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">{t("admin.colPlan")}</th>
+                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">{t("admin.colLicense")}</th>
+                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">{t("admin.colStorage")}</th>
+                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">{t("admin.colFiles")}</th>
+                <th className="px-6 py-3 bg-gray-50 border-b border-gray-200 relative"><span className="sr-only">{t("admin.colActions")}</span></th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedUsers.map(u => (
+              {paginatedUsers.map(u => {
+                let licenseCell;
+                if (u.plan_type === "free") {
+                  licenseCell = <span className="text-gray-400">-</span>;
+                } else if (u.expire_date === null) {
+                  licenseCell = <span className="text-emerald-600 font-medium">{t("admin.licensePermanent")}</span>;
+                } else {
+                  licenseCell = (
+                    <div className="flex flex-col">
+                      <span className="text-blue-600 font-medium">Subscribe</span>
+                      <span className="text-xs text-gray-400 mt-0.5">
+                        {t("admin.licenseExpires", { date: new Date(u.expire_date).toLocaleDateString(locale) })}
+                      </span>
+                    </div>
+                  );
+                }
+                return (
                 <tr key={u.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -208,7 +227,7 @@ export default function AdminDashboard() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {u.is_active ? 'ปกติ' : 'ถูกระงับ'}
+                      {u.is_active ? t("admin.statusActive") : t("admin.statusSuspended")}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -220,16 +239,7 @@ export default function AdminDashboard() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {u.plan_type === 'free' ? (
-                      <span className="text-gray-400">-</span>
-                    ) : u.expire_date === null ? (
-                      <span className="text-emerald-600 font-medium">Individual (ถาวร)</span>
-                    ) : (
-                      <div className="flex flex-col">
-                        <span className="text-blue-600 font-medium">Subscribe</span>
-                        <span className="text-xs text-gray-400 mt-0.5">หมดอายุ: {new Date(u.expire_date).toLocaleDateString('th-TH')}</span>
-                      </div>
-                    )}
+                    {licenseCell}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatBytes(u.total_storage)}
@@ -239,18 +249,19 @@ export default function AdminDashboard() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex gap-2">
-                      <button onClick={() => { setEditingUser(u); setEditPlan(u.plan_type); }} className="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded-md hover:bg-blue-100 transition-colors border border-blue-200">
-                        แพ็กเกจ
+                      <button type="button" onClick={() => { setEditingUser(u); setEditPlan(u.plan_type); }} className="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded-md hover:bg-blue-100 transition-colors border border-blue-200">
+                        {t("admin.planBtn")}
                       </button>
                       {u.id !== user.id && (
-                        <button onClick={() => handleToggleStatus(u)} className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors border ${u.is_active ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200' : 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200'}`}>
-                          {u.is_active ? 'ระงับบัญชี' : 'ปลดระงับ'}
+                        <button type="button" onClick={() => void handleToggleStatus(u)} className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors border ${u.is_active ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200' : 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200'}`}>
+                          {u.is_active ? t("admin.suspendBtn") : t("admin.unsuspendBtn")}
                         </button>
                       )}
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -260,47 +271,51 @@ export default function AdminDashboard() {
           <div className="bg-white px-4 py-3 border border-gray-200 border-t-0 rounded-b-lg flex items-center justify-between sm:px-6 mb-6">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
+                type="button"
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
                 className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                ก่อนหน้า
+                {t("admin.prevPage")}
               </button>
               <button
+                type="button"
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
                 className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                ถัดไป
+                {t("admin.nextPage")}
               </button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  แสดง <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> ถึง <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> จาก <span className="font-medium">{filteredUsers.length}</span> รายการ
+                  {t("admin.showingPrefix")} <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> {t("admin.showingTo")} <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> {t("admin.showingOf")} <span className="font-medium">{filteredUsers.length}</span> {t("admin.showingSuffix")}
                 </p>
               </div>
               <div>
                 <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                   <button
+                    type="button"
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                     className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span className="sr-only">หน้าก่อนหน้า</span>
+                    <span className="sr-only">{t("admin.prevPageSr")}</span>
                     <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                       <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </button>
                   <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                    หน้า {currentPage} จาก {totalPages}
+                    {t("admin.pageOf", { current: currentPage, total: totalPages })}
                   </span>
                   <button
+                    type="button"
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
                     className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span className="sr-only">หน้าถัดไป</span>
+                    <span className="sr-only">{t("admin.nextPageSr")}</span>
                     <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                       <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                     </svg>
@@ -315,9 +330,9 @@ export default function AdminDashboard() {
       {editingUser && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">เปลี่ยนแพ็กเกจผู้ใช้</h3>
-            <p className="text-sm text-gray-600 mb-4">กำลังแก้ไขบัญชี: {editingUser.email}</p>
-            <form onSubmit={handleSavePlan}>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">{t("admin.changePlanTitle")}</h3>
+            <p className="text-sm text-gray-600 mb-4">{t("admin.editingAccount", { email: editingUser.email })}</p>
+            <form onSubmit={(e) => void handleSavePlan(e)}>
               <select 
                 className="w-full border border-gray-300 rounded p-2 mb-4"
                 value={editPlan}
@@ -328,8 +343,8 @@ export default function AdminDashboard() {
                 <option value="premium">Premium (5GB)</option>
               </select>
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setEditingUser(null)} className="px-4 py-2 text-gray-600 bg-gray-100 rounded hover:bg-gray-200">ยกเลิก</button>
-                <button type="submit" className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700">บันทึก</button>
+                <button type="button" onClick={() => setEditingUser(null)} className="px-4 py-2 text-gray-600 bg-gray-100 rounded hover:bg-gray-200">{t("common.cancel")}</button>
+                <button type="submit" className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700">{t("common.saveShort")}</button>
               </div>
             </form>
           </div>
@@ -339,14 +354,14 @@ export default function AdminDashboard() {
       {showPlanConfig && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">ตั้งค่าข้อจำกัดของแพ็กเกจ (Plan Limits)</h3>
-            <p className="text-sm text-gray-500 mb-4">กำหนดจำนวนเซสชันสูงสุด และขนาดพื้นที่ดิสก์ที่อนุญาตในแต่ละแพ็กเกจ</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t("admin.planLimitsTitle")}</h3>
+            <p className="text-sm text-gray-500 mb-4">{t("admin.planLimitsDesc")}</p>
             
             {successMessage && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded mb-4 text-sm font-medium">{successMessage}</div>}
             
             <div className="space-y-4">
               {plans.map(p => (
-                <form key={p.plan_type} onSubmit={(e) => handleSavePlanConfig(e, p.plan_type, e.target.max_sessions.value, e.target.max_storage_mb.value)} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                <form key={p.plan_type} onSubmit={(e) => void handleSavePlanConfig(e, p.plan_type, e.target.max_sessions.value, e.target.max_storage_mb.value)} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
                   <div className="w-24">
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       p.plan_type === 'premium' ? 'bg-yellow-100 text-yellow-800' :
@@ -364,14 +379,14 @@ export default function AdminDashboard() {
                       <label htmlFor={`plan-${p.plan_type}-max_storage_mb`} className="text-sm text-gray-600">Disk (MB):</label>
                       <input id={`plan-${p.plan_type}-max_storage_mb`} name="max_storage_mb" type="number" defaultValue={p.max_storage_mb} min="1" className="w-24 px-2 py-1 border rounded text-center text-sm" />
                     </div>
-                    <button type="submit" className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 ml-2">อัปเดต</button>
+                    <button type="submit" className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 ml-2">{t("admin.updateBtn")}</button>
                   </div>
                 </form>
               ))}
             </div>
 
             <div className="mt-6 flex justify-end">
-              <button onClick={() => setShowPlanConfig(false)} className="px-4 py-2 text-gray-600 bg-gray-100 rounded hover:bg-gray-200">ปิดหน้าต่าง</button>
+              <button type="button" onClick={() => setShowPlanConfig(false)} className="px-4 py-2 text-gray-600 bg-gray-100 rounded hover:bg-gray-200">{t("admin.closeWindowBtn")}</button>
             </div>
           </div>
         </div>

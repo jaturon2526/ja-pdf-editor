@@ -11,6 +11,7 @@ import {
   getDeleteAccountPasskeyOptions,
   passkeyErrorMessage,
 } from "../../api";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
 function formatBytes(bytes) {
   if (!bytes) return "0 B";
@@ -25,6 +26,7 @@ function formatBytes(bytes) {
 }
 
 function DeleteDialog({ email, onClose }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState("");
@@ -42,7 +44,8 @@ function DeleteDialog({ email, onClose }) {
           getDeleteAccountPasskeyOptions().then(setPrepared).catch(() => setPrepared(null));
         }
       })
-      .catch((e) => setError(e.message || "โหลดข้อมูลไม่สำเร็จ"));
+      .catch((e) => setError(e.message || t("deleteAccount.loadError")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -62,14 +65,14 @@ function DeleteDialog({ email, onClose }) {
       clearLocalSession();
       void navigate("/login?deleted=1", { replace: true });
     } catch (e) {
-      setError(e.message || "ลบบัญชีไม่สำเร็จ");
+      setError(e.message || t("deleteAccount.deleteError"));
       setBusy(false);
     }
   }
 
   async function withPasskey() {
     if (!prepared || Date.now() - prepared.at > 4 * 60 * 1000) {
-      setError("กำลังเตรียม passkey ใหม่ — กดอีกครั้ง");
+      setError(t("deleteAccount.passkeyPreparing"));
       getDeleteAccountPasskeyOptions().then(setPrepared).catch((e) => setError(e.message));
       return;
     }
@@ -94,50 +97,49 @@ function DeleteDialog({ email, onClose }) {
         className="bg-white w-full sm:max-w-lg max-h-[92dvh] overflow-y-auto rounded-t-2xl sm:rounded-2xl shadow-2xl p-5 sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="delete-account-title" className="text-xl font-bold text-red-700 mb-3">ลบบัญชีถาวร</h2>
+        <h2 id="delete-account-title" className="text-xl font-bold text-red-700 mb-3">{t("deleteAccount.dialogTitle")}</h2>
         <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-800 mb-4" role="alert">
-          <strong>การลบบัญชีกู้คืนไม่ได้</strong> — ไฟล์และข้อมูลทั้งหมดของ <strong className="[overflow-wrap:anywhere]">{email}</strong> จะถูกลบทันที
-          รวมถึงไฟล์ที่ระบบเก็บไว้ ผู้ดูแลระบบก็กู้คืนให้ไม่ได้ ดาวน์โหลดไฟล์ที่ต้องการเก็บไว้ก่อน
+          <strong>{t("deleteAccount.warningLead")}</strong> {t("deleteAccount.warningMid")} <strong className="[overflow-wrap:anywhere]">{email}</strong>{" "}
+          {t("deleteAccount.warningTail")}
         </div>
 
-        {!summary && !error && <p className="text-sm text-gray-500">กำลังโหลด...</p>}
+        {!summary && !error && <p className="text-sm text-gray-500">{t("common.loading")}</p>}
         {summary && (
           <ul className="text-sm text-gray-700 space-y-1.5 mb-4 list-disc pl-5" data-testid="delete-summary">
-            <li>ไฟล์ในเอกสารของฉัน <strong>{summary.files}</strong> ไฟล์ ({formatBytes(summary.storage_bytes)}) — ลบทั้งหมด</li>
+            <li>{t("deleteAccount.summaryFilesBefore")} <strong>{summary.files}</strong> {t("deleteAccount.summaryFilesAfter", { size: formatBytes(summary.storage_bytes) })}</li>
             <li>
-              คำขอลงนามที่คุณส่ง <strong>{summary.requests_total}</strong> รายการ — ลบทั้งหมด
+              {t("deleteAccount.summaryRequestsBefore")} <strong>{summary.requests_total}</strong> {t("deleteAccount.summaryRequestsAfter")}
               {summary.requests_in_progress > 0 && (
-                <> · ที่ยังค้าง <strong>{summary.requests_in_progress}</strong> รายการจะถูกยกเลิกและแจ้งผู้ลงนาม</>
+                <>{t("deleteAccount.summaryInProgressBefore")} <strong>{summary.requests_in_progress}</strong> {t("deleteAccount.summaryInProgressAfter")}</>
               )}
             </li>
             {summary.pending_as_signer > 0 && (
-              <li>เอกสารของคนอื่นที่รอคุณลงนาม <strong>{summary.pending_as_signer}</strong> รายการ — จะถูกปฏิเสธอัตโนมัติและแจ้งเจ้าของเอกสาร</li>
+              <li>{t("deleteAccount.summaryPendingSignerBefore")} <strong>{summary.pending_as_signer}</strong> {t("deleteAccount.summaryPendingSignerAfter")}</li>
             )}
             {summary.signed_for_others > 0 && (
               <li>
-                ลายเซ็นที่คุณลงไว้ในเอกสารของคนอื่น <strong>{summary.signed_for_others}</strong> รายการ — ยังอยู่ในเอกสารของเจ้าของ
-                พร้อมชื่อและอีเมลของคุณในประวัติการลงนาม (เป็นหลักฐานของเจ้าของเอกสาร) แต่ไม่เชื่อมกับบัญชีแล้ว
+                {t("deleteAccount.summarySignedOthersBefore")} <strong>{summary.signed_for_others}</strong> {t("deleteAccount.summarySignedOthersAfter")}
               </li>
             )}
-            <li>Passkey, การเชื่อมต่อ LINE, API key ของ AI, ฟอนต์ที่ติดตั้ง และการตั้งค่าทั้งหมด — ลบทั้งหมด</li>
-            {summary.line_linked && <li>บัญชี LINE ของ JA PDF ยังอยู่ในรายชื่อเพื่อน — บล็อกเองได้ใน LINE</li>}
+            <li>{t("deleteAccount.summaryOtherData")}</li>
+            {summary.line_linked && <li>{t("deleteAccount.summaryLineFriend")}</li>}
           </ul>
         )}
 
         {summary?.is_last_admin ? (
           <p className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
-            คุณเป็นผู้ดูแลระบบคนสุดท้าย — แต่งตั้งผู้ดูแลระบบคนอื่นในหน้าแผงควบคุมก่อน จึงจะลบบัญชีได้
+            {t("deleteAccount.lastAdminWarning")}
           </p>
         ) : (
           summary && (
             <div className="space-y-3">
               <label className="flex items-start gap-2 text-sm text-gray-800 cursor-pointer">
                 <input type="checkbox" className="mt-0.5 h-4 w-4" checked={ack} onChange={(e) => setAck(e.target.checked)} />
-                ฉันเข้าใจว่าบัญชี ไฟล์ และข้อมูลทั้งหมดจะถูกลบถาวรและกู้คืนไม่ได้
+                {t("deleteAccount.ackLabel")}
               </label>
               <div>
                 <label htmlFor="delete-confirm-email" className="block text-sm text-gray-700 mb-1">
-                  พิมพ์อีเมล <strong className="break-all select-all">{email}</strong> เพื่อยืนยัน
+                  {t("deleteAccount.confirmEmailBefore")} <strong className="break-all select-all">{email}</strong> {t("deleteAccount.confirmEmailAfter")}
                 </label>
                 <input
                   id="delete-confirm-email"
@@ -149,7 +151,7 @@ function DeleteDialog({ email, onClose }) {
                 />
               </div>
               <div>
-                <label htmlFor="delete-password" className="block text-sm text-gray-700 mb-1">รหัสผ่านปัจจุบัน</label>
+                <label htmlFor="delete-password" className="block text-sm text-gray-700 mb-1">{t("deleteAccount.currentPassword")}</label>
                 <input
                   id="delete-password"
                   type="password"
@@ -159,7 +161,7 @@ function DeleteDialog({ email, onClose }) {
                   className="w-full border border-gray-300 rounded px-3 py-2"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  สมัครด้วย Google หรือ LINE และไม่เคยตั้งรหัสผ่าน? ใช้ Passkey แทน หรือกด "ลืมรหัสผ่าน" ที่หน้าเข้าสู่ระบบเพื่อตั้งรหัสก่อน
+                  {t("deleteAccount.oauthPasswordHint")}
                 </p>
               </div>
             </div>
@@ -170,26 +172,26 @@ function DeleteDialog({ email, onClose }) {
 
         <div className="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
           <button type="button" onClick={onClose} disabled={busy} className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50">
-            ยกเลิก
+            {t("common.cancel")}
           </button>
           {summary && !summary.is_last_admin && summary.passkeys > 0 && browserSupportsWebAuthn() && (
             <button
               type="button"
-              onClick={withPasskey}
+              onClick={() => void withPasskey()}
               disabled={!ready}
               className="px-4 py-2 rounded border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-40"
             >
-              ยืนยันด้วย Passkey แล้วลบ
+              {t("deleteAccount.confirmWithPasskey")}
             </button>
           )}
           {summary && !summary.is_last_admin && (
             <button
               type="button"
-              onClick={() => finish({ password })}
+              onClick={() => void finish({ password })}
               disabled={!ready || !password}
               className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white font-semibold disabled:opacity-40"
             >
-              {busy ? "กำลังลบ..." : "ลบบัญชีถาวร"}
+              {busy ? t("deleteAccount.deleting") : t("deleteAccount.confirmDelete")}
             </button>
           )}
         </div>
@@ -199,19 +201,20 @@ function DeleteDialog({ email, onClose }) {
 }
 
 export default function DeleteAccountSection({ email }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   return (
     <section className="mt-10 pt-6 border-t border-red-200" aria-labelledby="danger-title" data-testid="delete-account-section">
-      <h2 id="danger-title" className="text-lg font-semibold text-red-700">ลบบัญชี</h2>
+      <h2 id="danger-title" className="text-lg font-semibold text-red-700">{t("deleteAccount.title")}</h2>
       <p className="text-sm text-gray-600 mt-1 mb-3">
-        ลบบัญชีพร้อมไฟล์และข้อมูลทั้งหมดถาวร กู้คืนไม่ได้ — ดาวน์โหลดไฟล์ที่ต้องการเก็บไว้ก่อน
+        {t("deleteAccount.subtitle")}
       </p>
       <button
         type="button"
         onClick={() => setOpen(true)}
         className="px-4 py-2 rounded border border-red-300 text-red-700 hover:bg-red-50 font-medium"
       >
-        ลบบัญชีของฉัน...
+        {t("deleteAccount.openBtn")}
       </button>
       {open && <DeleteDialog email={email} onClose={() => setOpen(false)} />}
     </section>

@@ -10,9 +10,10 @@ import {
   registerPasskey,
   renamePasskey,
 } from "../../api";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
-const fmt = (iso) =>
-  iso ? new Date(iso).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" }) : null;
+const fmtDate = (iso, locale) =>
+  iso ? new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" }) : null;
 
 function KeyIcon({ className = "w-5 h-5" }) {
   return (
@@ -24,6 +25,9 @@ function KeyIcon({ className = "w-5 h-5" }) {
 }
 
 export default function PasskeySection({ onChanged } = {}) {
+  const { lang, t } = useI18n();
+  const locale = lang === "en" ? "en-US" : "th-TH";
+  const fmt = (iso) => fmtDate(iso, locale);
   const supported = browserSupportsWebAuthn();
   const [items, setItems] = useState(null);
   const [error, setError] = useState("");
@@ -37,20 +41,21 @@ export default function PasskeySection({ onChanged } = {}) {
 
   function prepare() {
     setPrepared(null);
-    preparePasskeyRegistration().then(setPrepared).catch((e) => setError(e.message || "เริ่มสร้าง passkey ไม่สำเร็จ"));
+    preparePasskeyRegistration().then(setPrepared).catch((e) => setError(e.message || t("security.passkey.prepareError")));
   }
 
   async function reload() {
     try {
       setItems(await listPasskeys());
     } catch (e) {
-      setError(e.message || "โหลดรายการ passkey ไม่สำเร็จ");
+      setError(e.message || t("security.passkey.loadError"));
       setItems([]);
     }
   }
 
   useEffect(() => {
     void reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleAdd(e) {
@@ -60,7 +65,7 @@ export default function PasskeySection({ onChanged } = {}) {
     setBusy(true);
     try {
       const pk = await registerPasskey(newName.trim() || guessDeviceName(), prepared);
-      setSuccess(`เพิ่ม passkey "${pk.name}" แล้ว — ครั้งหน้าเข้าสู่ระบบด้วย passkey ได้เลย`);
+      setSuccess(t("security.passkey.addSuccess", { name: pk.name }));
       setAdding(false);
       await reload();
       onChanged?.();
@@ -83,7 +88,7 @@ export default function PasskeySection({ onChanged } = {}) {
       setEditing(null);
       await reload();
     } catch (err) {
-      setError(err.message || "เปลี่ยนชื่อไม่สำเร็จ");
+      setError(err.message || t("security.passkey.renameError"));
     } finally {
       setBusy(false);
     }
@@ -97,11 +102,11 @@ export default function PasskeySection({ onChanged } = {}) {
     try {
       await deletePasskey(pk.id);
       setConfirmDelete(null);
-      setSuccess(`ลบ passkey "${pk.name}" แล้ว`);
+      setSuccess(t("security.passkey.deleteSuccess", { name: pk.name }));
       await reload();
       onChanged?.();
     } catch (err) {
-      setError(err.message || "ลบไม่สำเร็จ");
+      setError(err.message || t("security.passkey.deleteError"));
     } finally {
       setBusy(false);
     }
@@ -114,8 +119,7 @@ export default function PasskeySection({ onChanged } = {}) {
         <div className="min-w-0">
           <h2 id="passkey-title" className="text-lg font-semibold text-gray-900">Passkey</h2>
           <p className="text-sm text-gray-600">
-            เข้าสู่ระบบด้วย Face ID, Touch ID, Windows Hello หรือรหัส PIN ของอุปกรณ์ โดยไม่ต้องพิมพ์รหัสผ่าน —
-            ปลอดภัยกว่ารหัสผ่านและถูกหลอกเอาไปใช้ในเว็บปลอมไม่ได้
+            {t("security.passkey.desc")}
           </p>
         </div>
       </div>
@@ -125,31 +129,31 @@ export default function PasskeySection({ onChanged } = {}) {
 
       {!supported ? (
         <p className="p-3 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-sm">
-          เบราว์เซอร์นี้ยังไม่รองรับ passkey — ลองใช้ Safari, Chrome หรือ Edge รุ่นล่าสุด
+          {t("security.passkey.unsupported")}
         </p>
       ) : (
         <>
           {items === null ? (
-            <p className="text-sm text-gray-500">กำลังโหลด...</p>
+            <p className="text-sm text-gray-500">{t("common.loading")}</p>
           ) : items.length === 0 ? (
-            <p className="text-sm text-gray-500 mb-3">ยังไม่มี passkey</p>
+            <p className="text-sm text-gray-500 mb-3">{t("security.passkey.empty")}</p>
           ) : (
             <ul className="mb-3 divide-y divide-gray-100 rounded-lg border border-gray-200" data-testid="passkey-list">
               {items.map((pk) => (
                 <li key={pk.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-3">
                   <KeyIcon className="w-4 h-4 text-gray-400 shrink-0" />
                   {editing?.id === pk.id ? (
-                    <form onSubmit={handleRename} className="flex flex-1 min-w-0 gap-2">
+                    <form onSubmit={(e) => void handleRename(e)} className="flex flex-1 min-w-0 gap-2">
                       <input
                         autoFocus
-                        aria-label="ชื่อ passkey"
+                        aria-label={t("security.passkey.nameAria")}
                         maxLength={60}
                         value={editing.name}
                         onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                         className="flex-1 min-w-0 border border-gray-300 rounded px-2 py-1 text-sm"
                       />
-                      <button type="submit" disabled={busy} className="px-3 py-1 text-sm rounded bg-blue-600 text-white disabled:opacity-50">บันทึก</button>
-                      <button type="button" onClick={() => setEditing(null)} className="px-2 py-1 text-sm text-gray-600">ยกเลิก</button>
+                      <button type="submit" disabled={busy} className="px-3 py-1 text-sm rounded bg-blue-600 text-white disabled:opacity-50">{t("common.saveShort")}</button>
+                      <button type="button" onClick={() => setEditing(null)} className="px-2 py-1 text-sm text-gray-600">{t("common.cancel")}</button>
                     </form>
                   ) : (
                     <>
@@ -157,21 +161,21 @@ export default function PasskeySection({ onChanged } = {}) {
                         <div className="font-medium text-gray-900 break-words">
                           {pk.name}
                           {pk.backed_up && (
-                            <span className="ml-2 align-middle text-[11px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-700" title="ใช้ได้ทุกอุปกรณ์ที่ลงชื่อเข้าบัญชีเดียวกัน (iCloud Keychain / Google Password Manager)">
-                              ซิงก์ข้ามอุปกรณ์
+                            <span className="ml-2 align-middle text-[11px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-700" title={t("security.passkey.syncedTitle")}>
+                              {t("security.passkey.syncedBadge")}
                             </span>
                           )}
                         </div>
                         <div className="text-xs text-gray-500">
-                          สร้าง {fmt(pk.created_at)} · {pk.last_used_at ? `ใช้ล่าสุด ${fmt(pk.last_used_at)}` : "ยังไม่เคยใช้"}
+                          {t("security.passkey.createdAt", { date: fmt(pk.created_at) })} · {pk.last_used_at ? t("security.passkey.lastUsedAt", { date: fmt(pk.last_used_at) }) : t("security.passkey.neverUsed")}
                         </div>
                       </div>
                       <div className="flex gap-1 shrink-0">
                         <button type="button" onClick={() => setEditing({ id: pk.id, name: pk.name })} className="px-2 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded">
-                          เปลี่ยนชื่อ
+                          {t("security.passkey.renameBtn")}
                         </button>
                         <button type="button" onClick={() => setConfirmDelete(pk)} className="px-2 py-1 text-sm text-red-600 hover:bg-red-50 rounded">
-                          ลบ
+                          {t("common.delete")}
                         </button>
                       </div>
                     </>
@@ -182,9 +186,9 @@ export default function PasskeySection({ onChanged } = {}) {
           )}
 
           {adding ? (
-            <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-2 p-3 rounded-lg bg-gray-50 border border-gray-200">
+            <form onSubmit={(e) => void handleAdd(e)} className="flex flex-wrap items-end gap-2 p-3 rounded-lg bg-gray-50 border border-gray-200">
               <label className="flex-1 min-w-[180px] text-sm text-gray-700">
-                ตั้งชื่อให้จำได้ว่าเป็นอุปกรณ์ไหน
+                {t("security.passkey.deviceNameLabel")}
                 <input
                   autoFocus
                   maxLength={60}
@@ -194,9 +198,9 @@ export default function PasskeySection({ onChanged } = {}) {
                 />
               </label>
               <button type="submit" disabled={busy} className="px-4 py-2 text-sm font-medium rounded bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50">
-                {busy ? "รอยืนยันที่อุปกรณ์..." : "สร้าง passkey"}
+                {busy ? t("security.passkey.waitingDevice") : t("security.passkey.createBtn")}
               </button>
-              <button type="button" onClick={() => setAdding(false)} disabled={busy} className="px-3 py-2 text-sm text-gray-600">ยกเลิก</button>
+              <button type="button" onClick={() => setAdding(false)} disabled={busy} className="px-3 py-2 text-sm text-gray-600">{t("common.cancel")}</button>
             </form>
           ) : (
             <button
@@ -204,11 +208,11 @@ export default function PasskeySection({ onChanged } = {}) {
               onClick={() => { setAdding(true); setError(""); setSuccess(""); setNewName(guessDeviceName()); prepare(); }}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded border border-blue-600 text-blue-700 hover:bg-blue-50"
             >
-              + เพิ่ม passkey
+              {t("security.passkey.addBtn")}
             </button>
           )}
           <p className="mt-3 text-xs text-gray-500">
-            เพิ่มได้หลายอุปกรณ์ · รหัสผ่านและการเข้าสู่ระบบด้วย Google / LINE ยังใช้ได้ตามปกติ
+            {t("security.passkey.footerHint")}
           </p>
         </>
       )}
@@ -216,20 +220,20 @@ export default function PasskeySection({ onChanged } = {}) {
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
           <div role="dialog" aria-modal="true" aria-labelledby="del-pk-title" className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
-            <h3 id="del-pk-title" className="text-lg font-bold text-gray-900 mb-2">ลบ passkey</h3>
+            <h3 id="del-pk-title" className="text-lg font-bold text-gray-900 mb-2">{t("security.passkey.deleteTitle")}</h3>
             <p className="text-sm text-gray-600">
-              ลบ <strong className="text-gray-900 break-words">{confirmDelete.name}</strong> ออกจากบัญชี? อุปกรณ์นี้จะเข้าสู่ระบบด้วย passkey ไม่ได้อีก
-              (ควรลบ passkey ในผู้จัดการรหัสผ่านของอุปกรณ์ด้วย)
+              {t("security.passkey.deleteConfirmBefore")} <strong className="text-gray-900 break-words">{confirmDelete.name}</strong>{" "}
+              {t("security.passkey.deleteConfirmAfter")}
             </p>
             {items?.length === 1 && (
               <p className="mt-3 p-3 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-sm">
-                นี่คือ passkey อันสุดท้าย — หลังลบต้องเข้าสู่ระบบด้วยรหัสผ่านหรือ Google
+                {t("security.passkey.deleteLastWarning")}
               </p>
             )}
             <div className="flex justify-end gap-3 mt-6">
-              <button type="button" onClick={() => setConfirmDelete(null)} disabled={busy} className="px-4 py-2 text-sm rounded border border-gray-300 text-gray-700">ยกเลิก</button>
-              <button type="button" onClick={handleDelete} disabled={busy} className="px-4 py-2 text-sm rounded bg-red-600 hover:bg-red-700 text-white disabled:opacity-50">
-                {busy ? "กำลังลบ..." : "ลบ passkey"}
+              <button type="button" onClick={() => setConfirmDelete(null)} disabled={busy} className="px-4 py-2 text-sm rounded border border-gray-300 text-gray-700">{t("common.cancel")}</button>
+              <button type="button" onClick={() => void handleDelete()} disabled={busy} className="px-4 py-2 text-sm rounded bg-red-600 hover:bg-red-700 text-white disabled:opacity-50">
+                {busy ? t("deleteAccount.deleting") : t("security.passkey.deleteBtn")}
               </button>
             </div>
           </div>

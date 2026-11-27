@@ -2,6 +2,7 @@
 // เปลี่ยนสีหน้าอีโมจิ + พื้นหลังได้ · ลบรูป → กลับไปใช้รูปจาก Google/LINE หรือตัวอักษรแรกของชื่อ
 import React, { useEffect, useRef, useState } from "react";
 import { avatarEmojiPreviewUrl, deleteAvatar, getAvatarEmojis, setAvatarEmoji, uploadAvatar } from "../../api";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 import UserAvatar from "../UserAvatar.jsx";
 
 const FACE_COLORS = ["#FFC83D", "#FB923C", "#F87171", "#F472B6", "#A78BFA", "#60A5FA", "#34D399", "#A3A3A3"];
@@ -9,6 +10,7 @@ const BG_COLORS = ["#DBEAFE", "#E0F2FE", "#ECFDF5", "#FEF3C7", "#FCE7F3", "#F5F3
 const CROP_VIEW = 240; // ขนาดกรอบครอปบนจอ (px)
 
 function Swatches({ label, colors, value, onChange, testId }) {
+  const { t } = useI18n();
   return (
     <div>
       <p className="text-xs font-medium text-gray-700 mb-1">{label}</p>
@@ -18,7 +20,7 @@ function Swatches({ label, colors, value, onChange, testId }) {
             className={`w-7 h-7 rounded-full border-2 ${value === c ? "border-blue-600 ring-2 ring-blue-200" : "border-white shadow"}`}
             style={{ background: c }} onClick={() => onChange(c)} />
         ))}
-        <input type="color" aria-label={`${label} (เลือกเอง)`} value={value} onChange={(e) => onChange(e.target.value.toUpperCase())}
+        <input type="color" aria-label={t("avatar.customColorLabel", { label })} value={value} onChange={(e) => onChange(e.target.value.toUpperCase())}
           className="w-8 h-8 p-0 border-0 bg-transparent" />
       </div>
     </div>
@@ -27,6 +29,7 @@ function Swatches({ label, colors, value, onChange, testId }) {
 
 /** ครอปรูปเป็นสี่เหลี่ยมจัตุรัส: ลากเพื่อเลื่อน · แถบซูม — ได้ PNG 512px ส่งให้เซิร์ฟเวอร์ (ย่อเหลือ 256px + ลบข้อมูลแฝง) */
 function Cropper({ file, onCancel, onDone, busy }) {
+  const { t } = useI18n();
   const [img, setImg] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -70,7 +73,7 @@ function Cropper({ file, onCancel, onDone, busy }) {
 
   return (
     <div className="mt-3 p-3 border border-gray-200 rounded-lg bg-gray-50" data-testid="avatar-cropper">
-      <p className="text-sm text-gray-700 mb-2">ลากเพื่อเลื่อนรูป · ปรับซูมให้ใบหน้าอยู่กลางวงกลม</p>
+      <p className="text-sm text-gray-700 mb-2">{t("avatar.cropHint")}</p>
       <div className="relative mx-auto overflow-hidden rounded-lg bg-gray-200 touch-none cursor-grab select-none"
         style={{ width: CROP_VIEW, height: CROP_VIEW }}
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={() => { drag.current = null; }}>
@@ -78,12 +81,12 @@ function Cropper({ file, onCancel, onDone, busy }) {
           style={{ left: pos.x, top: pos.y, width: w, height: h }} />}
         <div className="absolute inset-0 pointer-events-none rounded-full" style={{ boxShadow: "0 0 0 999px rgba(0,0,0,0.45)" }} />
       </div>
-      <input type="range" aria-label="ซูมรูป" min="1" max="4" step="0.01" value={zoom} onChange={(e) => setZoom(Number(e.target.value))}
+      <input type="range" aria-label={t("avatar.zoomLabel")} min="1" max="4" step="0.01" value={zoom} onChange={(e) => setZoom(Number(e.target.value))}
         className="mt-3 w-full" />
       <div className="mt-2 flex justify-end gap-2">
-        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-sm border border-gray-300 rounded bg-white">ยกเลิก</button>
+        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-sm border border-gray-300 rounded bg-white">{t("common.cancel")}</button>
         <button type="button" onClick={done} disabled={!img || busy} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded disabled:opacity-50">
-          {busy ? "กำลังบันทึก..." : "ใช้รูปนี้"}
+          {busy ? t("common.saving") : t("avatar.usePhoto")}
         </button>
       </div>
     </div>
@@ -91,6 +94,7 @@ function Cropper({ file, onCancel, onDone, busy }) {
 }
 
 export default function AvatarSection({ user, onChange }) {
+  const { t } = useI18n();
   const [mode, setMode] = useState(null); // null | "emoji" | "upload"
   const [faces, setFaces] = useState([]);
   const initial = user?.avatar_emoji?.split("|") || [];
@@ -147,23 +151,23 @@ export default function AvatarSection({ user, onChange }) {
 
   return (
     <section className="mb-8 pb-6 border-b" data-testid="avatar-section">
-      <h2 className="text-sm font-medium text-gray-700 mb-3">รูปโปรไฟล์</h2>
+      <h2 className="text-sm font-medium text-gray-700 mb-3">{t("avatar.title")}</h2>
       <div className="flex items-center gap-4 flex-wrap">
         <UserAvatar user={user} size={72} />
         <div className="flex flex-wrap gap-2">
-          <button type="button" className={chip(mode === "upload")} onClick={() => fileRef.current?.click()}>อัปโหลดรูป</button>
-          <button type="button" className={chip(mode === "emoji")} onClick={() => setMode(mode === "emoji" ? null : "emoji")}>เลือกอีโมจิ</button>
+          <button type="button" className={chip(mode === "upload")} onClick={() => fileRef.current?.click()}>{t("avatar.uploadBtn")}</button>
+          <button type="button" className={chip(mode === "emoji")} onClick={() => setMode(mode === "emoji" ? null : "emoji")}>{t("avatar.emojiBtn")}</button>
           {user?.avatar_url && (
             <button type="button" className="px-3 py-1.5 text-sm rounded-lg border border-red-200 text-red-700 hover:bg-red-50" disabled={busy}
-              onClick={() => run(deleteAvatar, "ลบรูปโปรไฟล์แล้ว")}>ลบรูป</button>
+              onClick={() => void run(deleteAvatar, t("avatar.deleteSuccess"))}>{t("avatar.deleteBtn")}</button>
           )}
         </div>
-        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" aria-label="เลือกรูปโปรไฟล์"
+        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" aria-label={t("avatar.fileInputLabel")}
           onChange={(e) => {
             const f = e.target.files?.[0];
             e.target.value = "";
             if (!f) return;
-            if (f.size > 8 * 1024 * 1024) { setMessage({ type: "error", text: "ไฟล์รูปใหญ่เกิน 8MB" }); return; }
+            if (f.size > 8 * 1024 * 1024) { setMessage({ type: "error", text: t("avatar.fileTooLarge") }); return; }
             setFile(f);
             setMode("upload");
           }} />
@@ -176,7 +180,7 @@ export default function AvatarSection({ user, onChange }) {
 
       {mode === "upload" && file && (
         <Cropper file={file} busy={busy} onCancel={() => { setFile(null); setMode(null); }}
-          onDone={(blob) => run(() => uploadAvatar(blob), "บันทึกรูปโปรไฟล์แล้ว")} />
+          onDone={(blob) => void run(() => uploadAvatar(blob), t("avatar.saveSuccess"))} />
       )}
 
       {mode === "emoji" && (
@@ -191,14 +195,14 @@ export default function AvatarSection({ user, onChange }) {
               </button>
             ))}
           </div>
-          <Swatches label="สีหน้า" colors={FACE_COLORS} value={faceColor} onChange={setFaceColor} testId="face-colors" />
-          <Swatches label="สีพื้นหลัง" colors={BG_COLORS} value={bgColor} onChange={setBgColor} testId="bg-colors" />
+          <Swatches label={t("avatar.faceColor")} colors={FACE_COLORS} value={faceColor} onChange={setFaceColor} testId="face-colors" />
+          <Swatches label={t("avatar.bgColor")} colors={BG_COLORS} value={bgColor} onChange={setBgColor} testId="bg-colors" />
           <div className="flex items-center justify-between gap-3">
-            {thumbs[face] && <img src={thumbs[face]} alt="ตัวอย่างที่เลือก" className="w-14 h-14 rounded-full" />}
+            {thumbs[face] && <img src={thumbs[face]} alt={t("avatar.previewAlt")} className="w-14 h-14 rounded-full" />}
             <div className="flex gap-2 ml-auto">
-              <button type="button" onClick={() => setMode(null)} className="px-3 py-1.5 text-sm border border-gray-300 rounded bg-white">ยกเลิก</button>
-              <button type="button" disabled={busy} onClick={() => run(() => setAvatarEmoji(face, faceColor, bgColor), "บันทึกรูปโปรไฟล์แล้ว")}
-                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded disabled:opacity-50">{busy ? "กำลังบันทึก..." : "ใช้อีโมจินี้"}</button>
+              <button type="button" onClick={() => setMode(null)} className="px-3 py-1.5 text-sm border border-gray-300 rounded bg-white">{t("common.cancel")}</button>
+              <button type="button" disabled={busy} onClick={() => void run(() => setAvatarEmoji(face, faceColor, bgColor), t("avatar.saveSuccess"))}
+                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded disabled:opacity-50">{busy ? t("common.saving") : t("avatar.useEmoji")}</button>
             </div>
           </div>
         </div>

@@ -15,10 +15,12 @@ import {
   sigPasskeyErrorMessage,
   supportsWebAuthn,
 } from "../../utils/sigPasskey.js";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
 const FRESH_MS = 4 * 60 * 1000;
 
 export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
+  const { t } = useI18n();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [prepared, setPrepared] = useState(null);
@@ -40,7 +42,7 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
       const list = await listSavedSignatures();
       setItems(list || []);
     } catch (err) {
-      setError(err?.message || "โหลดรายการรูปลายเซ็นไม่สำเร็จ");
+      setError(err?.message || t("security.savedSig.loadError"));
     } finally {
       setLoading(false);
     }
@@ -52,7 +54,7 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
       setPrepared(null);
       setNoPasskey(true);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void loadAll();
@@ -75,7 +77,7 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
     e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("กรุณาเลือกไฟล์รูปภาพ (PNG, JPG, WebP)");
+      setError(t("security.savedSig.invalidImage"));
       return;
     }
     setError("");
@@ -88,7 +90,7 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
   async function handleSave() {
     if (!previewUrl || submitting) return;
     if (!supportsWebAuthn()) {
-      setError("เบราว์เซอร์หรือที่อยู่เว็บนี้ไม่รองรับ Passkey (ต้องเป็น https หรือ localhost)");
+      setError(t("security.savedSig.unsupportedWebAuthn"));
       return;
     }
     setSubmitting(true);
@@ -99,13 +101,13 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
         ? prepared
         : await prepareSavedSignatureOptions();
       const pngBytes = dataUrlToBytes(previewUrl);
-      const cleanLabel = label.trim() || `ลายเซ็น ${items.length + 1}`;
+      const cleanLabel = label.trim() || t("security.savedSig.defaultLabel", { n: items.length + 1 });
       const payload = await sealSignatureWithPasskey({ prepared: opt, pngBytes, label: cleanLabel });
       await saveEncryptedSignature(payload);
       setLabel("");
       setRawImage(null);
       setPreviewUrl(null);
-      setSuccess(`บันทึกรูปลายเซ็น "${cleanLabel}" และล็อกด้วย Passkey เรียบร้อยแล้ว`);
+      setSuccess(t("security.savedSig.saveSuccess", { label: cleanLabel }));
       await loadAll();
     } catch (err) {
       const msg = sigPasskeyErrorMessage(err);
@@ -124,10 +126,10 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
     setSuccess("");
     try {
       await deleteSavedSignature(item.id);
-      setSuccess(`ลบรูปลายเซ็น "${item.label}" แล้ว`);
+      setSuccess(t("security.savedSig.deleteSuccess", { label: item.label }));
       await loadAll();
     } catch (err) {
-      setError(err?.message || "ลบรูปลายเซ็นไม่สำเร็จ");
+      setError(err?.message || t("security.savedSig.deleteError"));
     } finally {
       setDeletingId(null);
     }
@@ -140,10 +142,10 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
       data-testid="saved-sig-section"
     >
       <h2 id="saved-sigs-heading" className="text-lg font-semibold text-gray-900 mb-1">
-        รูปลายเซ็นที่บันทึกไว้ (ล็อกด้วย Passkey)
+        {t("security.savedSig.title")}
       </h2>
       <p className="text-sm text-gray-600 mb-4">
-        อัปโหลดรูปลายเซ็นเก็บไว้เรียกใช้ซ้ำได้ทั้งลายเซ็นอิเล็กทรอนิกส์และลายเซ็นดิจิทัล — รูปลายเซ็นถูกเข้ารหัสในอุปกรณ์ของคุณด้วย Passkey ระบบไม่สามารถเปิดดูรูปลายเซ็นจริงได้ (สูงสุด 5 อัน)
+        {t("security.savedSig.desc")}
       </p>
 
       {error && <div role="alert" className="mb-3 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{error}</div>}
@@ -151,7 +153,7 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
 
       {/* รายการรูปลายเซ็นที่บันทึกไว้ */}
       {loading ? (
-        <p className="text-sm text-gray-500 mb-4">กำลังโหลด...</p>
+        <p className="text-sm text-gray-500 mb-4">{t("common.loading")}</p>
       ) : items.length > 0 && (
         <ul className="space-y-2 mb-5" data-testid="saved-sig-list">
           {items.map((item) => (
@@ -159,7 +161,7 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
               <div className="min-w-0">
                 <div className="text-sm font-medium text-gray-900 truncate">{item.label}</div>
                 <div className="text-xs text-gray-500">
-                  ล็อกด้วย Passkey: {item.passkey_name}
+                  {t("security.savedSig.lockedBy", { name: item.passkey_name })}
                 </div>
               </div>
               <button
@@ -168,7 +170,7 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
                 onClick={() => void handleDelete(item)}
                 className="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 border border-red-200 rounded-lg disabled:opacity-50"
               >
-                {deletingId === item.id ? "กำลังลบ..." : "ลบ"}
+                {deletingId === item.id ? t("deleteAccount.deleting") : t("common.delete")}
               </button>
             </li>
           ))}
@@ -178,13 +180,13 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
       {/* ฟอร์มอัปโหลดและล็อกด้วย Passkey */}
       {noPasskey ? (
         <div className="p-3.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
-          ต้องเพิ่ม <strong>Passkey</strong> ด้านบนอย่างน้อย 1 อันก่อน จึงจะบันทึกรูปลายเซ็นแบบเข้ารหัสได้
+          {t("security.savedSig.needPasskeyBefore")} <strong>Passkey</strong> {t("security.savedSig.needPasskeyAfter")}
         </div>
       ) : items.length < 5 && (
         <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/70 space-y-3">
           <div>
             <label htmlFor="saved-sig-label" className="block text-xs font-medium text-gray-700 mb-1">
-              ชื่อรูปลายเซ็น
+              {t("security.savedSig.labelTitle")}
             </label>
             <input
               id="saved-sig-label"
@@ -192,7 +194,7 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
               maxLength={100}
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="เช่น ลายเซ็นทางการ, ลายเซ็นย่อ"
+              placeholder={t("security.savedSig.labelPlaceholder")}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -212,7 +214,7 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
                 onClick={() => fileRef.current?.click()}
                 className="px-3.5 py-2 text-xs font-medium text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg"
               >
-                {rawImage ? "เปลี่ยนรูปลายเซ็น" : "เลือกรูปลายเซ็น (PNG / JPG)"}
+                {rawImage ? t("security.savedSig.changeImageBtn") : t("security.savedSig.chooseImageBtn")}
               </button>
               <label className="inline-flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none">
                 <input
@@ -221,14 +223,14 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
                   onChange={(e) => setRemoveBg(e.target.checked)}
                   className="rounded border-gray-300 text-blue-600"
                 />
-                <span>ลบพื้นหลังสีขาวอัตโนมัติ</span>
+                <span>{t("security.savedSig.removeBg")}</span>
               </label>
             </div>
           </div>
 
           {previewUrl && (
             <div className="rounded-lg border border-gray-200 bg-white p-3 flex items-center justify-center max-h-36 overflow-hidden">
-              <img src={previewUrl} alt="ตัวอย่างรูปลายเซ็น" className="max-h-28 w-auto object-contain" />
+              <img src={previewUrl} alt={t("security.savedSig.previewAlt")} className="max-h-28 w-auto object-contain" />
             </div>
           )}
 
@@ -239,7 +241,7 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
               onClick={() => void handleSave()}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg shadow-sm"
             >
-              {submitting ? "กำลังเข้ารหัสและบันทึก..." : "บันทึกด้วย Passkey"}
+              {submitting ? t("security.savedSig.savingBtn") : t("security.savedSig.saveBtn")}
             </button>
           </div>
         </div>

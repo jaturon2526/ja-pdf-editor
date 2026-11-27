@@ -26,7 +26,7 @@ export default function SecurityPage() {
     setSuccess("");
 
     if (newPassword !== confirmPassword) {
-      setError("รหัสผ่านใหม่ไม่ตรงกัน");
+      setError(t("security.password.mismatch"));
       return;
     }
     const pwdError = validatePassword(newPassword);
@@ -38,12 +38,12 @@ export default function SecurityPage() {
     setSaving(true);
     try {
       await changePassword(oldPassword, newPassword);
-      setSuccess("เปลี่ยนรหัสผ่านเรียบร้อยแล้ว");
+      setSuccess(t("security.password.success"));
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      setError(err.message || "เปลี่ยนรหัสผ่านไม่สำเร็จ");
+      setError(err.message || t("security.password.error"));
     } finally {
       setSaving(false);
     }
@@ -70,12 +70,12 @@ export default function SecurityPage() {
         <LineSection />
 
         <h2 className="text-lg font-semibold text-gray-900 mt-10 mb-4 pt-6 border-t border-gray-200">{t("pages.changePasswordTitle")}</h2>
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
           {error && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
           {success && <div className="p-3 bg-green-100 text-green-700 rounded text-sm">{success}</div>}
 
           <div>
-            <label htmlFor="securitypage-f69" className="block text-sm font-medium text-gray-700 mb-1">รหัสผ่านเดิม</label>
+            <label htmlFor="securitypage-f69" className="block text-sm font-medium text-gray-700 mb-1">{t("security.password.oldLabel")}</label>
             <input id="securitypage-f69"
               type="password"
               required
@@ -86,7 +86,7 @@ export default function SecurityPage() {
           </div>
 
           <div>
-            <label htmlFor="securitypage-f80" className="block text-sm font-medium text-gray-700 mb-1">รหัสผ่านใหม่</label>
+            <label htmlFor="securitypage-f80" className="block text-sm font-medium text-gray-700 mb-1">{t("security.password.newLabel")}</label>
             <input id="securitypage-f80"
               type="password"
               required
@@ -97,7 +97,7 @@ export default function SecurityPage() {
           </div>
 
           <div>
-            <label htmlFor="securitypage-f91" className="block text-sm font-medium text-gray-700 mb-1">ยืนยันรหัสผ่านใหม่</label>
+            <label htmlFor="securitypage-f91" className="block text-sm font-medium text-gray-700 mb-1">{t("security.password.confirmLabel")}</label>
             <input id="securitypage-f91"
               type="password"
               required
@@ -106,7 +106,7 @@ export default function SecurityPage() {
               className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <p className="mt-2 text-xs text-rose-500">
-              * ข้อแนะนำ: รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร และประกอบด้วยตัวพิมพ์ใหญ่ (A-Z) ตัวพิมพ์เล็ก (a-z) และตัวเลข (0-9) อย่างน้อย 1 ตัว
+              {t("security.password.hint")}
             </p>
           </div>
 
@@ -116,7 +116,7 @@ export default function SecurityPage() {
               disabled={saving}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium disabled:opacity-50"
             >
-              {saving ? "กำลังบันทึก..." : "อัปเดตรหัสผ่าน"}
+              {saving ? t("common.saving") : t("security.password.submitBtn")}
             </button>
           </div>
         </form>

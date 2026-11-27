@@ -42,7 +42,7 @@ function isSupportedUpload(file) {
 }
 
 export default function Dashboard() {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const navigate = useNavigate();
   const [files, setFiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -515,7 +515,7 @@ export default function Dashboard() {
                 <div className="relative">
                   <button
                     type="button"
-                    aria-label="เมนูบัญชี"
+                    aria-label={t("accountMenu.ariaLabel")}
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
                     className="flex items-center gap-2 focus:outline-none"
                   >
@@ -527,7 +527,12 @@ export default function Dashboard() {
                       <div className="px-4 py-3 border-b border-gray-50 bg-gray-50/50">
                         <p className="text-sm text-gray-900 font-semibold truncate">{user.display_name || user.email}</p>
                         {user.display_name && <p className="text-xs text-gray-500 truncate mt-0.5">{user.email}</p>}
-                        <p className="text-xs text-blue-600 mt-1 font-medium uppercase tracking-wider">Plan: {user.plan_type}{user.plan_type !== "free" && user.expire_date ? ` · ถึง ${new Date(user.expire_date).toLocaleDateString("th-TH", { dateStyle: "medium" })}` : ""}</p>
+                        <p className="text-xs text-blue-600 mt-1 font-medium uppercase tracking-wider">
+                          Plan: {user.plan_type}
+                          {user.plan_type !== "free" && user.expire_date
+                            ? ` · ${t("accountMenu.planUntil", { date: new Date(user.expire_date).toLocaleDateString(lang === "en" ? "en-US" : "th-TH", { dateStyle: "medium" }) })}`
+                            : ""}
+                        </p>
                       </div>
                       <a href="/profile" onClick={(e) => { e.preventDefault(); setIsProfileOpen(false); void navigate("/profile"); }} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
                         {t("profile.title")}

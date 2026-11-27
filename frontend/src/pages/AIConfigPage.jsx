@@ -8,23 +8,23 @@ import { useI18n } from "../i18n/I18nContext.jsx";
 const PROVIDER_HELP = {
   gemini: {
     keyPlaceholder: "AIzaSy...",
-    modelPlaceholder: "ว่าง = Gemini Flash รุ่นล่าสุด",
+    modelPlaceholderKey: "aiConfig.geminiModelPh",
     link: "https://aistudio.google.com/apikey",
     linkLabel: "Google AI Studio",
   },
   anthropic: {
     keyPlaceholder: "sk-ant-...",
-    modelPlaceholder: "ว่าง = claude-haiku-5-5",
+    modelPlaceholderKey: "aiConfig.anthropicModelPh",
     link: "https://console.anthropic.com/settings/keys",
     linkLabel: "Claude Console",
-    note: "ต้องเป็น API key จาก Claude Console (คิดเงินตามการใช้งาน) — แผนสมาชิก Claude Pro/Max/Team ใช้แทนไม่ได้",
+    noteKey: "aiConfig.anthropicNote",
   },
   openai: {
-    keyPlaceholder: "sk-... (Azure: key ของ resource)",
-    modelPlaceholder: "เช่น gpt-4.1-mini หรือชื่อ deployment ของ Azure",
+    keyPlaceholderKey: "aiConfig.openaiKeyPh",
+    modelPlaceholderKey: "aiConfig.openaiModelPh",
     link: "https://platform.openai.com/api-keys",
     linkLabel: "OpenAI Platform",
-    note: "Azure OpenAI: URL = https://<resource>.openai.azure.com/openai/v1 · โมเดลที่องค์กรรันเอง (vLLM/Ollama/LiteLLM) ใส่ URL ของ API นั้น",
+    noteKey: "aiConfig.openaiNote",
     needsModel: true,
     showBaseUrl: true,
   },
@@ -51,7 +51,7 @@ export default function AIConfigPage() {
         setForm((f) => ({ ...f, provider: quota.personal_provider, model: quota.personal_model || "", baseUrl: quota.personal_base_url || "" }));
       }
     } catch {
-      setError("ไม่สามารถโหลดข้อมูลได้");
+      setError(t("aiConfig.loadError"));
     } finally {
       setLoading(false);
     }
@@ -59,9 +59,13 @@ export default function AIConfigPage() {
 
   useEffect(() => {
     void fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const help = PROVIDER_HELP[form.provider] || PROVIDER_HELP.gemini;
+  const keyPlaceholder = help.keyPlaceholderKey ? t(help.keyPlaceholderKey) : help.keyPlaceholder;
+  const modelPlaceholder = t(help.modelPlaceholderKey);
+  const helpNote = help.noteKey ? t(help.noteKey) : null;
   const providerLabel = (value) => q?.providers?.find((p) => p.value === value)?.label || value;
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -70,17 +74,20 @@ export default function AIConfigPage() {
     setError("");
     setSuccess("");
     if (!form.apiKey.trim() && !(form.provider === "openai" && form.baseUrl.trim())) {
-      setError("กรุณากรอก API Key");
+      setError(t("aiConfig.keyRequired"));
       return;
     }
     if (help.needsModel && !form.model.trim()) {
-      setError("กรุณาระบุชื่อรุ่น (model)");
+      setError(t("aiConfig.modelRequired"));
       return;
     }
     setSaving(true);
     try {
       const res = await saveApiKey({ ...form, apiKey: form.apiKey.trim(), model: form.model.trim(), baseUrl: form.baseUrl.trim() });
-      setSuccess(`ทดสอบผ่านและบันทึกแล้ว — ใช้ ${providerLabel(res.provider)}${res.model ? ` (${res.model})` : ""} เมื่อโควต้า AI ของระบบหมด`);
+      setSuccess(t("aiConfig.saveSuccess", {
+        provider: providerLabel(res.provider),
+        model: res.model ? ` (${res.model})` : "",
+      }));
       setForm((f) => ({ ...f, apiKey: "" }));
       void fetchData();
     } catch (err) {
@@ -91,10 +98,10 @@ export default function AIConfigPage() {
   }
 
   async function handleRemove() {
-    if (!window.confirm("ลบ API Key ส่วนตัว และกลับไปใช้ AI ของระบบใช่หรือไม่?")) return;
+    if (!window.confirm(t("aiConfig.removeConfirm"))) return;
     try {
       await removeApiKey();
-      setSuccess("ลบ API Key แล้ว — กลับไปใช้ AI ของระบบ");
+      setSuccess(t("aiConfig.removeSuccess"));
       setForm({ provider: "gemini", apiKey: "", model: "", baseUrl: "" });
       void fetchData();
     } catch (err) {
@@ -113,7 +120,7 @@ export default function AIConfigPage() {
       </div>
 
       <h1 className="text-2xl font-bold mb-2">{t("pages.aiConfigTitle")}</h1>
-      <p className="text-sm text-gray-500 mb-6">AI ใช้แก้คำไทยตอนแปลง PDF เป็น Word และอ่านข้อความจากพื้นที่ที่เลือก (คัดลอกข้อความ)</p>
+      <p className="text-sm text-gray-500 mb-6">{t("aiConfig.subtitle")}</p>
 
       {error && <div className="bg-red-50 text-red-700 p-4 rounded mb-4" role="alert">{error}</div>}
       {success && <div className="bg-green-50 text-green-700 p-4 rounded mb-4">{success}</div>}
@@ -123,47 +130,52 @@ export default function AIConfigPage() {
         {q?.system_ai ? (
           <>
             <p className="text-sm text-gray-700">
-              ใช้ <strong>{q.system_provider_label}</strong>{q.system_model ? ` · รุ่น ${q.system_model}` : ""} — แปลงเป็น Word ด้วย AI ได้วันละ{" "}
-              <strong>{q.system_daily_limit}</strong> ครั้ง (วันนี้ใช้แล้ว {q.system_requests_today} ครั้ง)
+              {t("aiConfig.systemUsing")} <strong>{q.system_provider_label}</strong>
+              {q.system_model ? t("aiConfig.modelPrefix", { model: q.system_model }) : ""}{" "}
+              {t("aiConfig.systemQuotaMid")} <strong>{q.system_daily_limit}</strong>{" "}
+              {t("aiConfig.systemQuotaTail", { used: q.system_requests_today })}
             </p>
             {user?.is_admin && q.system_key_preview && (
               <p className="mt-3 text-xs text-gray-500">
-                key ของระบบ (.env): <span className="font-mono bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">{q.system_key_preview}</span>
+                {t("aiConfig.systemKeyLabel")} <span className="font-mono bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">{q.system_key_preview}</span>
               </p>
             )}
           </>
         ) : (
-          <p className="text-sm text-gray-600">ระบบยังไม่ได้ตั้ง AI — แปลงเป็น Word ได้ตามปกติแต่ไม่มีการแก้คำด้วย AI{q?.user_keys_enabled ? " (ใส่ API key ส่วนตัวด้านล่างเพื่อใช้ AI)" : ""}</p>
+          <p className="text-sm text-gray-600">
+            {t("aiConfig.systemNotConfigured")}
+            {q?.user_keys_enabled ? t("aiConfig.systemNotConfiguredHint") : ""}
+          </p>
         )}
-        <p className="mt-3 text-xs text-gray-500">คำขอ AI ด้วย key ส่วนตัวของคุณวันนี้: {q?.requests_today ?? 0} ครั้ง</p>
+        <p className="mt-3 text-xs text-gray-500">{t("aiConfig.personalRequestsToday", { count: q?.requests_today ?? 0 })}</p>
       </div>
 
       {q?.user_keys_enabled === false ? (
-        <div className="bg-white rounded-lg shadow p-6 text-sm text-gray-600">ระบบนี้ไม่เปิดให้ใช้ API key ส่วนตัว — ใช้ AI ของระบบเท่านั้น</div>
+        <div className="bg-white rounded-lg shadow p-6 text-sm text-gray-600">{t("aiConfig.personalDisabled")}</div>
       ) : (
         <div className="bg-white rounded-lg shadow p-6" data-testid="personal-ai">
-          <h2 className="text-lg font-semibold mb-1">API Key ส่วนตัว</h2>
-          <p className="text-sm text-gray-500 mb-4">ใช้เครดิตของคุณเอง (หรือของแผนก) เมื่อโควต้าของระบบหมด หรือใช้ค่ายที่ต่างจากระบบได้ — key ถูกเข้ารหัสก่อนเก็บ</p>
+          <h2 className="text-lg font-semibold mb-1">{t("aiConfig.personalTitle")}</h2>
+          <p className="text-sm text-gray-500 mb-4">{t("aiConfig.personalDesc")}</p>
 
           {user?.has_api_key && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
               <p>
-                ตั้งไว้แล้ว: <strong>{providerLabel(q?.personal_provider || "gemini")}</strong>
-                {q?.personal_model ? ` · รุ่น ${q.personal_model}` : ""}
+                {t("aiConfig.configuredLabel")} <strong>{providerLabel(q?.personal_provider || "gemini")}</strong>
+                {q?.personal_model ? t("aiConfig.modelPrefix", { model: q.personal_model }) : ""}
               </p>
               {q?.personal_base_url && <p className="mt-1 break-all">URL: {q.personal_base_url}</p>}
               {q?.personal_key_preview && (
                 <p className="font-mono bg-white border border-green-300 px-3 py-1.5 rounded mt-2 select-none">{q.personal_key_preview}</p>
               )}
-              <button onClick={handleRemove} className="mt-3 px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm font-medium">
-                ลบ API Key (กลับไปใช้ AI ของระบบ)
+              <button type="button" onClick={() => void handleRemove()} className="mt-3 px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm font-medium">
+                {t("aiConfig.removeBtn")}
               </button>
             </div>
           )}
 
-          <form onSubmit={handleSave} className="space-y-4">
+          <form onSubmit={(e) => void handleSave(e)} className="space-y-4">
             <div>
-              <label htmlFor="ai-provider" className="block text-sm font-medium text-gray-700 mb-1">ผู้ให้บริการ AI</label>
+              <label htmlFor="ai-provider" className="block text-sm font-medium text-gray-700 mb-1">{t("aiConfig.providerLabel")}</label>
               <select id="ai-provider" className={input} value={form.provider}
                 onChange={(e) => setForm({ provider: e.target.value, apiKey: "", model: "", baseUrl: "" })}>
                 {(q?.providers || [{ value: "gemini", label: "Google Gemini" }]).map((p) => (
@@ -171,31 +183,31 @@ export default function AIConfigPage() {
                 ))}
               </select>
               <p className="mt-1 text-xs text-gray-500">
-                สร้าง key ได้ที่ <a href={help.link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{help.linkLabel}</a>
-                {help.note ? <> · {help.note}</> : null}
+                {t("aiConfig.getKeyPrefix")} <a href={help.link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{help.linkLabel}</a>
+                {helpNote ? <> · {helpNote}</> : null}
               </p>
             </div>
             <div>
               <label htmlFor="ai-key" className="block text-sm font-medium text-gray-700 mb-1">
-                {user?.has_api_key ? "API Key ใหม่" : "API Key"}
+                {user?.has_api_key ? t("aiConfig.newKeyLabel") : t("aiConfig.keyLabel")}
               </label>
-              <input id="ai-key" type="password" autoComplete="off" className={input} value={form.apiKey} onChange={set("apiKey")} placeholder={help.keyPlaceholder} />
+              <input id="ai-key" type="password" autoComplete="off" className={input} value={form.apiKey} onChange={set("apiKey")} placeholder={keyPlaceholder} />
             </div>
             <div>
               <label htmlFor="ai-model" className="block text-sm font-medium text-gray-700 mb-1">
-                รุ่น (model){help.needsModel ? "" : " — ไม่บังคับ"}
+                {t("aiConfig.modelLabel")}{help.needsModel ? "" : t("aiConfig.optionalSuffix")}
               </label>
-              <input id="ai-model" className={input} value={form.model} onChange={set("model")} placeholder={help.modelPlaceholder} maxLength={100} />
+              <input id="ai-model" className={input} value={form.model} onChange={set("model")} placeholder={modelPlaceholder} maxLength={100} />
             </div>
             {help.showBaseUrl && (
               <div>
-                <label htmlFor="ai-base" className="block text-sm font-medium text-gray-700 mb-1">URL ของ API — ไม่บังคับ (ว่าง = OpenAI)</label>
+                <label htmlFor="ai-base" className="block text-sm font-medium text-gray-700 mb-1">{t("aiConfig.baseUrlLabel")}</label>
                 <input id="ai-base" className={input} value={form.baseUrl} onChange={set("baseUrl")} placeholder="https://<resource>.openai.azure.com/openai/v1" maxLength={300} />
               </div>
             )}
             <button type="submit" disabled={saving}
               className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-              {saving ? "กำลังทดสอบ key..." : "ทดสอบและบันทึก"}
+              {saving ? t("aiConfig.testingBtn") : t("aiConfig.testSaveBtn")}
             </button>
           </form>
         </div>
