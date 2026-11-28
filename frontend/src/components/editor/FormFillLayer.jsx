@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
 function computeDraggedRect(startRect, kind, dx, dy, pageWidthPt, pageHeightPt) {
   if (kind === "move") {
@@ -14,6 +15,7 @@ function computeDraggedRect(startRect, kind, dx, dy, pageWidthPt, pageHeightPt) 
 }
 
 function DraftFieldBox({ draftField, zoom, pageWidthPt, pageHeightPt, onRectChange, onConfirm, onCancel }) {
+  const { t } = useI18n();
   const { rect, label } = draftField;
   const left = rect.x0 * zoom;
   const top = rect.y0 * zoom;
@@ -59,7 +61,7 @@ function DraftFieldBox({ draftField, zoom, pageWidthPt, pageHeightPt, onRectChan
       </span>
       <div
         role="presentation"
-        title="ลากเพื่อปรับขนาดช่องฟอร์ม"
+        title={t("editor.panels.formFill.resizeDraftTitle")}
         onPointerDown={(e) => startPointer("resize", e)}
         className="absolute -right-2 -bottom-2 w-4 h-4 rounded-full bg-blue-600 border-2 border-white cursor-nwse-resize touch-none shadow"
       />
@@ -73,14 +75,14 @@ function DraftFieldBox({ draftField, zoom, pageWidthPt, pageHeightPt, onRectChan
           onClick={() => void onConfirm()}
           className="px-2 py-0.5 text-[11px] font-medium bg-blue-600 hover:bg-blue-700 text-white rounded shadow whitespace-nowrap"
         >
-          วางช่อง
+          {t("editor.panels.formFill.placeBoxBtn")}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="px-2 py-0.5 text-[11px] font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded shadow whitespace-nowrap"
         >
-          ยกเลิก
+          {t("editor.panels.formFill.cancelBtn")}
         </button>
       </div>
     </div>
@@ -91,6 +93,7 @@ function DraftFieldBox({ draftField, zoom, pageWidthPt, pageHeightPt, onRectChan
  * ช่องฟอร์มที่วางไปแล้วในโหมด "ออกแบบฟอร์ม" — ลากย้ายตำแหน่งและดึงมุมขวาล่างเพื่อปรับขนาดได้ทันที (v1.47.3)
  */
 function PlacedDesignBox({ field, zoom, pageWidthPt, pageHeightPt, onMoveField }) {
+  const { t } = useI18n();
   const [liveRect, setLiveRect] = useState(null);
   const rect = liveRect || field.rect;
   const left = rect.x0 * zoom;
@@ -138,7 +141,7 @@ function PlacedDesignBox({ field, zoom, pageWidthPt, pageHeightPt, onMoveField }
   return (
     <div
       data-testid={`form-design-field-${field.xref}`}
-      title={`ลากเพื่อย้ายช่อง "${field.label}" หรือดึงมุมขวาล่างเพื่อปรับขนาด`}
+      title={t("editor.panels.formFill.moveOrResizeFieldTitle", { label: field.label })}
       onPointerDown={(e) => startPointer("move", e)}
       className={`absolute pointer-events-auto rounded border-2 cursor-move touch-none select-none transition-colors ${
         liveRect
@@ -153,7 +156,7 @@ function PlacedDesignBox({ field, zoom, pageWidthPt, pageHeightPt, onMoveField }
       {!field.read_only && (
         <div
           role="presentation"
-          title={`ปรับขนาดช่อง "${field.label}"`}
+          title={t("editor.panels.formFill.resizeFieldTitle", { label: field.label })}
           onPointerDown={(e) => startPointer("resize", e)}
           className="absolute -right-2 -bottom-2 w-4 h-4 rounded-full bg-white border-2 border-blue-600 cursor-nwse-resize touch-none shadow"
         />

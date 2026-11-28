@@ -35,13 +35,13 @@ export default function FindBar({ find }) {
 
   let statusText = "";
   if (searching) {
-    statusText = "กำลังค้นหา...";
+    statusText = t("editor.panels.findBar.searching");
   } else if (error) {
     statusText = error;
   } else if (matches.length > 0) {
     statusText = `${activeIndex + 1} / ${matches.length}${truncated ? "+" : ""}`;
   } else if (query.trim()) {
-    statusText = "ไม่พบ";
+    statusText = t("editor.panels.findBar.notFound");
   }
 
   function onKeyDown(e) {
@@ -68,16 +68,16 @@ export default function FindBar({ find }) {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={onKeyDown}
-        placeholder="ค้นหาในเอกสาร..."
-        aria-label="คำที่ต้องการค้นหา"
+        placeholder={t("editor.panels.findBar.placeholder")}
+        aria-label={t("editor.panels.findBar.searchInputAria")}
         className="w-48 phone:flex-1 phone:min-w-0 px-2.5 py-1 text-base sm:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-800"
       />
       <button
         type="button"
         onClick={() => setMatchCase((v) => !v)}
         aria-pressed={matchCase}
-        title="ตรงตัวพิมพ์ใหญ่-เล็ก"
-        aria-label="ตรงตัวพิมพ์ใหญ่-เล็ก"
+        title={t("editor.panels.findBar.matchCase")}
+        aria-label={t("editor.panels.findBar.matchCase")}
         className={`px-2 py-1 text-xs font-semibold rounded-md border transition-colors cursor-pointer ${
           matchCase
             ? "bg-sky-100 text-sky-700 border-sky-300"
@@ -99,8 +99,8 @@ export default function FindBar({ find }) {
         type="button"
         onClick={prev}
         disabled={matches.length === 0}
-        title="ผลลัพธ์ก่อนหน้า (Shift+Enter)"
-        aria-label="ผลลัพธ์ก่อนหน้า"
+        title={t("editor.panels.findBar.prevTitle")}
+        aria-label={t("editor.panels.findBar.prevAria")}
         className="w-7 h-7 flex items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer"
       >
         ↑
@@ -109,8 +109,8 @@ export default function FindBar({ find }) {
         type="button"
         onClick={next}
         disabled={matches.length === 0}
-        title="ผลลัพธ์ถัดไป (Enter)"
-        aria-label="ผลลัพธ์ถัดไป"
+        title={t("editor.panels.findBar.nextTitle")}
+        aria-label={t("editor.panels.findBar.nextAria")}
         className="w-7 h-7 flex items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer"
       >
         ↓
@@ -118,8 +118,8 @@ export default function FindBar({ find }) {
       <button
         type="button"
         onClick={closeFind}
-        title="ปิดแถบค้นหา (Esc)"
-        aria-label="ปิดแถบค้นหา"
+        title={t("editor.panels.findBar.closeTitle")}
+        aria-label={t("editor.panels.findBar.closeAria")}
         className="w-7 h-7 flex items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 cursor-pointer"
       >
         ✕

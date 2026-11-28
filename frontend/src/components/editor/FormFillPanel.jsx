@@ -1,11 +1,12 @@
 import React, { useState } from "react";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
 const FIELD_TYPES = [
-  { id: "text", label: "ข้อความ", multiline: false },
-  { id: "textarea", label: "หลายบรรทัด", multiline: true },
-  { id: "checkbox", label: "ติ๊กถูก", multiline: false },
-  { id: "radio", label: "ตัวเลือก (Radio)", multiline: false },
-  { id: "dropdown", label: "ดรอปดาวน์", multiline: false },
+  { id: "text", labelKey: "editor.panels.formFill.fieldTypeText", multiline: false },
+  { id: "textarea", labelKey: "editor.panels.formFill.fieldTypeTextarea", multiline: true },
+  { id: "checkbox", labelKey: "editor.panels.formFill.fieldTypeCheckbox", multiline: false },
+  { id: "radio", labelKey: "editor.panels.formFill.fieldTypeRadio", multiline: false },
+  { id: "dropdown", labelKey: "editor.panels.formFill.fieldTypeDropdown", multiline: false },
 ];
 
 function renderFieldControl(field, val, onChange) {
@@ -84,23 +85,31 @@ export default function FormFillPanel({
   onSwitchToInsertText,
   onClose,
 }) {
+  const { t } = useI18n();
   const [collapsed, setCollapsed] = useState(false);
   const [newType, setNewType] = useState("text");
   const [newLabel, setNewLabel] = useState("");
   const [newGroup, setNewGroup] = useState("");
-  const [newOptions, setNewOptions] = useState("ตัวเลือก 1, ตัวเลือก 2");
+  const [newOptions, setNewOptions] = useState(() => t("editor.panels.formFill.defaultDropdownOptions"));
 
   const isDesign = hook.mode === "design";
 
+  let saveBtnLabel = t("editor.panels.formFill.saveFormBtn");
+  if (hook.saving) {
+    saveBtnLabel = t("editor.panels.formFill.savingBtn");
+  } else if (hook.dirtyCount > 0) {
+    saveBtnLabel = t("editor.panels.formFill.saveFormWithCountBtn", { count: hook.dirtyCount });
+  }
+
   function handlePlaceNewField() {
-    const spec = FIELD_TYPES.find((t) => t.id === newType) || FIELD_TYPES[0];
+    const spec = FIELD_TYPES.find((ft) => ft.id === newType) || FIELD_TYPES[0];
     const apiType = spec.id === "textarea" ? "text" : spec.id;
     const opts = apiType === "dropdown"
       ? newOptions.split(",").map((s) => s.trim()).filter(Boolean)
       : [];
     hook.startPlaceField({
       type: apiType,
-      label: newLabel.trim() || spec.label,
+      label: newLabel.trim() || t(spec.labelKey),
       name: apiType === "radio" ? (newGroup.trim() || "group1") : "",
       multiline: spec.multiline,
       options: opts,
@@ -109,15 +118,15 @@ export default function FormFillPanel({
 
   return (
     <aside
-      aria-label="แผงกรอกแบบฟอร์ม PDF"
+      aria-label={t("editor.panels.formFill.panelAria")}
       className="w-72 bg-white border-l border-slate-200 flex flex-col shrink-0 z-30 shadow-sm phone:fixed phone:inset-x-0 phone:bottom-0 phone:w-full phone:border-l-0 phone:border-t phone:rounded-t-2xl phone:shadow-2xl phone:z-40 phone:max-h-[55dvh]"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-slate-200 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm font-semibold text-slate-800 truncate">แบบฟอร์ม PDF</span>
+          <span className="text-sm font-semibold text-slate-800 truncate">{t("editor.panels.formFill.title")}</span>
           <span className="text-[11px] text-slate-500 whitespace-nowrap">
-            {hook.fields.length} ช่อง
+            {t("editor.panels.formFill.fieldCount", { count: hook.fields.length })}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -125,14 +134,14 @@ export default function FormFillPanel({
             type="button"
             onClick={() => setCollapsed((c) => !c)}
             className="desk:hidden px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 rounded"
-            aria-label={collapsed ? "ขยายแผงแบบฟอร์ม" : "ย่อแผงแบบฟอร์ม"}
+            aria-label={collapsed ? t("editor.panels.formFill.expandPanelAria") : t("editor.panels.formFill.collapsePanelAria")}
           >
-            {collapsed ? "ขยาย" : "ย่อ"}
+            {collapsed ? t("editor.panels.formFill.expandBtn") : t("editor.panels.formFill.collapseBtn")}
           </button>
           <button
             type="button"
             onClick={onClose}
-            aria-label="ปิดแผงกรอกแบบฟอร์ม"
+            aria-label={t("editor.panels.formFill.closeAria")}
             className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -156,7 +165,7 @@ export default function FormFillPanel({
               !isDesign ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"
             }`}
           >
-            กรอกฟอร์ม
+            {t("editor.panels.formFill.tabFill")}
           </button>
           <button
             type="button"
@@ -165,7 +174,7 @@ export default function FormFillPanel({
               isDesign ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"
             }`}
           >
-            ออกแบบฟอร์ม
+            {t("editor.panels.formFill.tabDesign")}
           </button>
         </div>
       )}
@@ -173,14 +182,18 @@ export default function FormFillPanel({
       {!collapsed && !isDesign && (
         <div className="p-3.5 space-y-3 overflow-y-auto flex-1 text-xs">
           {hook.loading && (
-            <div className="text-slate-500 py-4 text-center">กำลังตรวจหาช่องแบบฟอร์ม...</div>
+            <div className="text-slate-500 py-4 text-center">{t("editor.panels.formFill.loadingFields")}</div>
           )}
 
           {!hook.loading && hook.fields.length === 0 && (
             <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-2 text-slate-600">
-              <p className="font-medium text-slate-700">ไม่พบช่องแบบฟอร์ม (AcroForm) ในเอกสารนี้</p>
+              <p className="font-medium text-slate-700">{t("editor.panels.formFill.noFieldsTitle")}</p>
               <p className="leading-relaxed">
-                คุณสามารถสลับไปแท็บ <strong>ออกแบบฟอร์ม</strong> เพื่อสร้างช่องกรอกจริงลงบนเอกสารนี้ หรือใช้ <strong>แทรกข้อความ</strong> ได้ทันที
+                {t("editor.panels.formFill.noFieldsHintBeforeDesign")}
+                <strong>{t("editor.panels.formFill.tabDesign")}</strong>
+                {t("editor.panels.formFill.noFieldsHintBetween")}
+                <strong>{t("editor.panels.formFill.noFieldsHintInsertText")}</strong>
+                {t("editor.panels.formFill.noFieldsHintAfter")}
               </p>
               <div className="flex flex-col gap-1.5">
                 <button
@@ -188,14 +201,14 @@ export default function FormFillPanel({
                   onClick={() => hook.setMode("design")}
                   className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg"
                 >
-                  ไปแท็บ “ออกแบบฟอร์ม”
+                  {t("editor.panels.formFill.goToDesignBtn")}
                 </button>
                 <button
                   type="button"
                   onClick={onSwitchToInsertText}
                   className="w-full px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg"
                 >
-                  เปลี่ยนไปใช้ “แทรกข้อความ”
+                  {t("editor.panels.formFill.switchToInsertTextBtn")}
                 </button>
               </div>
             </div>
@@ -203,7 +216,7 @@ export default function FormFillPanel({
 
           {!hook.loading && hook.pagesWithFields.length > 1 && (
             <div>
-              <div className="text-[11px] text-slate-500 mb-1">หน้าที่มีช่องแบบฟอร์ม</div>
+              <div className="text-[11px] text-slate-500 mb-1">{t("editor.panels.formFill.pagesWithFieldsLabel")}</div>
               <div className="flex flex-wrap gap-1">
                 {hook.pagesWithFields.map((p) => (
                   <button
@@ -216,7 +229,7 @@ export default function FormFillPanel({
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    หน้า {p + 1}
+                    {t("editor.panels.formFill.pageNumber", { page: p + 1 })}
                   </button>
                 ))}
               </div>
@@ -225,7 +238,7 @@ export default function FormFillPanel({
 
           {!hook.loading && hook.fields.length > 0 && hook.pageFields.length === 0 && (
             <div className="text-slate-500 text-center py-3">
-              หน้า {currentPage + 1} ไม่มีช่องกรอกฟอร์ม — เลือกหน้าที่มีฟอร์มด้านบน
+              {t("editor.panels.formFill.noFieldsOnPage", { page: currentPage + 1 })}
             </div>
           )}
 
@@ -259,10 +272,10 @@ export default function FormFillPanel({
       {!collapsed && isDesign && (
         <div className="p-3.5 space-y-3 overflow-y-auto flex-1 text-xs">
           <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 space-y-2.5">
-            <div className="font-semibold text-slate-800">เพิ่มช่องแบบฟอร์มใหม่</div>
+            <div className="font-semibold text-slate-800">{t("editor.panels.formFill.addFieldHeading")}</div>
             <div>
               <label htmlFor="form-new-type" className="block text-[11px] text-slate-600 mb-1">
-                ชนิดช่อง
+                {t("editor.panels.formFill.fieldTypeLabel")}
               </label>
               <select
                 id="form-new-type"
@@ -270,16 +283,16 @@ export default function FormFillPanel({
                 onChange={(e) => setNewType(e.target.value)}
                 className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
               >
-                {FIELD_TYPES.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
+                {FIELD_TYPES.map((ft) => (
+                  <option key={ft.id} value={ft.id}>
+                    {t(ft.labelKey)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
               <label htmlFor="form-new-label" className="block text-[11px] text-slate-600 mb-1">
-                ป้ายชื่อช่อง
+                {t("editor.panels.formFill.fieldLabelLabel")}
               </label>
               <input
                 id="form-new-label"
@@ -287,14 +300,14 @@ export default function FormFillPanel({
                 value={newLabel}
                 maxLength={120}
                 onChange={(e) => setNewLabel(e.target.value)}
-                placeholder="เช่น ชื่อ-นามสกุล, เบอร์โทร"
+                placeholder={t("editor.panels.formFill.fieldLabelPlaceholder")}
                 className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg"
               />
             </div>
             {newType === "radio" && (
               <div>
                 <label htmlFor="form-new-group" className="block text-[11px] text-slate-600 mb-1">
-                  ชื่อกลุ่มตัวเลือก (Radio Group)
+                  {t("editor.panels.formFill.radioGroupLabel")}
                 </label>
                 <input
                   id="form-new-group"
@@ -302,7 +315,7 @@ export default function FormFillPanel({
                   value={newGroup}
                   maxLength={60}
                   onChange={(e) => setNewGroup(e.target.value)}
-                  placeholder="เช่น gender (กลุ่มเดียวกันเลือกได้ 1)"
+                  placeholder={t("editor.panels.formFill.radioGroupPlaceholder")}
                   className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg"
                 />
               </div>
@@ -310,14 +323,14 @@ export default function FormFillPanel({
             {newType === "dropdown" && (
               <div>
                 <label htmlFor="form-new-options" className="block text-[11px] text-slate-600 mb-1">
-                  รายการตัวเลือก (คั่นด้วยจุลภาค ,)
+                  {t("editor.panels.formFill.dropdownOptionsLabel")}
                 </label>
                 <input
                   id="form-new-options"
                   type="text"
                   value={newOptions}
                   onChange={(e) => setNewOptions(e.target.value)}
-                  placeholder="เช่น บัญชี, บุคคล, ไอที"
+                  placeholder={t("editor.panels.formFill.dropdownOptionsPlaceholder")}
                   className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg"
                 />
               </div>
@@ -325,14 +338,14 @@ export default function FormFillPanel({
 
             {hook.draftField ? (
               <div className="space-y-1.5 pt-1">
-                <p className="text-[11px] text-blue-700">ลากกรอบสีน้ำเงินบนหน้าเพื่อจัดตำแหน่ง/ขนาด แล้วกดวาง</p>
+                <p className="text-[11px] text-blue-700">{t("editor.panels.formFill.dragBlueBoxHint")}</p>
                 <div className="flex gap-1.5">
                   <button
                     type="button"
                     onClick={hook.cancelDraftField}
                     className="flex-1 px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-100"
                   >
-                    ยกเลิก
+                    {t("editor.panels.formFill.cancelBtn")}
                   </button>
                   <button
                     type="button"
@@ -340,7 +353,7 @@ export default function FormFillPanel({
                     onClick={() => void hook.commitDraftField()}
                     className="flex-1 px-2 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-50"
                   >
-                    {hook.saving ? "กำลังวาง..." : "ยืนยันวางช่อง"}
+                    {hook.saving ? t("editor.panels.formFill.placingBtn") : t("editor.panels.formFill.confirmPlaceBtn")}
                   </button>
                 </div>
               </div>
@@ -351,7 +364,7 @@ export default function FormFillPanel({
                 onClick={handlePlaceNewField}
                 className="w-full px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-50"
               >
-                + วางช่องบนหน้า
+                {t("editor.panels.formFill.placeFieldBtn")}
               </button>
             )}
           </div>
@@ -361,13 +374,13 @@ export default function FormFillPanel({
             onClick={onSwitchToInsertText}
             className="w-full px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg"
           >
-            แทรกข้อความ (ทำหัวข้อ / ป้ายกำกับ)
+            {t("editor.panels.formFill.insertTextHeadingBtn")}
           </button>
 
           {hook.pageFields.length > 0 && (
             <div className="space-y-1.5">
               <div className="text-[11px] font-medium text-slate-600">
-                ช่องฟอร์มในหน้านี้ ({hook.pageFields.length})
+                {t("editor.panels.formFill.fieldsOnPageHeading", { count: hook.pageFields.length })}
               </div>
               {hook.pageFields.map((f) => (
                 <div
@@ -382,10 +395,10 @@ export default function FormFillPanel({
                     type="button"
                     disabled={hook.saving}
                     onClick={() => void hook.deleteField(f)}
-                    aria-label={`ลบช่อง ${f.label}`}
+                    aria-label={t("editor.panels.formFill.deleteFieldAria", { label: f.label })}
                     className="px-2 py-1 text-[11px] text-red-600 hover:bg-red-50 border border-red-200 rounded"
                   >
-                    ลบ
+                    {t("editor.panels.formFill.deleteBtn")}
                   </button>
                 </div>
               ))}
@@ -409,7 +422,7 @@ export default function FormFillPanel({
               onClick={hook.resetDraft}
               className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg"
             >
-              ล้างค่าที่แก้
+              {t("editor.panels.formFill.resetDraftBtn")}
             </button>
           ) : (
             <button
@@ -417,7 +430,7 @@ export default function FormFillPanel({
               onClick={onClose}
               className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg"
             >
-              ปิด
+              {t("editor.panels.formFill.closeBtn")}
             </button>
           )}
           <button
@@ -426,9 +439,7 @@ export default function FormFillPanel({
             onClick={() => void hook.save()}
             className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg shadow-sm"
           >
-            {hook.saving
-              ? "กำลังบันทึก..."
-              : `บันทึกแบบฟอร์ม${hook.dirtyCount > 0 ? ` (${hook.dirtyCount})` : ""}`}
+            {saveBtnLabel}
           </button>
         </div>
       )}

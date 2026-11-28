@@ -1,4 +1,5 @@
 import React from "react";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 import { applyHandleDrag, ptToMm } from "../../utils/cropGeometry.js";
 
 const HANDLES = [
@@ -23,6 +24,7 @@ export default function CropPageLayer({
   pageHeightPt,
   onChange,
 }) {
+  const { t } = useI18n();
   const leftPx = margins.left * zoom;
   const topPx = margins.top * zoom;
   const rightPx = margins.right * zoom;
@@ -80,7 +82,7 @@ export default function CropPageLayer({
       >
         {/* ป้ายแสดงขนาดหลังตัด (มม.) */}
         <div className="absolute left-1/2 top-2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-blue-600/90 text-white text-[11px] font-medium whitespace-nowrap shadow">
-          {remainW} × {remainH} มม.
+          {t("editor.panels.crop.sizeSpaced", { w: remainW, h: remainH })}
         </div>
 
         {/* ปุ่มจับ 8 จุด (4 มุม + 4 ขอบ) */}

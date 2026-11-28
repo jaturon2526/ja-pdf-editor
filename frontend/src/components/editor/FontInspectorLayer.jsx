@@ -1,7 +1,9 @@
 // ชั้นกรอบข้อความบนหน้า สำหรับเครื่องมือ "ตรวจฟอนต์" — ชี้ดู (title) / คลิกหรือแตะเพื่อดูรายละเอียดในแผง
+import { useI18n } from "../../i18n/I18nContext.jsx";
 import { sizeLabel } from "../../utils/fontInfo.js";
 
 export default function FontInspectorLayer({ spans, zoom, selected, onSelect }) {
+  const { t } = useI18n();
   if (!spans?.length) return null;
   return (
     <div className="absolute inset-0" data-testid="font-inspector-layer">
@@ -11,7 +13,11 @@ export default function FontInspectorLayer({ spans, zoom, selected, onSelect }) 
           <button
             key={i}
             type="button"
-            aria-label={`ฟอนต์ของ “${s.text.slice(0, 40)}”: ${s.name} ${sizeLabel(s.size)}`}
+            aria-label={t("editor.panels.fontInspector.spanAria", {
+              text: s.text.slice(0, 40),
+              name: s.name,
+              size: sizeLabel(s.size),
+            })}
             aria-pressed={isSel}
             title={`${s.name} · ${sizeLabel(s.size)}`}
             onPointerDown={(e) => e.stopPropagation()}

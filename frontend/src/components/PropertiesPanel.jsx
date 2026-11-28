@@ -1,6 +1,7 @@
 import SourceFontList from "./fonts/SourceFontList.jsx";
 import React from "react";
 import { resolveFamilyAndStyle } from "../utils/textEditUtils.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 /**
  * PropertiesPanel — แถบด้านขวา แสดงตอนเลือกย่อหน้าเพื่อแก้ไข (Tools > แก้ไขข้อความ)
@@ -29,10 +30,10 @@ import { resolveFamilyAndStyle } from "../utils/textEditUtils.js";
  * จึงกดได้เสมอไม่ว่าจะเลือกฟอนต์ family ไหนอยู่)
  */
 const STYLE_OPTIONS = [
-  { key: "regular", label: "R", title: "ตัวปกติ (Regular)" },
-  { key: "bold", label: "B", title: "ตัวหนา (Bold)" },
-  { key: "italic", label: "I", title: "ตัวเอียง (Italic)" },
-  { key: "bold_italic", label: "BI", title: "ตัวหนาเอียง (Bold Italic)" },
+  { key: "regular", label: "R", titleKey: "editor.panels.props.styleRegular" },
+  { key: "bold", label: "B", titleKey: "editor.panels.props.styleBold" },
+  { key: "italic", label: "I", titleKey: "editor.panels.props.styleItalic" },
+  { key: "bold_italic", label: "BI", titleKey: "editor.panels.props.styleBoldItalic" },
 ];
 
 // ไอคอนจัดตัวหนังสือ ชิดซ้าย/กึ่งกลาง/ชิดขวา (ผู้ใช้แจ้งเพิ่ม) — เส้นจำลองบรรทัดข้อความสั้น/ยาวสลับกัน
@@ -55,9 +56,9 @@ const ALIGN_ICONS = {
   ),
 };
 const ALIGN_OPTIONS = [
-  { key: "left", label: "ชิดซ้าย" },
-  { key: "center", label: "กึ่งกลาง" },
-  { key: "right", label: "ชิดขวา" },
+  { key: "left", labelKey: "editor.panels.props.alignLeft" },
+  { key: "center", labelKey: "editor.panels.props.alignCenter" },
+  { key: "right", labelKey: "editor.panels.props.alignRight" },
 ];
 
 const VALIGN_ICONS = {
@@ -78,15 +79,15 @@ const VALIGN_ICONS = {
   ),
 };
 const VALIGN_OPTIONS = [
-  { key: "top", label: "ชิดบน" },
-  { key: "middle", label: "กึ่งกลาง" },
-  { key: "bottom", label: "ชิดล่าง" },
+  { key: "top", labelKey: "editor.panels.props.valignTop" },
+  { key: "middle", labelKey: "editor.panels.props.valignMiddle" },
+  { key: "bottom", labelKey: "editor.panels.props.valignBottom" },
 ];
 
 const PRESET_COLORS = [
-  { key: "black", label: "ดำ", value: "#000000" },
-  { key: "blue", label: "น้ำเงิน", value: "#1a56db" },
-  { key: "red", label: "แดง", value: "#d32f2f" },
+  { key: "black", labelKey: "editor.panels.props.colorBlack", value: "#000000" },
+  { key: "blue", labelKey: "editor.panels.props.colorBlue", value: "#1a56db" },
+  { key: "red", labelKey: "editor.panels.props.colorRed", value: "#d32f2f" },
 ];
 
 export default function PropertiesPanel({
@@ -109,6 +110,7 @@ export default function PropertiesPanel({
   saving,
   errorMessage,
 }) {
+  const { t } = useI18n();
   const families = fontFamilies || [];
   const { familyKey, style: currentStyle } = resolveFamilyAndStyle(fontKey, families);
   const currentFamily = families.find((f) => f.key === familyKey) || families[0] || null;
@@ -129,27 +131,26 @@ export default function PropertiesPanel({
   return (
     <div className="properties-panel">
       <div className="properties-header">
-        <h3>ฟอนต์ของข้อความ</h3>
-        <button className="icon-btn" onClick={onCancel} title="ปิด" aria-label="ปิด">
+        <h3>{t("editor.panels.props.title")}</h3>
+        <button className="icon-btn" onClick={onCancel} title={t("editor.panels.props.close")} aria-label={t("editor.panels.props.close")}>
           ✕
         </button>
       </div>
 
       <div className="properties-body">
         <p className="properties-hint">
-          พิมพ์แก้ข้อความได้ที่กล่องบนหน้าเอกสารโดยตรง กด "ตกลง" เพื่อยืนยันย่อหน้านี้ แล้วไปกดปุ่ม
-          "บันทึกการแก้ไข" บน toolbar อีกครั้งหลังแก้ไขครบทุกจุดแล้ว เพื่อบันทึกลงไฟล์จริง
+          {t("editor.panels.props.hint")}
         </p>
 
         {sourceFonts?.length > 0 && (
           <section className="mb-3 p-2 rounded-md bg-slate-50 border border-slate-200" aria-labelledby="props-source-fonts">
-            <h4 id="props-source-fonts" className="text-xs font-semibold text-slate-700 mb-1">ฟอนต์ในไฟล์</h4>
+            <h4 id="props-source-fonts" className="text-xs font-semibold text-slate-700 mb-1">{t("editor.panels.props.sourceFontsTitle")}</h4>
             <SourceFontList fonts={sourceFonts} showChars={sourceFonts.length > 1} />
-            <p className="mt-1.5 text-[11px] text-slate-500">ข้อความที่แก้จะวาดใหม่ด้วยฟอนต์ที่เลือกด้านล่าง</p>
+            <p className="mt-1.5 text-[11px] text-slate-500">{t("editor.panels.props.sourceFontsNote")}</p>
           </section>
         )}
 
-        <label htmlFor="propertiespanel-f142" className="properties-label">Font</label>
+        <label htmlFor="propertiespanel-f142" className="properties-label">{t("editor.panels.props.fontLabel")}</label>
         <select id="propertiespanel-f142"
           className="properties-select"
           value={familyKey || ""}
@@ -165,12 +166,13 @@ export default function PropertiesPanel({
         <div className="properties-style-group">
           {STYLE_OPTIONS.map((opt) => {
             const available = !!currentFamily?.styles[opt.key];
+            const styleTitle = t(opt.titleKey);
             return (
               <button
                 key={opt.key}
                 type="button"
                 className={`properties-style-btn ${currentStyle === opt.key ? "active" : ""}`}
-                title={available ? opt.title : `${opt.title} — ฟอนต์นี้ไม่มีไฟล์สไตล์นี้`}
+                title={available ? styleTitle : t("editor.panels.props.styleUnavailable", { style: styleTitle })}
                 disabled={!available}
                 onClick={() => handleStyleChange(opt.key)}
               >
@@ -181,7 +183,7 @@ export default function PropertiesPanel({
           <button
             type="button"
             className={`properties-style-btn properties-underline-btn ${underline ? "active" : ""}`}
-            title="ขีดเส้นใต้ (ใช้ได้กับทุกฟอนต์)"
+            title={t("editor.panels.props.underlineTitle")}
             onClick={() => onUnderlineChange(!underline)}
           >
             U
@@ -190,7 +192,7 @@ export default function PropertiesPanel({
 
         <div className="properties-row">
           <div className="properties-field">
-            <label htmlFor="propertiespanel-f183" className="properties-label">ขนาดตัวอักษร</label>
+            <label htmlFor="propertiespanel-f183" className="properties-label">{t("editor.panels.props.fontSize")}</label>
             <input id="propertiespanel-f183"
               type="number"
               className="properties-number"
@@ -201,26 +203,29 @@ export default function PropertiesPanel({
             />
           </div>
           <div className="properties-field" style={{ flex: 1.2 }}>
-            <span className="properties-label" id="props-color-label">สีตัวอักษร</span>
+            <span className="properties-label" id="props-color-label">{t("editor.panels.props.fontColor")}</span>
             <div className="flex items-center gap-2 mt-1" role="group" aria-labelledby="props-color-label">
-              {PRESET_COLORS.map((preset) => (
-                <button
-                  key={preset.key}
-                  type="button"
-                  title={preset.label}
-                  aria-label={preset.label}
-                  className={`w-7 h-7 rounded-full border transition-all shadow-sm ${
-                    colorHex.toLowerCase() === preset.value
-                      ? "border-sky-500 scale-110 ring-2 ring-sky-200"
-                      : "border-slate-300 hover:scale-105"
-                  }`}
-                  style={{ backgroundColor: preset.value }}
-                  onClick={() => onColorHexChange(preset.value)}
-                />
-              ))}
+              {PRESET_COLORS.map((preset) => {
+                const presetLabel = t(preset.labelKey);
+                return (
+                  <button
+                    key={preset.key}
+                    type="button"
+                    title={presetLabel}
+                    aria-label={presetLabel}
+                    className={`w-7 h-7 rounded-full border transition-all shadow-sm ${
+                      colorHex.toLowerCase() === preset.value
+                        ? "border-sky-500 scale-110 ring-2 ring-sky-200"
+                        : "border-slate-300 hover:scale-105"
+                    }`}
+                    style={{ backgroundColor: preset.value }}
+                    onClick={() => onColorHexChange(preset.value)}
+                  />
+                );
+              })}
               <div
                 className="relative w-7 h-7 rounded-full overflow-hidden border border-slate-300 shadow-sm hover:border-slate-400"
-                title="สีอื่นๆ"
+                title={t("editor.panels.props.otherColors")}
               >
                 <input
                   type="color"
@@ -233,36 +238,42 @@ export default function PropertiesPanel({
           </div>
         </div>
 
-        <span className="properties-label" id="props-halign-label">การจัดตัวหนังสือ (แนวนอน)</span>
+        <span className="properties-label" id="props-halign-label">{t("editor.panels.props.alignHorizontal")}</span>
         <div className="properties-align-group" role="group" aria-labelledby="props-halign-label">
-          {ALIGN_OPTIONS.map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              className={`properties-align-btn ${align === opt.key ? "active" : ""}`}
-              title={opt.label}
-              aria-label={opt.label}
-              onClick={() => onAlignChange(opt.key)}
-            >
-              {ALIGN_ICONS[opt.key]}
-            </button>
-          ))}
+          {ALIGN_OPTIONS.map((opt) => {
+            const label = t(opt.labelKey);
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                className={`properties-align-btn ${align === opt.key ? "active" : ""}`}
+                title={label}
+                aria-label={label}
+                onClick={() => onAlignChange(opt.key)}
+              >
+                {ALIGN_ICONS[opt.key]}
+              </button>
+            );
+          })}
         </div>
 
-        <span className="properties-label" id="props-valign-label" style={{ marginTop: 16 }}>การจัดตัวหนังสือ (แนวตั้ง)</span>
+        <span className="properties-label" id="props-valign-label" style={{ marginTop: 16 }}>{t("editor.panels.props.alignVertical")}</span>
         <div className="properties-align-group" role="group" aria-labelledby="props-valign-label">
-          {VALIGN_OPTIONS.map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              className={`properties-align-btn ${valign === opt.key ? "active" : ""}`}
-              title={opt.label}
-              aria-label={opt.label}
-              onClick={() => onValignChange(opt.key)}
-            >
-              {VALIGN_ICONS[opt.key]}
-            </button>
-          ))}
+          {VALIGN_OPTIONS.map((opt) => {
+            const label = t(opt.labelKey);
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                className={`properties-align-btn ${valign === opt.key ? "active" : ""}`}
+                title={label}
+                aria-label={label}
+                onClick={() => onValignChange(opt.key)}
+              >
+                {VALIGN_ICONS[opt.key]}
+              </button>
+            );
+          })}
         </div>
 
         {errorMessage && <p className="properties-error">{errorMessage}</p>}
@@ -270,10 +281,10 @@ export default function PropertiesPanel({
 
       <div className="properties-actions">
         <button className="secondary-btn" onClick={onCancel} disabled={saving}>
-          ยกเลิก
+          {t("editor.panels.props.cancel")}
         </button>
         <button className="primary-btn" onClick={onSave} disabled={saving}>
-          ตกลง
+          {t("editor.panels.props.ok")}
         </button>
       </div>
     </div>

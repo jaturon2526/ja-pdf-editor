@@ -1,5 +1,6 @@
 // แผง "ย้าย/ลบบาร์โค้ด" (v1.41.0): ตำแหน่ง (มม.) · ตกลงย้าย · ลบ · แทรกใหม่ (เปลี่ยนข้อมูล = ลบแล้วแทรกใหม่)
 // เดสก์ท็อปอยู่ขวา มือถือเป็นแผ่นล่าง (เหมือนแผงแก้ไขตาราง)
+import { useI18n } from "../../i18n/I18nContext.jsx";
 import { mmToPt, ptToMm } from "../../utils/tableGeometry.js";
 import { barcodeLabel } from "./BarcodeEditLayer.jsx";
 
@@ -15,6 +16,7 @@ function MmInput({ id, label, valuePt, onChangePt }) {
 }
 
 export default function BarcodeEditPanel({ hook, onClose, onInsertNew }) {
+  const { t } = useI18n();
   const { barcodes, rotated, selected, draft, moveTo, reset, changed, apply, remove, applying, error, lastAction } = hook;
   return (
     <aside aria-labelledby="barcode-edit-title" data-testid="barcode-edit-panel"
@@ -22,51 +24,51 @@ export default function BarcodeEditPanel({ hook, onClose, onInsertNew }) {
         desk:w-72 desk:border-l
         phone:fixed phone:inset-x-0 phone:bottom-0 phone:z-40 phone:max-h-[50dvh] phone:border-t phone:rounded-t-2xl phone:shadow-2xl">
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200">
-        <h3 id="barcode-edit-title" className="text-sm font-semibold text-slate-900">ย้าย / ลบบาร์โค้ด</h3>
-        <button type="button" onClick={onClose} aria-label="ปิดเครื่องมือย้ายลบบาร์โค้ด" className="icon-btn">✕</button>
+        <h3 id="barcode-edit-title" className="text-sm font-semibold text-slate-900">{t("editor.panels.barcodeEdit.title")}</h3>
+        <button type="button" onClick={onClose} aria-label={t("editor.panels.barcodeEdit.closeAria")} className="icon-btn">✕</button>
       </div>
       <div className="p-3 overflow-y-auto text-sm space-y-3">
-        {barcodes === null && <p className="text-slate-500">กำลังหาบาร์โค้ดในหน้านี้...</p>}
+        {barcodes === null && <p className="text-slate-500">{t("editor.panels.barcodeEdit.scanning")}</p>}
         {barcodes?.length === 0 && (
           <p className="text-slate-600">
-            {rotated ? "ยังย้าย/ลบบาร์โค้ดในหน้าที่หมุนไม่ได้ — หมุนหน้ากลับเป็นแนวเดิมก่อน"
-              : "ไม่พบบาร์โค้ดหรือ QR Code ที่อ่านได้ในหน้านี้"}
+            {rotated ? t("editor.panels.barcodeEdit.rotatedNotice")
+              : t("editor.panels.barcodeEdit.emptyNotice")}
           </p>
         )}
         {barcodes?.length > 0 && !selected && (
-          <p className="text-slate-600">คลิกหรือแตะกรอบสีม่วงเพื่อเลือกบาร์โค้ด ({barcodes.length} รายการในหน้านี้)</p>
+          <p className="text-slate-600">{t("editor.panels.barcodeEdit.selectHint", { count: barcodes.length })}</p>
         )}
-        {lastAction === "deleted" && <p className="text-xs text-green-700" role="status">ลบบาร์โค้ดแล้ว</p>}
+        {lastAction === "deleted" && <p className="text-xs text-green-700" role="status">{t("editor.panels.barcodeEdit.deletedStatus")}</p>}
         {selected && draft && (
           <>
             <p className="text-xs text-slate-600 break-all" data-testid="barcode-selected">{barcodeLabel(selected)}</p>
-            <p className="text-xs text-slate-500">ลากบาร์โค้ดเพื่อย้าย (หรือปุ่มลูกศร) แล้วกดตกลง</p>
-            <section className="space-y-1.5" aria-label="ตำแหน่ง">
-              <h4 className="text-xs font-semibold text-slate-700">ตำแหน่ง (มม. จากมุมซ้ายบน)</h4>
-              <MmInput id="bc-left" label="ซ้าย" valuePt={draft.x0} onChangePt={(v) => moveTo(v, draft.y0)} />
-              <MmInput id="bc-top" label="บน" valuePt={draft.y0} onChangePt={(v) => moveTo(draft.x0, v)} />
+            <p className="text-xs text-slate-500">{t("editor.panels.barcodeEdit.dragHint")}</p>
+            <section className="space-y-1.5" aria-label={t("editor.panels.barcodeEdit.positionAria")}>
+              <h4 className="text-xs font-semibold text-slate-700">{t("editor.panels.barcodeEdit.positionHeading")}</h4>
+              <MmInput id="bc-left" label={t("editor.panels.barcodeEdit.leftLabel")} valuePt={draft.x0} onChangePt={(v) => moveTo(v, draft.y0)} />
+              <MmInput id="bc-top" label={t("editor.panels.barcodeEdit.topLabel")} valuePt={draft.y0} onChangePt={(v) => moveTo(draft.x0, v)} />
             </section>
             {error && <p className="text-xs text-red-600" role="alert">{error}</p>}
-            {lastAction === "moved" && !changed && <p className="text-xs text-green-700" role="status">ย้ายบาร์โค้ดแล้ว</p>}
+            {lastAction === "moved" && !changed && <p className="text-xs text-green-700" role="status">{t("editor.panels.barcodeEdit.movedStatus")}</p>}
             <div className="flex gap-2">
               <button type="button" onClick={reset} disabled={!changed || applying}
-                className="flex-1 px-3 py-2 text-sm rounded border border-slate-300 text-slate-700 disabled:opacity-50">รีเซ็ต</button>
+                className="flex-1 px-3 py-2 text-sm rounded border border-slate-300 text-slate-700 disabled:opacity-50">{t("editor.panels.barcodeEdit.reset")}</button>
               <button type="button" onClick={() => void apply()} disabled={!changed || applying}
                 className="flex-1 px-3 py-2 text-sm font-medium rounded bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50">
-                {applying ? "กำลังย้าย..." : "ตกลง"}
+                {applying ? t("editor.panels.barcodeEdit.applying") : t("editor.panels.barcodeEdit.apply")}
               </button>
             </div>
             <button type="button" onClick={() => void remove()} disabled={applying}
               className="w-full px-3 py-2 text-sm rounded border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50">
-              ลบบาร์โค้ดนี้
+              {t("editor.panels.barcodeEdit.deleteButton")}
             </button>
           </>
         )}
         {barcodes !== null && (
           <div className="pt-2 border-t border-slate-100 space-y-1.5">
-            <p className="text-[11px] text-slate-500">ต้องการเปลี่ยนข้อมูลในบาร์โค้ด: ลบอันเดิมแล้วแทรกใหม่</p>
+            <p className="text-[11px] text-slate-500">{t("editor.panels.barcodeEdit.replaceHint")}</p>
             <button type="button" onClick={onInsertNew}
-              className="w-full px-3 py-1.5 text-xs rounded border border-slate-300 hover:bg-slate-50">แทรกบาร์โค้ด / QR ใหม่...</button>
+              className="w-full px-3 py-1.5 text-xs rounded border border-slate-300 hover:bg-slate-50">{t("editor.panels.barcodeEdit.insertNew")}</button>
           </div>
         )}
       </div>

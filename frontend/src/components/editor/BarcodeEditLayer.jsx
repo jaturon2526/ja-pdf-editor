@@ -2,6 +2,7 @@
 // พรีวิว: ปิดที่เดิมด้วยพื้นขาว + ครอปภาพหน้าส่วนบาร์โค้ดไปวางที่ใหม่ · ผลจริง backend ย้ายแบบเวกเตอร์ (edit_service/barcodes.py)
 // จุดลากเป็นของเมาส์/นิ้ว — คีย์บอร์ดใช้ช่องตำแหน่ง (มม.) ในแผง และปุ่มลูกศร
 import { useRef } from "react";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
 export function barcodeLabel(b) {
   const text = b.text.length > 40 ? `${b.text.slice(0, 40)}…` : b.text;
@@ -9,6 +10,7 @@ export function barcodeLabel(b) {
 }
 
 export default function BarcodeEditLayer({ barcodes, selected, draft, zoom, pageSrc, pageWidthPt, pageHeightPt, onSelect, onMoveTo }) {
+  const { t } = useI18n();
   const drag = useRef(null);
   if (!barcodes) return null;
   const z = (v) => v * zoom;
@@ -40,7 +42,7 @@ export default function BarcodeEditLayer({ barcodes, selected, draft, zoom, page
   return (
     <div className="absolute inset-0" data-testid="barcode-edit-layer">
       {barcodes.filter((b) => b.id !== selected?.id).map((b, i) => (
-        <button key={b.id} type="button" aria-label={`เลือกบาร์โค้ดที่ ${i + 1}: ${barcodeLabel(b)}`}
+        <button key={b.id} type="button" aria-label={t("editor.panels.barcodeEdit.selectBarcodeAria", { index: i + 1, label: barcodeLabel(b) })}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); onSelect(b.id); }}
           className="absolute border-2 border-dashed border-violet-500/80 bg-violet-400/5 hover:bg-violet-400/15 rounded-sm cursor-pointer"
@@ -57,7 +59,7 @@ export default function BarcodeEditLayer({ barcodes, selected, draft, zoom, page
               backgroundPosition: `${-z(old.x0)}px ${-z(old.y0)}px`,
             }} />
           )}
-          <div role="presentation" title="ลากเพื่อย้ายบาร์โค้ด" data-handle="ย้ายบาร์โค้ด"
+          <div role="presentation" title={t("editor.panels.barcodeEdit.dragTitle")} data-handle={t("editor.panels.barcodeEdit.moveHandle")}
             className="absolute z-10 cursor-move touch-none outline-2 outline-dashed outline-violet-600 outline-offset-2 rounded-sm"
             style={box(draft)} {...handlers} />
         </>

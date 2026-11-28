@@ -4,6 +4,7 @@
 // ผลจริง backend จัดตำแหน่งตามเดิมในเซลล์และตัดบรรทัดเซลล์ที่แคบลง (edit_service/tables.py)
 // จุดลากเป็นของเมาส์/นิ้วเท่านั้น — คีย์บอร์ด/โปรแกรมอ่านหน้าจอใช้ช่องตัวเลข (มม.) ในแผง และปุ่มลูกศรย้ายตาราง
 import { useRef, useState } from "react";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 import { moveInnerLine, ptToMm, scaleTo, setSize, translate } from "../../utils/tableGeometry.js";
 import { fontFamilyForKey } from "../../utils/textEditUtils.js";
 
@@ -70,21 +71,21 @@ function Handle({ zoom, draft, expandMode, onUpdate, onActiveChange, axis, index
   );
 }
 
-function activeSizeBadge(activeHandle, draft, zoom) {
+function activeSizeBadge(activeHandle, draft, zoom, t) {
   if (!activeHandle || !draft) return null;
   const { axis, index, kind } = activeHandle;
   const z = (v) => v * zoom;
   if (kind === "corner") {
     const w = ptToMm(draft.xs.at(-1) - draft.xs[0]);
     const h = ptToMm(draft.ys.at(-1) - draft.ys[0]);
-    return { text: `${w} × ${h} มม.`, left: z(draft.xs.at(-1)), top: z(draft.ys.at(-1)) - 28 };
+    return { text: t("editor.panels.table.sizeBadgeCorner", { w, h }), left: z(draft.xs.at(-1)), top: z(draft.ys.at(-1)) - 28 };
   }
   if (axis === "xs") {
     const mm = kind === "outer" ? ptToMm(draft.xs.at(-1) - draft.xs[0]) : ptToMm(draft.xs[index] - draft.xs[index - 1]);
-    return { text: `${mm} มม.`, left: z(draft.xs[index]), top: z(draft.ys[0]) - 36 };
+    return { text: t("editor.panels.table.sizeBadgeSingle", { mm }), left: z(draft.xs[index]), top: z(draft.ys[0]) - 36 };
   }
   const mm = kind === "outer" ? ptToMm(draft.ys.at(-1) - draft.ys[0]) : ptToMm(draft.ys[index] - draft.ys[index - 1]);
-  return { text: `${mm} มม.`, left: z(draft.xs[0]) + 14, top: z(draft.ys[index]) - 28 };
+  return { text: t("editor.panels.table.sizeBadgeSingle", { mm }), left: z(draft.xs[0]) + 14, top: z(draft.ys[index]) - 28 };
 }
 
 export default function TableEditLayer({
@@ -111,6 +112,7 @@ export default function TableEditLayer({
   editingCellOnCanvas = false,
   onSetEditingCellOnCanvas,
 }) {
+  const { t } = useI18n();
   const [activeHandle, setActiveHandle] = useState(null);
   const moveRef = useRef(null);
   const moveDrag = {
@@ -157,18 +159,18 @@ export default function TableEditLayer({
 
   return (
     <div className="absolute inset-0" data-testid="table-edit-layer">
-      {tables.filter((t) => t.id !== selected?.id).map((t, i) => (
-        <button key={t.id} type="button" aria-label={`เลือกตารางที่ ${i + 1} (${t.ys.length - 1} แถว × ${t.xs.length - 1} คอลัมน์)`}
+      {tables.filter((tbl) => tbl.id !== selected?.id).map((tbl, i) => (
+        <button key={tbl.id} type="button" aria-label={t("editor.panels.table.selectTableAria", { index: i + 1, rows: tbl.ys.length - 1, cols: tbl.xs.length - 1 })}
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.stopPropagation(); onSelect(t.id); }}
+          onClick={(e) => { e.stopPropagation(); onSelect(tbl.id); }}
           className="absolute border-2 border-dashed border-sky-500/70 bg-sky-400/5 hover:bg-sky-400/15 rounded-sm cursor-pointer"
-          style={{ left: z(t.bbox.x0), top: z(t.bbox.y0), width: z(t.bbox.x1 - t.bbox.x0), height: z(t.bbox.y1 - t.bbox.y0) }} />
+          style={{ left: z(tbl.bbox.x0), top: z(tbl.bbox.y0), width: z(tbl.bbox.x1 - tbl.bbox.x0), height: z(tbl.bbox.y1 - tbl.bbox.y0) }} />
       ))}
 
       {selected && draft && (() => {
         const { xs, ys } = draft;
         const changed = xs.some((v, i) => v !== selected.xs[i]) || ys.some((v, i) => v !== selected.ys[i]);
-        const badge = activeSizeBadge(activeHandle, draft, zoom);
+        const badge = activeSizeBadge(activeHandle, draft, zoom, t);
         const topY = z(ys[0]);
         const botY = z(ys.at(-1));
         const leftX = z(xs[0]);
@@ -239,8 +241,8 @@ export default function TableEditLayer({
             )}
             <div
               role="presentation"
-              title="คลิกเพื่อเลือกเซลล์ · ดับเบิลคลิกเพื่อพิมพ์ข้อความในเซลล์ · ลากเพื่อย้ายตาราง"
-              data-handle="ย้ายตาราง"
+              title={t("editor.panels.table.moveTableTitle")}
+              data-handle={t("editor.panels.table.handleMoveTable")}
               className="absolute z-10 cursor-move touch-none"
               style={{ left: leftX, top: topY, width: rightX - leftX, height: botY - topY }}
               onDoubleClick={(e) => {
@@ -262,10 +264,10 @@ export default function TableEditLayer({
             {editingCellOnCanvas && cellSelection && !changed && cellSelection.r1 + 1 < ys.length && cellSelection.c1 + 1 < xs.length && (
               <input
                 type="text"
-                aria-label="พิมพ์ข้อความในเซลล์"
+                aria-label={t("editor.panels.table.inlineCellAria")}
                 data-testid="table-inline-cell-input"
                 value={cellText || ""}
-                placeholder="พิมพ์..."
+                placeholder={t("editor.panels.table.inlineCellPlaceholder")}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
                 onChange={(e) => onCellTextChange?.(e.target.value)}
@@ -305,10 +307,10 @@ export default function TableEditLayer({
               return (
                 <div key={`hx${i}`}>
                   <Handle zoom={zoom} draft={draft} expandMode={expandMode} onUpdate={onUpdate} onActiveChange={setActiveHandle}
-                    axis="xs" index={i} kind="inner" label={`เส้นแบ่งคอลัมน์ที่ ${i}`} cursor="col-resize"
+                    axis="xs" index={i} kind="inner" label={t("editor.panels.table.handleColDivider", { index: i })} cursor="col-resize"
                     style={{ left: `calc(${z(x)}px - var(--hit) / 2)`, top: topY, width: "var(--hit)", height: botY - topY }} />
                   <Handle zoom={zoom} draft={draft} expandMode={expandMode} onUpdate={onUpdate} onActiveChange={setActiveHandle}
-                    axis="xs" index={i} kind="inner" label={`จับปรับคอลัมน์ที่ ${i}`} cursor="col-resize"
+                    axis="xs" index={i} kind="inner" label={t("editor.panels.table.handleColKnob", { index: i })} cursor="col-resize"
                     className="z-30 flex items-center justify-center"
                     style={{ left: z(x) - knobW / 2, top: topY - KNOB_HIT / 2 - 4, width: knobW, height: KNOB_HIT }}>
                     <span aria-hidden="true" className={`block rounded-full border-2 border-white shadow transition-transform ${isLineActive("xs", i) ? "w-2.5 h-5 bg-sky-700 scale-110" : "w-2 h-4 bg-sky-500"}`} />
@@ -325,10 +327,10 @@ export default function TableEditLayer({
               return (
                 <div key={`hy${i}`}>
                   <Handle zoom={zoom} draft={draft} expandMode={expandMode} onUpdate={onUpdate} onActiveChange={setActiveHandle}
-                    axis="ys" index={i} kind="inner" label={`เส้นแบ่งแถวที่ ${i}`} cursor="row-resize"
+                    axis="ys" index={i} kind="inner" label={t("editor.panels.table.handleRowDivider", { index: i })} cursor="row-resize"
                     style={{ top: `calc(${z(y)}px - var(--hit) / 2)`, left: leftX, height: "var(--hit)", width: rightX - leftX }} />
                   <Handle zoom={zoom} draft={draft} expandMode={expandMode} onUpdate={onUpdate} onActiveChange={setActiveHandle}
-                    axis="ys" index={i} kind="inner" label={`จับปรับแถวที่ ${i}`} cursor="row-resize"
+                    axis="ys" index={i} kind="inner" label={t("editor.panels.table.handleRowKnob", { index: i })} cursor="row-resize"
                     className="z-30 flex items-center justify-center"
                     style={{ left: leftX - KNOB_HIT / 2 - 4, top: z(y) - knobH / 2, width: KNOB_HIT, height: knobH }}>
                     <span aria-hidden="true" className={`block rounded-full border-2 border-white shadow transition-transform ${isLineActive("ys", i) ? "w-5 h-2.5 bg-sky-700 scale-110" : "w-4 h-2 bg-sky-500"}`} />
@@ -339,10 +341,10 @@ export default function TableEditLayer({
 
             {/* ขอบขวา + ปุ่มจับกึ่งกลางขอบขวา */}
             <Handle zoom={zoom} draft={draft} expandMode={expandMode} onUpdate={onUpdate} onActiveChange={setActiveHandle}
-              axis="xs" index={xs.length - 1} kind="outer" label="ขอบขวา (ย่อขยายความกว้างทั้งตาราง)" cursor="ew-resize"
+              axis="xs" index={xs.length - 1} kind="outer" label={t("editor.panels.table.handleRightEdge")} cursor="ew-resize"
               style={{ left: `calc(${rightX}px - var(--hit) / 2)`, top: topY, width: "var(--hit)", height: botY - topY }} />
             <Handle zoom={zoom} draft={draft} expandMode={expandMode} onUpdate={onUpdate} onActiveChange={setActiveHandle}
-              axis="xs" index={xs.length - 1} kind="outer" label="จับขยายความกว้างทั้งตาราง" cursor="ew-resize"
+              axis="xs" index={xs.length - 1} kind="outer" label={t("editor.panels.table.handleRightKnob")} cursor="ew-resize"
               className="z-30 flex items-center justify-center"
               style={{ left: rightX - KNOB_HIT / 2 + 4, top: midY - KNOB_HIT / 2, width: KNOB_HIT, height: KNOB_HIT }}>
               <span aria-hidden="true" className="block w-2 h-5 rounded-full bg-white border-2 border-sky-600 shadow" />
@@ -350,10 +352,10 @@ export default function TableEditLayer({
 
             {/* ขอบล่าง + ปุ่มจับกึ่งกลางขอบล่าง */}
             <Handle zoom={zoom} draft={draft} expandMode={expandMode} onUpdate={onUpdate} onActiveChange={setActiveHandle}
-              axis="ys" index={ys.length - 1} kind="outer" label="ขอบล่าง (ย่อขยายความสูงทั้งตาราง)" cursor="ns-resize"
+              axis="ys" index={ys.length - 1} kind="outer" label={t("editor.panels.table.handleBottomEdge")} cursor="ns-resize"
               style={{ top: `calc(${botY}px - var(--hit) / 2)`, left: leftX, height: "var(--hit)", width: rightX - leftX }} />
             <Handle zoom={zoom} draft={draft} expandMode={expandMode} onUpdate={onUpdate} onActiveChange={setActiveHandle}
-              axis="ys" index={ys.length - 1} kind="outer" label="จับขยายความสูงทั้งตาราง" cursor="ns-resize"
+              axis="ys" index={ys.length - 1} kind="outer" label={t("editor.panels.table.handleBottomKnob")} cursor="ns-resize"
               className="z-30 flex items-center justify-center"
               style={{ left: midX - KNOB_HIT / 2, top: botY - KNOB_HIT / 2 + 4, width: KNOB_HIT, height: KNOB_HIT }}>
               <span aria-hidden="true" className="block w-5 h-2 rounded-full bg-white border-2 border-sky-600 shadow" />
@@ -361,7 +363,7 @@ export default function TableEditLayer({
 
             {/* มุมขวาล่าง */}
             <Handle zoom={zoom} draft={draft} expandMode={expandMode} onUpdate={onUpdate} onActiveChange={setActiveHandle}
-              axis="xs" index={xs.length - 1} kind="corner" label="มุมขวาล่าง (ย่อขยายทั้งตาราง)" cursor="nwse-resize"
+              axis="xs" index={xs.length - 1} kind="corner" label={t("editor.panels.table.handleCorner")} cursor="nwse-resize"
               className="z-30 flex items-center justify-center"
               style={{ left: rightX - KNOB_HIT / 2, top: botY - KNOB_HIT / 2, width: KNOB_HIT, height: KNOB_HIT }}>
               <span aria-hidden="true" className="block w-4 h-4 bg-white border-2 border-sky-600 rounded-sm shadow" />

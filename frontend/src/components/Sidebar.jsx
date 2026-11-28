@@ -96,6 +96,13 @@ export default function Sidebar({
   const ghostRef = useRef(null);
   const longPressTimerRef = useRef(null);
   const lastPointerTypeRef = useRef("mouse"); // นิ้ว/ปากกา: เมนูมาจากตัวจับเวลากดค้าง ไม่ใช่ contextmenu ของเบราว์เซอร์
+  const renameInputRef = useRef(null);
+
+  useEffect(() => {
+    if (renamingBookmarkId != null) {
+      renameInputRef.current?.focus();
+    }
+  }, [renamingBookmarkId]);
 
   // เอกสารเปลี่ยน (เปิดไฟล์ใหม่/จำนวนหน้าเปลี่ยน — รวมถึงหลังลากสลับตำแหน่งหน้าสำเร็จ) — เคลียร์
   // selection เดิมทิ้ง กันเลือกหน้าที่ไม่มีอยู่แล้ว/อ้างอิงตำแหน่งเก่าที่ไม่ตรงแล้ว
@@ -431,7 +438,18 @@ export default function Sidebar({
 
   const multiSelectActive = selectedPages.size > 1 || selectMode;
   const hasSelection = selectedPages.size > 0;
-  const countSuffix = selectedPages.size > 1 ? ` (${selectedPages.size} หน้า)` : "";
+  const countSuffix = selectedPages.size > 1
+    ? t("editor.panels.sidebar.pageCountSuffix", { count: selectedPages.size })
+    : "";
+  let exportSuffix = "";
+  if (selectedPages.size === 1) {
+    exportSuffix = t("editor.panels.sidebar.pageCountSingleSuffix", { count: 1 });
+  } else if (selectedPages.size > 1) {
+    exportSuffix = t("editor.panels.sidebar.pageCountSuffix", { count: selectedPages.size });
+  }
+  const zipSuffix = selectedPages.size > 1
+    ? t("editor.panels.sidebar.zipCountSuffix", { count: selectedPages.size })
+    : "";
   const sortedSelected = Array.from(selectedPages).sort((a, b) => a - b);
   // เลื่อนขึ้นไม่ได้อีกแล้วก็ต่อเมื่อหน้าที่เลือกอยู่ต้นสุดของเอกสารพอดี (index 0) — เลื่อนลงไม่ได้อีกแล้ว
   // ก็ต่อเมื่อหน้าสุดท้ายที่เลือกอยู่ท้ายสุดของเอกสารพอดี (ไม่ว่ากลุ่มที่เลือกจะติดกันหรือไม่ก็ตาม)
@@ -450,7 +468,7 @@ export default function Sidebar({
       <>
         {isOpenOnMobile && <div role="presentation" className="fixed inset-0 bg-black/20 z-10 desk:hidden" onClick={onCloseMobile} />}
         <div className={`flex flex-col bg-slate-50 border-r border-slate-200 relative shrink-0 transition-all z-20 ${isOpenOnMobile ? "absolute inset-y-0 left-0 shadow-2xl h-full" : "hidden desk:flex"}`} style={{ width: SIDEBAR_COLLAPSED_WIDTH }}>
-          <button className="w-full p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors font-bold text-lg" title="ขยายแผงหน้าเอกสาร" onClick={() => setCollapsed(false)}>
+          <button className="w-full p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors font-bold text-lg" title={t("editor.panels.sidebar.expandPanel")} onClick={() => setCollapsed(false)}>
             »
           </button>
         </div>
@@ -551,7 +569,7 @@ export default function Sidebar({
                       {thumbnails[pageNum] ? (
                         <img
                           src={pageImageSrc(thumbnails[pageNum])}
-                          alt={`หน้า ${pageNum + 1}`}
+                          alt={t("editor.panels.sidebar.pageLabel", { page: pageNum + 1 })}
                           className="ios-no-callout block w-auto h-auto max-w-[118px] max-h-[158px] rounded"
                           draggable={false}
                         />
@@ -569,7 +587,7 @@ export default function Sidebar({
             {pageCount > 0 && onInsertPages && !selectMode && (
               <button type="button" onClick={(e) => { e.stopPropagation(); onInsertPages(pageCount); }}
                 className="self-center w-[120px] py-2 rounded border-2 border-dashed border-slate-300 text-xs font-medium text-slate-500 hover:border-sky-400 hover:text-sky-700 hover:bg-sky-50">
-                ＋ แทรกหน้า
+                {t("editor.panels.sidebar.insertPageButton")}
               </button>
             )}
           </div>
@@ -582,9 +600,9 @@ export default function Sidebar({
               onClick={onAddBookmark}
               disabled={pageCount === 0}
             >
-              + เพิ่มที่คั่นหน้าหน้านี้
+              {t("editor.panels.sidebar.addBookmark")}
             </button>
-            {bookmarks.length === 0 && <div className="text-center text-slate-400 text-xs mt-10">ยังไม่มีบุ๊คมาร์ค</div>}
+            {bookmarks.length === 0 && <div className="text-center text-slate-400 text-xs mt-10">{t("editor.panels.sidebar.noBookmarks")}</div>}
             {bookmarks.map((bm) => {
               const isRenaming = renamingBookmarkId === bm.id;
               return (
@@ -593,9 +611,9 @@ export default function Sidebar({
                   className={`flex items-center gap-2 pr-2 py-1.5 rounded-md group transition-colors ${bm.page === currentPage ? "bg-sky-100" : "hover:bg-slate-200"}`}>
                   {isRenaming ? (
                     <input
-                      autoFocus
+                      ref={renameInputRef}
                       maxLength={300}
-                      aria-label="ชื่อบุ๊คมาร์ค"
+                      aria-label={t("editor.panels.sidebar.bookmarkNameAria")}
                       className="flex-1 w-full text-xs px-2 py-1 border border-sky-400 rounded focus:outline-none focus:ring-1 focus:ring-sky-500 select-text [-webkit-touch-callout:default]"
                       value={renameDraft}
                       onChange={(e) => setRenameDraft(e.target.value)}
@@ -614,13 +632,13 @@ export default function Sidebar({
                     >
                       <span className="text-[10px]">🔖</span>
                       <span className="text-xs font-medium text-slate-700 truncate">{bm.label}</span>
-                      <span className="text-[10px] text-slate-400 shrink-0 ml-auto">หน้า {bm.page + 1}</span>
+                      <span className="text-[10px] text-slate-400 shrink-0 ml-auto">{t("editor.panels.sidebar.pageLabel", { page: bm.page + 1 })}</span>
                     </button>
                   )}
                   {!isRenaming && (
                     <button
                       className="opacity-0 group-hover:opacity-100 focus:opacity-100 [@media(hover:none)]:opacity-100 p-1 text-slate-400 hover:text-sky-600 transition-opacity text-[10px]"
-                      title="เปลี่ยนชื่อบุ๊คมาร์ค"
+                      title={t("editor.panels.sidebar.renameBookmark")}
                       onClick={() => startRenameBookmark(bm)}
                     >
                       ✎
@@ -628,7 +646,7 @@ export default function Sidebar({
                   )}
                   <button
                     className="opacity-0 group-hover:opacity-100 focus:opacity-100 [@media(hover:none)]:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity text-sm leading-none"
-                    title="ลบบุ๊คมาร์ค"
+                    title={t("editor.panels.sidebar.deleteBookmark")}
                     onClick={() => onRemoveBookmark(bm.id)}
                   >
                     ×
@@ -654,29 +672,29 @@ export default function Sidebar({
                 role="menuitem"
                 onClick={enterSelectMode}
               >
-                ☑ เลือกหลายหน้า
+                {t("editor.panels.sidebar.selectMultiple")}
               </button>
               <div className="h-px bg-slate-200 my-1 mx-2" />
             </>
           )}
           {/* จัดคำสั่งคู่กันเป็นแถว (ขึ้น/ลง · ขวา/ซ้าย · PDF/PNG/JPG) ให้เมนูสั้นพอสำหรับจอมือถือ (ผู้ใช้แจ้ง: เมนูยาวล้นจอ)
               ชื่อเต็มของแต่ละปุ่มอยู่ใน aria-label/title */}
-          <MenuRow label={`เลื่อนหน้า${countSuffix}`}>
-            <MenuChip label={`เลื่อนหน้าขึ้น${countSuffix}`} disabled={!canMoveUp} onClick={() => handleMoveClick("up")}>↑ ขึ้น</MenuChip>
-            <MenuChip label={`เลื่อนหน้าลง${countSuffix}`} disabled={!canMoveDown} onClick={() => handleMoveClick("down")}>↓ ลง</MenuChip>
+          <MenuRow label={t("editor.panels.sidebar.movePages", { suffix: countSuffix })}>
+            <MenuChip label={t("editor.panels.sidebar.movePagesUp", { suffix: countSuffix })} disabled={!canMoveUp} onClick={() => handleMoveClick("up")}>{t("editor.panels.sidebar.moveUpChip")}</MenuChip>
+            <MenuChip label={t("editor.panels.sidebar.movePagesDown", { suffix: countSuffix })} disabled={!canMoveDown} onClick={() => handleMoveClick("down")}>{t("editor.panels.sidebar.moveDownChip")}</MenuChip>
           </MenuRow>
-          <MenuRow label={`หมุน${countSuffix}`}>
-            <MenuChip label={`หมุนขวา ↻ (90°)${countSuffix}`} disabled={!hasSelection}
-              onClick={() => { onRotatePages(Array.from(selectedPages), 90); setContextMenu(null); }}>↻ ขวา</MenuChip>
-            <MenuChip label={`หมุนซ้าย ↺ (-90°)${countSuffix}`} disabled={!hasSelection}
-              onClick={() => { onRotatePages(Array.from(selectedPages), -90); setContextMenu(null); }}>↺ ซ้าย</MenuChip>
+          <MenuRow label={t("editor.panels.sidebar.rotate", { suffix: countSuffix })}>
+            <MenuChip label={t("editor.panels.sidebar.rotateRightLabel", { suffix: countSuffix })} disabled={!hasSelection}
+              onClick={() => { onRotatePages(Array.from(selectedPages), 90); setContextMenu(null); }}>{t("editor.panels.sidebar.rotateRightChip")}</MenuChip>
+            <MenuChip label={t("editor.panels.sidebar.rotateLeftLabel", { suffix: countSuffix })} disabled={!hasSelection}
+              onClick={() => { onRotatePages(Array.from(selectedPages), -90); setContextMenu(null); }}>{t("editor.panels.sidebar.rotateLeftChip")}</MenuChip>
           </MenuRow>
           {onInsertPages && (
-            <MenuRow label="แทรกหน้า">
-              <MenuChip label="แทรกหน้าก่อนหน้านี้" disabled={!hasSelection}
-                onClick={() => { onInsertPages(Math.min(...selectedPages)); setContextMenu(null); }}>＋ ก่อน</MenuChip>
-              <MenuChip label="แทรกหน้าหลังหน้านี้" disabled={!hasSelection}
-                onClick={() => { onInsertPages(Math.max(...selectedPages) + 1); setContextMenu(null); }}>＋ หลัง</MenuChip>
+            <MenuRow label={t("editor.panels.sidebar.insertPages")}>
+              <MenuChip label={t("editor.panels.sidebar.insertBeforeLabel")} disabled={!hasSelection}
+                onClick={() => { onInsertPages(Math.min(...selectedPages)); setContextMenu(null); }}>{t("editor.panels.sidebar.insertBeforeChip")}</MenuChip>
+              <MenuChip label={t("editor.panels.sidebar.insertAfterLabel")} disabled={!hasSelection}
+                onClick={() => { onInsertPages(Math.max(...selectedPages) + 1); setContextMenu(null); }}>{t("editor.panels.sidebar.insertAfterChip")}</MenuChip>
             </MenuRow>
           )}
           <div className="h-px bg-slate-200 my-1 mx-2" />
@@ -685,24 +703,26 @@ export default function Sidebar({
             role="menuitem"
             style={{ color: "var(--color-danger, #ef4444)" }}
             disabled={!canDelete}
-            title={canDelete ? undefined : "ลบทุกหน้าไม่ได้ — เอกสารต้องเหลืออย่างน้อย 1 หน้า"}
+            title={canDelete ? undefined : t("editor.panels.sidebar.cannotDeleteAll")}
             onClick={() => { onDeletePages(Array.from(selectedPages)); setContextMenu(null); }}
           >
-            {selectedPages.size > 1 ? "ลบหน้าที่เลือก" : "ลบหน้านี้ทิ้ง"}{selectedPages.size > 1 ? ` (${selectedPages.size} หน้า)` : ""}
+            {selectedPages.size > 1
+              ? t("editor.panels.sidebar.deleteSelectedPages", { count: selectedPages.size })
+              : t("editor.panels.sidebar.deleteThisPage")}
           </button>
           <div className="h-px bg-slate-200 my-1 mx-2" />
-          <MenuRow label={`ส่งออก${selectedPages.size > 0 ? ` (${selectedPages.size} หน้า)` : ""}`}>
-            <MenuChip label={`ส่งออกหน้าที่เลือกเป็นไฟล์ใหม่${selectedPages.size > 0 ? ` (${selectedPages.size} หน้า)` : ""}`}
+          <MenuRow label={t("editor.panels.sidebar.exportRow", { suffix: exportSuffix })}>
+            <MenuChip label={t("editor.panels.sidebar.exportPdfLabel", { suffix: exportSuffix })}
               disabled={!hasSelection} onClick={handleExportClick}>PDF</MenuChip>
             {["png", "jpg"].map((fmt) => (
-              <MenuChip key={fmt} label={`ส่งออกเป็นรูปภาพ ${fmt.toUpperCase()}${selectedPages.size > 1 ? ` (${selectedPages.size} หน้า .zip)` : ""}`}
+              <MenuChip key={fmt} label={t("editor.panels.sidebar.exportImageLabel", { format: fmt.toUpperCase(), suffix: zipSuffix })}
                 disabled={!hasSelection} onClick={() => handleExportImageClick(fmt)}>{fmt.toUpperCase()}</MenuChip>
             ))}
           </MenuRow>
         </div>
       )}
 
-      <div className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-sky-400/50 transition-colors z-30" onPointerDown={handleResizeStart} title="ลากเพื่อปรับความกว้าง" />
+      <div className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-sky-400/50 transition-colors z-30" onPointerDown={handleResizeStart} title={t("editor.panels.sidebar.resizeHandle")} />
 
       {/* Ghost element for dragging */}
       <div 
