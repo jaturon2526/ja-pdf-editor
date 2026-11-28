@@ -2,12 +2,14 @@
 // หรือ ลบ · ไม่แก้ข้อมูลในบาร์โค้ด (ผู้ใช้เลือก: อยากเปลี่ยนให้ลบแล้วแทรกใหม่)
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 const MATCH_PT = 3;
 const near = (a, b) => ["x0", "y0", "x1", "y1"].every((k) => Math.abs(a[k] - b[k]) <= MATCH_PT);
 const shift = (r, dx, dy) => ({ x0: r.x0 + dx, y0: r.y0 + dy, x1: r.x1 + dx, y1: r.y1 + dy });
 
 export function useBarcodeEdit({ session, currentPage, pageImage, active, runDocumentChange }) {
+  const { t } = useI18n();
   const [barcodes, setBarcodes] = useState(null);
   const [rotated, setRotated] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
@@ -40,9 +42,9 @@ export function useBarcodeEdit({ session, currentPage, pageImage, active, runDoc
           return list.some((b) => b.id === id) ? id : null;
         });
       })
-      .catch((e) => { if (!cancelled) { setBarcodes([]); setError(e.message || "อ่านบาร์โค้ดไม่สำเร็จ"); } });
+      .catch((e) => { if (!cancelled) { setBarcodes([]); setError(e.message || t("editor.hooks.barcode.loadFailed")); } });
     return () => { cancelled = true; };
-  }, [active, session?.sessionId, currentPage, pageImage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active, session?.sessionId, currentPage, pageImage, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selected = barcodes?.find((b) => b.id === selectedId) || null;
 
@@ -70,8 +72,8 @@ export function useBarcodeEdit({ session, currentPage, pageImage, active, runDoc
     try {
       await runDocumentChange((sid) => api.editBarcodeObject(sid, currentPage, { bbox: selected.bbox, target }), {
         nextPage: currentPage,
-        success: target ? "ย้ายบาร์โค้ดแล้ว" : "ลบบาร์โค้ดแล้ว",
-        failure: target ? "ย้ายบาร์โค้ดไม่สำเร็จ" : "ลบบาร์โค้ดไม่สำเร็จ",
+        success: target ? t("editor.hooks.barcode.moved") : t("editor.hooks.barcode.deleted"),
+        failure: target ? t("editor.hooks.barcode.moveFailed") : t("editor.hooks.barcode.deleteFailed"),
         rethrow: true,
         keepTool: true,
       });
@@ -79,7 +81,7 @@ export function useBarcodeEdit({ session, currentPage, pageImage, active, runDoc
       setLastAction(target ? "moved" : "deleted");
     } catch (e) {
       reselect.current = null;
-      setError(e.message || "ทำรายการไม่สำเร็จ");
+      setError(e.message || t("editor.hooks.barcode.actionFailed"));
     } finally {
       setApplying(false);
     }

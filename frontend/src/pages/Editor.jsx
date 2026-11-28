@@ -157,12 +157,12 @@ export default function Editor() {
         if (res.status === "ok") {
           if (res.session_id === id) await sessionHook._activateSession(id, null, null, resetTransientEditState);
           else void navigate(`/editor/${res.session_id}`, { replace: true });
-          setStatusMessage("เปิดเอกสารจากไฟล์ที่บันทึกล่าสุดแล้ว");
+          setStatusMessage(t("editor.msg.reopenedSaved"));
           return;
         }
         void navigate("/dashboard", { replace: true }); // มีรหัสผ่าน — เปิดจากหน้าเอกสารของฉัน (ถามรหัสที่นั่น)
       } catch {
-        setStatusMessage(`โหลดไฟล์ไม่สำเร็จ: ${err.message}`);
+        setStatusMessage(t("editor.msg.loadFileFailed", { error: err.message }));
       }
     });
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -461,9 +461,9 @@ export default function Editor() {
     const pending = textEditHook.textPendingCount + imageEditHook.imagePendingCount;
     if (!session || (!pending && !unsaved)) return true;
     const what = pending
-      ? `ยังมีการแก้ไข ${pending} จุดที่ยังไม่ได้กด "บันทึกการแก้ไข"`
-      : "มีการแก้ไขที่ยังไม่ได้บันทึกลงเอกสารของฉัน (เมนู ไฟล์ → บันทึก หรือ Ctrl+S)";
-    return window.confirm(`${what} — ${action}แล้วการแก้ไขจะหาย ต้องการทำต่อหรือไม่?`);
+      ? t("editor.msg.discardPending", { count: pending })
+      : t("editor.msg.discardUnsaved");
+    return window.confirm(t("editor.msg.discardConfirm", { what, action }));
   }
 
   useEffect(() => {
@@ -483,13 +483,13 @@ export default function Editor() {
   }, [hasPendingWork]);
 
   function handleFileSelected(file) {
-    if (!confirmDiscard("เปิดไฟล์อื่น")) return;
+    if (!confirmDiscard(t("editor.msg.actionOpenOther"))) return;
     if (session) api.closeSession(session.sessionId).catch(() => {}); // เดิมเอกสารเก่าค้างอยู่บนเซิร์ฟเวอร์จนหมดอายุ
     sessionHook.handleFileSelected(file, resetTransientEditState);
   }
 
   function goToDashboard() {
-    if (!confirmDiscard("กลับหน้าเอกสารของฉัน")) return;
+    if (!confirmDiscard(t("editor.msg.actionGoDashboard"))) return;
     setUnsaved(false);
     void navigate("/dashboard");
   }
@@ -499,7 +499,7 @@ export default function Editor() {
   }
 
   function closeDocument() {
-    if (!confirmDiscard("ปิดไฟล์")) return;
+    if (!confirmDiscard(t("editor.msg.actionCloseFile"))) return;
     revokeAllPendingImageBlobUrls(imageEditHook.pendingImageEdits, imageEditHook.draftImageEdit);
     if (session) api.closeSession(session.sessionId).catch(() => {});
     setSession(null);
@@ -517,7 +517,7 @@ export default function Editor() {
     setCanUndo(false);
     setCanRedo(false);
     setUnsaved(false);
-    setStatusMessage("ปิดไฟล์แล้ว");
+    setStatusMessage(t("editor.msg.fileClosed"));
   }
 
   // ======================== Page navigation & zoom ========================
@@ -582,10 +582,10 @@ export default function Editor() {
   // เลือกไฟล์จากเมนู/ปุ่ม "แทรกรูปภาพ" หรือลากไฟล์รูปมาวางในโหมดแก้ไขรูปภาพ → เข้าโหมดแก้ไขรูปแล้ววางรูปให้ย้าย/ปรับขนาด
   useEffect(() => {
     if (activeTool === "edit_image" && session) {
-      setStatusMessage("โหมดแก้ไขรูปภาพ: คลิกรูปเพื่อย้าย/ปรับขนาด/แทนที่ หรือลากไฟล์รูปภาพมาวางบนหน้าเพื่อแทรกรูปใหม่");
+      setStatusMessage(t("editor.msg.imageEditModeHint"));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTool]);
+  }, [activeTool, t]);
 
   function insertImageFile(file, point = null) {
     if (!session || !file) return;
@@ -636,8 +636,11 @@ export default function Editor() {
     const win = printOpensNewTab() ? window.open("", "_blank") : null;
     if (win) {
       try {
-        win.document.title = "กำลังเตรียมเอกสาร...";
-        win.document.body.innerHTML = '<p style="font-family:sans-serif;padding:24px;color:#475569">กำลังเตรียมเอกสารสำหรับพิมพ์...</p>';
+        win.document.title = t("editor.msg.printPreparingTitle");
+        const p = win.document.createElement("p");
+        p.style.cssText = "font-family:sans-serif;padding:24px;color:#475569";
+        p.textContent = t("editor.msg.printPreparingBody");
+        win.document.body.replaceChildren(p);
       } catch { /* ignore */ }
     }
     let opened = false;
@@ -691,7 +694,8 @@ export default function Editor() {
     closeDocument,
     openExtract: () => setIsExtractModalOpen(true),
     openSaveCopy: () => {
-      setCopyFilename((session?.filename || "document").replace(/\.pdf$/i, "") + " (สำเนา).pdf");
+      const baseName = (session?.filename || "document").replace(/\.pdf$/i, "");
+      setCopyFilename(t("editor.msg.copyFilename", { name: baseName }));
       setCopyPdfVersion("");
       setCurrentPdfInfo(null);
       setShowSaveCopyModal(true);
@@ -714,21 +718,23 @@ export default function Editor() {
     openRedactSearch: () => setShowRedactSearchModal(true),
     runOcrLayer: async () => {
       // ข้อความในรูป (ลายเซ็น+ชื่อผู้ลงนาม ภาพสแกน) → ชั้นข้อความล่องหน ให้ค้นหา/เซ็นเซอร์/คัดลอก/PDPA ได้
-      setStatusMessage("กำลังอ่านข้อความในรูปภาพ (OCR)... อาจใช้เวลาหลายวินาทีต่อหน้า");
+      setStatusMessage(t("editor.msg.ocrRunning"));
       try {
         const r = await api.addOcrTextLayer(session.sessionId);
         if (!r.words) {
-          setStatusMessage("ไม่พบข้อความในรูปภาพที่ยังค้นหาไม่ได้ (หรือรูปไม่ชัดพอ)");
+          setStatusMessage(t("editor.msg.ocrEmpty"));
           return;
         }
         sessionHook.refreshCurrentPage().catch((e) => console.warn("refresh page failed", e));
         void refreshAfterHistoryChange();
         setCanUndo(true);
         setCanRedo(false);
-        setStatusMessage(`อ่านข้อความในรูปแล้ว ${r.words} คำ ในหน้า ${r.pages.join(", ")} — ค้นหา/เซ็นเซอร์/คัดลอกได้แล้ว` +
-          (r.skipped_pages ? ` (เหลืออีก ${r.skipped_pages} หน้า กดซ้ำเพื่ออ่านต่อ)` : ""));
+        const skippedSuffix = r.skipped_pages ? t("editor.msg.ocrSkippedSuffix", { count: r.skipped_pages }) : "";
+        setStatusMessage(
+          t("editor.msg.ocrSuccess", { words: r.words, pages: r.pages.join(", ") }) + skippedSuffix,
+        );
       } catch (err) {
-        setStatusMessage(`อ่านข้อความในรูปไม่สำเร็จ: ${err.message}`);
+        setStatusMessage(t("editor.msg.ocrFailed", { error: err.message }));
       }
     },
     openPii: () => {
@@ -751,10 +757,7 @@ export default function Editor() {
       beforeStart: async () => {
         const pending = textEditHook.textPendingCount + imageEditHook.imagePendingCount > 0;
         if (!unsaved && !pending) return;
-        const ok = window.confirm(
-          "มีการแก้ไขที่ยังไม่ได้บันทึก — กด ตกลง เพื่อบันทึกทับไฟล์เดิมแล้วแปลงฉบับล่าสุด\n"
-          + "กด ยกเลิก เพื่อแปลงฉบับที่บันทึกไว้ (ไม่รวมการแก้ไขล่าสุด)"
-        );
+        const ok = window.confirm(t("editor.msg.convertWordUnsavedConfirm"));
         if (ok) await handleAutoSaveToServer();
       },
     }),
@@ -764,7 +767,7 @@ export default function Editor() {
         const res = await api.getMyFiles();
         setCompareFiles(res.files || []);
       } catch (err) {
-        setStatusMessage(`เปิดหน้าต่างเปรียบเทียบไม่สำเร็จ: ${err.message}`);
+        setStatusMessage(t("editor.msg.openCompareFailed", { error: err.message }));
       }
     },
     openAbout: () => setAboutOpen(true),
@@ -776,64 +779,75 @@ export default function Editor() {
 
   function handleCompressConfirm() {
     setShowCompressModal(false);
+    const trySmallest = compressProfile === "screen" ? "" : t("editor.msg.compressTrySmallest");
     return runDocumentChange((sid) => api.compressPdf(sid, compressProfile), {
-      busy: "กำลังลดขนาดไฟล์ กรุณารอสักครู่...",
+      busy: t("editor.msg.compressBusy"),
       success: (res) => (res?.before && res?.after
-        ? `ลดขนาดไฟล์สำเร็จ: ${formatSize(res.before)} → ${formatSize(res.after)} (−${Math.round((1 - res.after / res.before) * 100)}%)`
-        : "ลดขนาดไฟล์สำเร็จ"),
-      failure: "ลดขนาดไฟล์ไม่สำเร็จ",
-      noChange: "ไฟล์นี้บีบอัดเพิ่มไม่ได้แล้ว (เล็กลงไม่ถึง 3%) — ไม่ได้เปลี่ยนแปลงเอกสาร"
-        + (compressProfile !== "screen" ? " ลองเลือกระดับ \"เล็กสุด\"" : ""),
+        ? t("editor.msg.compressSuccessDetail", {
+          before: formatSize(res.before),
+          after: formatSize(res.after),
+          percent: Math.round((1 - res.after / res.before) * 100),
+        })
+        : t("editor.msg.compressSuccess")),
+      failure: t("editor.msg.compressFailed"),
+      noChange: t("editor.msg.compressNoChange") + trySmallest,
     });
   }
 
   // ดาวน์โหลดเสร็จแล้วค่อยปิดหน้าต่าง — ถ้าผิดพลาด (เช่น ไม่มีหน้านั้น) แสดงในหน้าต่างให้แก้ต่อได้ ไม่ต้องพิมพ์ใหม่
   const handleExtractPages = async (pageRange, mode, format = "pdf", dpi = 150) => {
-    setStatusMessage(format === "pdf" ? "กำลังแยกหน้าเอกสาร..." : "กำลังสร้างรูปภาพ...");
+    setStatusMessage(format === "pdf" ? t("editor.msg.extractingPages") : t("editor.msg.creatingImages"));
     const { blob, filename } = await api.extractPages(session.sessionId, pageRange, mode, format, dpi);
     saveBlob(blob, filename);
     setIsExtractModalOpen(false);
-    setStatusMessage(`ดาวน์โหลด "${filename}" แล้ว`);
+    setStatusMessage(t("editor.msg.downloadedFile", { filename }));
   };
 
   // แผงหน้าเอกสาร › คลิกขวา › ส่งออกหน้าที่เลือกเป็นรูปภาพ (pages = เลขหน้า 0-based เรียงแล้ว)
   const handleExportPagesAsImage = async (pages, format) => {
     if (!session || !pages?.length) return;
     try {
-      setStatusMessage("กำลังสร้างรูปภาพ...");
+      setStatusMessage(t("editor.msg.creatingImages"));
       const { blob, filename } = await api.extractPages(session.sessionId, pages.map((p) => p + 1).join(","), "single", format, 150);
       saveBlob(blob, filename);
-      setStatusMessage(`ดาวน์โหลด "${filename}" แล้ว`);
+      setStatusMessage(t("editor.msg.downloadedFile", { filename }));
     } catch (err) {
-      setStatusMessage(`ส่งออกรูปภาพไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.msg.exportImagesFailed", { error: err.message }));
     }
   };
 
   const handleSaveCopy = async () => {
     if (!copyFilename) return;
     try {
-      setStatusMessage("กำลังบันทึกสำเนา...");
+      setStatusMessage(t("editor.msg.savingCopy"));
       setShowSaveCopyModal(false);
       const res = await api.saveAsCopy(session.sessionId, copyFilename, copyPdfVersion || null);
       const v = res?.version;
-      const notes = v ? [...(v.converted || []), ...(v.removed || []).map((r) => `เอาออก: ${r}`)] : [];
-      setStatusMessage(
-        (v ? `บันทึกสำเนาเป็น ${v.pdf_version.startsWith("PDF/A") ? v.pdf_version : `PDF ${v.pdf_version}`} สำเร็จ` : "บันทึกสำเนาสำเร็จ")
-        + (notes.length ? ` — ${notes.join(", ")}` : "")
-        + " (เปิดไฟล์สำเนาได้จากหน้าแรก)",
-      );
+      const notes = v
+        ? [...(v.converted || []), ...(v.removed || []).map((r) => t("editor.msg.saveCopyRemovedItem", { item: r }))]
+        : [];
+      let baseMsg = t("editor.msg.saveCopySuccess");
+      if (v) {
+        const versionLabel = v.pdf_version.startsWith("PDF/A") ? v.pdf_version : `PDF ${v.pdf_version}`;
+        baseMsg = t("editor.msg.saveCopySuccessVersion", { version: versionLabel });
+      }
+      const notesPart = notes.length ? ` — ${notes.join(", ")}` : "";
+      setStatusMessage(`${baseMsg}${notesPart}${t("editor.msg.saveCopyOpenHint")}`);
     } catch (error) {
       console.error(error);
-      setStatusMessage(`บันทึกสำเนาไม่สำเร็จ${error?.message ? `: ${error.message}` : ""}`);
+      const errMsg = error?.message
+        ? t("editor.msg.saveCopyFailedDetail", { error: error.message })
+        : t("editor.msg.saveCopyFailed");
+      setStatusMessage(errMsg);
     }
   };
 
   function handleFlattenConfirm() {
     setShowFlattenModal(false);
     return runDocumentChange((sid) => api.flattenPdf(sid), {
-      busy: "กำลังรวมเลเยอร์ กรุณารอสักครู่...",
-      success: "รวมเลเยอร์สำเร็จ (ฟอร์มและลายเซ็นถูกฝังลงเอกสารแล้ว)",
-      failure: "รวมเลเยอร์ไม่สำเร็จ",
+      busy: t("editor.msg.flattenBusy"),
+      success: t("editor.msg.flattenSuccess"),
+      failure: t("editor.msg.flattenFailed"),
     });
   }
 
@@ -850,7 +864,7 @@ export default function Editor() {
         const selectedText = extractSelectedText(words, rectPt);
         setCopyPopup({ rectPt, textNormal: selectedText || "" });
       } catch (err) {
-        setStatusMessage(`เกิดข้อผิดพลาด: ${err.message}`);
+        setStatusMessage(t("editor.msg.genericError", { error: err.message }));
       }
       return;
     }
@@ -1263,7 +1277,7 @@ export default function Editor() {
             setShowBarcodeModal(false);
             setActiveTool("edit_image"); // โหมดแก้ไขรูป — กล่องบาร์โค้ดลากย้าย/ย่อขยายได้ แล้วกด "บันทึกการแก้ไข"
             imageEditHook.startBarcodeInsert(result);
-            setStatusMessage('ลากบาร์โค้ดไปวางตำแหน่งที่ต้องการ แล้วกด "ตกลง" และ "บันทึกการแก้ไข"');
+            setStatusMessage(t("editor.msg.barcodeInsertHint"));
           }}
         />
       )}
@@ -1274,7 +1288,7 @@ export default function Editor() {
           onSubmit={(file, stampLabel) => {
             setShowStampModal(false);
             insertImageFile(file);
-            setStatusMessage(`ลากตราประทับ "${stampLabel}" ไปวางตำแหน่งที่ต้องการ แล้วกด "ตกลง" และ "บันทึกการแก้ไข"`);
+            setStatusMessage(t("editor.msg.stampInsertHint", { label: stampLabel }));
           }}
         />
       )}
@@ -1293,17 +1307,29 @@ export default function Editor() {
       {compareFiles && session && (() => {
         const mine = compareFiles.find((f) => f.session_id === session.sessionId);
         const pending = textEditHook.textPendingCount + imageEditHook.imagePendingCount > 0;
-        const previous = { label: "ไฟล์นี้ — เวอร์ชันก่อนหน้า", side: { sessionId: session.sessionId, version: "previous" },
-          note: mine?.has_previous_version ? "ก่อนกดบันทึกครั้งล่าสุด" : "ยังไม่มี (มีหลังกดบันทึกทับอย่างน้อย 1 ครั้ง)",
-          disabled: !mine?.has_previous_version };
-        const saved = { label: "ไฟล์นี้ — ฉบับที่บันทึกไว้", side: { sessionId: session.sessionId, version: "saved" },
-          note: "ดูว่าแก้อะไรไปบ้างตั้งแต่บันทึกครั้งล่าสุด", disabled: !mine };
+        const previous = {
+          label: t("editor.msg.comparePreviousLabel"),
+          side: { sessionId: session.sessionId, version: "previous" },
+          note: mine?.has_previous_version
+            ? t("editor.msg.comparePreviousNoteAvailable")
+            : t("editor.msg.comparePreviousNoteUnavailable"),
+          disabled: !mine?.has_previous_version,
+        };
+        const saved = {
+          label: t("editor.msg.compareSavedLabel"),
+          side: { sessionId: session.sessionId, version: "saved" },
+          note: t("editor.msg.compareSavedNote"),
+          disabled: !mine,
+        };
         return (
           <CompareStartModal
             files={compareFiles.filter((f) => f.session_id !== session.sessionId)}
             presetsA={unsaved && mine ? [saved, previous] : [previous, saved]}
-            presetsB={[{ label: "เอกสารที่กำลังแก้ไข", side: { sessionId: session.sessionId },
-              note: pending ? "การแก้ข้อความ/รูปที่ยังไม่กด \"ใช้\" จะยังไม่ถูกนับ" : "รวมการแก้ไขที่ยังไม่บันทึก" }]}
+            presetsB={[{
+              label: t("editor.msg.compareCurrentLabel"),
+              side: { sessionId: session.sessionId },
+              note: pending ? t("editor.msg.compareCurrentNotePending") : t("editor.msg.compareCurrentNoteUnsaved"),
+            }]}
             onClose={() => setCompareFiles(null)}
           />
         );
@@ -1315,9 +1341,9 @@ export default function Editor() {
           onSubmit={(payload) => {
             setShowPageNumberModal(false);
             return runDocumentChange((sid) => api.applyPageNumbers(sid, payload), {
-              busy: "กำลังใส่เลขหน้า...",
-              success: "ใส่เลขหน้าเรียบร้อยแล้ว",
-              failure: "ใส่เลขหน้าไม่สำเร็จ",
+              busy: t("editor.msg.pageNumberBusy"),
+              success: t("editor.msg.pageNumberSuccess"),
+              failure: t("editor.msg.pageNumberFailed"),
             });
           }}
         />
@@ -1329,9 +1355,9 @@ export default function Editor() {
           onSubmit={(payload) => {
             setShowWatermarkModal(false);
             return runDocumentChange((sid) => api.applyWatermark(sid, payload), {
-              busy: "กำลังประทับลายน้ำ...",
-              success: "ประทับลายน้ำเรียบร้อยแล้ว",
-              failure: "ประทับลายน้ำไม่สำเร็จ",
+              busy: t("editor.msg.watermarkBusy"),
+              success: t("editor.msg.watermarkSuccess"),
+              failure: t("editor.msg.watermarkFailed"),
             });
           }}
         />

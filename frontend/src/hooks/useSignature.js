@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 /**
  * workflow ลายเซ็น:
@@ -20,6 +21,7 @@ export function useSignature({
   setCanRedo,
   currentPageSizePt,
 }) {
+  const { t } = useI18n();
   const [signModalOpen, setSignModalOpen] = useState(null); // null | "electronic" | "digital"
   const [draftSignature, setDraftSignature] = useState(null);
   const [signSubmitting, setSignSubmitting] = useState(false);
@@ -62,7 +64,7 @@ export function useSignature({
       previewUrl: previewDataUrl,
       imageBase64,
     });
-    setStatusMessage('ลาก/ย้าย/ย่อ/ขยายกล่องลายเซ็นให้ได้ตำแหน่งที่ต้องการ แล้วกด "ตกลง" ในกล่องนั้น');
+    setStatusMessage(t("editor.hooks.signature.electronicDragHint"));
   }
 
   // กด "ตกลง" ใน DigitalSignModal — ปิด modal แล้วเปิดกล่องลากวาง (ยังไม่เซ็นจริง)
@@ -81,9 +83,16 @@ export function useSignature({
       name,
       imageFile,
     });
-    const who = certInfo?.common_name ? `ใบรับรองของ ${certInfo.common_name} (ใช้ได้ถึง ${certInfo.valid_to}) — ` : "";
-    const warn = certInfo?.warnings?.length ? ` · หมายเหตุ: ${certInfo.warnings.join(" · ")}` : "";
-    setStatusMessage(`${who}ลาก/ย้าย/ย่อ/ขยายกรอบตำแหน่งลายเซ็นดิจิทัล แล้วกด "ตกลง" ในกล่องนั้น${warn}`);
+    const who = certInfo?.common_name
+      ? t("editor.hooks.signature.digitalCertPrefix", {
+          commonName: certInfo.common_name,
+          validTo: certInfo.valid_to,
+        })
+      : "";
+    const warn = certInfo?.warnings?.length
+      ? t("editor.hooks.signature.digitalWarnSuffix", { warnings: certInfo.warnings.join(" · ") })
+      : "";
+    setStatusMessage(t("editor.hooks.signature.digitalDragHint", { who, warn }));
   }
 
   function handleDraftSignatureRectChange(rect) {
@@ -133,12 +142,14 @@ export function useSignature({
       if (onAfterSign) await onAfterSign(res, currentPage);
       setStatusMessage(
         res.signature_type === "digital"
-          ? `ลงลายเซ็นดิจิทัลสำเร็จ (ผู้เซ็น: ${res.signer_name || "ไม่ทราบชื่อ"}) — คนถัดไปเซ็นซ้อนต่อได้`
-          : 'ลงลายเซ็นอิเล็กทรอนิกส์สำเร็จ — ย้าย/ปรับขนาดได้ที่เมนู เครื่องมือ → แก้ไขรูปภาพ'
+          ? t("editor.hooks.signature.digitalSignSuccess", {
+              signerName: res.signer_name || t("editor.hooks.signature.unknownSigner"),
+            })
+          : t("editor.hooks.signature.electronicSignSuccess")
       );
     } catch (err) {
       // เก็บกรอบไว้ ให้ลองใหม่หรือกดยกเลิกเอง (เดิมกรอบหาย ต้องสร้างลายเซ็น/เลือกใบรับรองใหม่ทั้งหมด)
-      setStatusMessage(`เซ็นเอกสารไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.signature.signFailed", { message: err.message }));
     } finally {
       setSignSubmitting(false);
     }

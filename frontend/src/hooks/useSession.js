@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 /** เบราว์เซอร์ที่ต้องเปิด PDF ในแท็บใหม่เพื่อพิมพ์ (iPhone/iPad/Android/Safari — iframe ซ่อนพิมพ์ PDF ไม่ได้) */
 export function printOpensNewTab() {
@@ -26,6 +27,7 @@ const THUMBNAIL_ZOOM = 0.25;
  * เพราะต้องรีเซ็ต state จาก hooks หลายตัวพร้อมกัน
  */
 export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onSaved }) {
+  const { t } = useI18n();
   const fileInputRef = useRef(null);
 
   const [session, setSession] = useState(null); // { sessionId, filename, pageCount, pageSizes, ... }
@@ -57,7 +59,7 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
         }
       })
       .catch((err) => {
-        if (!ctrl.signal.aborted) setStatusMessage(`โหลดหน้าไม่สำเร็จ: ${err.message}`);
+        if (!ctrl.signal.aborted) setStatusMessage(t("editor.hooks.session.loadPageFailed", { message: err.message }));
       })
       .finally(() => {
         if (!ctrl.signal.aborted) setPageLoading(false);
@@ -152,19 +154,21 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
 
     setCanUndo(!!info.can_undo);
     setCanRedo(!!info.can_redo);
-    setStatusMessage(`เปิด ${actualFilename} สำเร็จ — ${actualPageCount} หน้า`);
+    setStatusMessage(
+      t("editor.hooks.session.openSuccess", { filename: actualFilename, pageCount: actualPageCount })
+    );
   }
 
   // ---------- handleFileSelected — รับไฟล์จาก input หรือ drag-drop ----------
   // resetCallback: App.jsx ส่งมาให้ใช้รีเซ็ต state ของ hooks อื่นๆ ก่อนเปิดเอกสารใหม่
   const handleFileSelected = useCallback(async (file, resetCallback) => {
     if (!file) return;
-    setStatusMessage(`กำลังอัปโหลดและเปิด ${file.name}…`);
+    setStatusMessage(t("editor.hooks.session.uploading", { filename: file.name }));
     try {
       let res;
       const officeExts = [".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt", ".rtf", ".odt", ".ods", ".odp"];
       if (officeExts.some(ext => file.name.toLowerCase().endsWith(ext))) {
-        setStatusMessage(`กำลังแปลงไฟล์ Office เป็น PDF... (อาจใช้เวลาสักครู่)`);
+        setStatusMessage(t("editor.hooks.session.convertingOffice"));
         res = await api.uploadOffice(file);
       } else {
         res = await api.uploadPdf(file);
@@ -180,9 +184,9 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
       }
       await _activateSession(res.session_id, res.filename, res.page_count, resetCallback);
     } catch (err) {
-      setStatusMessage(`เปิดไฟล์ไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.session.openFailed", { message: err.message }));
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleUnlockSubmit(password, resetCallback) {
     if (!passwordState) return;
@@ -190,7 +194,7 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
     try {
       const res = await api.unlockPdf(passwordState.sessionId, password);
       if (res.status === "invalid_password") {
-        setPasswordState((s) => ({ ...s, submitting: false, error: "รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่" }));
+        setPasswordState((s) => ({ ...s, submitting: false, error: t("editor.hooks.session.invalidPassword") }));
         return;
       }
       await _activateSession(passwordState.sessionId, passwordState.filename, res.page_count, resetCallback);
@@ -212,7 +216,7 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
     try {
       await api.downloadPdf(session.sessionId);
     } catch (err) {
-      setStatusMessage(`ดาวน์โหลดไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.session.downloadFailed", { message: err.message }));
     }
   }
 
@@ -220,7 +224,7 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
   // targetWindow: แท็บว่างที่เปิดไว้ตอนกด (มือถือ/Safari — ดู printOpensNewTab) เปิดหลัง await ไม่ได้ เบราว์เซอร์บล็อก popup
   async function handlePrint({ layout = "auto", targetWindow = null } = {}) {
     if (!session) return;
-    setStatusMessage("กำลังเตรียมเอกสารสำหรับพิมพ์...");
+    setStatusMessage(t("editor.hooks.session.preparingPrint"));
     try {
       // ไฟล์สำหรับพิมพ์ไม่เข้ารหัสเสมอ (เดิม "auto" ใช้ไฟล์ดาวน์โหลด — ถ้าตั้งรหัสผ่านไว้ หน้าต่างพิมพ์ขึ้นช่องรหัสผ่าน
       // ที่มองไม่เห็น) และรวมไฮไลต์/กล่องข้อความลงหน้าแล้ว
@@ -232,12 +236,12 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
         // เดิมเรียก window.open หลังโหลดไฟล์เสร็จ iPhone บล็อกเงียบๆ แต่ขึ้นว่า "เปิดเรียบร้อยแล้ว"
         if (targetWindow && !targetWindow.closed) {
           targetWindow.location.href = blobUrl;
-          setStatusMessage("เปิดเอกสารในแท็บใหม่แล้ว — กดปุ่มแชร์ › พิมพ์ (หรือเมนูพิมพ์ของเบราว์เซอร์)");
+          setStatusMessage(t("editor.hooks.session.printOpenedInTab"));
           setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
           return "tab";
         } else {
           api.saveBlob(blob, filename || "print.pdf");
-          setStatusMessage("เบราว์เซอร์ไม่อนุญาตให้เปิดแท็บใหม่ — ดาวน์โหลดไฟล์สำหรับพิมพ์แล้ว เปิดไฟล์เพื่อพิมพ์");
+          setStatusMessage(t("editor.hooks.session.printPopupBlocked"));
         }
         setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
         return;
@@ -268,7 +272,7 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
         try {
           iframe.contentWindow.focus();
           iframe.contentWindow.print();
-          setStatusMessage("เปิดหน้าต่างพิมพ์เรียบร้อยแล้ว");
+          setStatusMessage(t("editor.hooks.session.printDialogOpened"));
         } catch (err) {
           console.warn("Direct iframe print failed, falling back to window.open:", err);
           if (!window.open(blobUrl, "_blank")) api.saveBlob(blob, filename || "print.pdf");
@@ -297,19 +301,19 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
     } catch (err) {
       console.error("Print error:", err);
       if (targetWindow && !targetWindow.closed) targetWindow.close();
-      setStatusMessage(`พิมพ์เอกสารไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.session.printFailed", { message: err.message }));
     }
   }
 
   async function handleSaveToServer() {
     if (!session) return;
-    setStatusMessage("กำลังบันทึกเอกสาร...");
+    setStatusMessage(t("editor.hooks.session.saving"));
     try {
       await api.saveToServer(session.sessionId);
       onSaved?.();
-      setStatusMessage("บันทึกเอกสารเรียบร้อยแล้ว");
+      setStatusMessage(t("editor.hooks.session.saveSuccess"));
     } catch (err) {
-      setStatusMessage(`บันทึกเอกสารไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.session.saveFailed", { message: err.message }));
     }
   }
 
@@ -318,7 +322,7 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
     try {
       await api.exportPages(session.sessionId, pageNumbers);
     } catch (err) {
-      setStatusMessage(`ส่งออกหน้าไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.session.exportPagesFailed", { message: err.message }));
     }
   }
 
@@ -338,14 +342,19 @@ export function useSession({ zoom, setStatusMessage, setCanUndo, setCanRedo, onS
       setCanUndo(true);
       setCanRedo(false);
     } catch (err) {
-      setStatusMessage(`บันทึก bookmark ไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.session.saveBookmarksFailed", { message: err.message }));
     }
   }
 
   // แทรกตามลำดับหน้า (เดิมต่อท้ายเสมอ — บุ๊กมาร์กหน้า 2 ที่เพิ่มทีหลังไปอยู่ใต้หน้า 10) เป็นชั้นบนสุด
   function addBookmark() {
     const at = bookmarks.findIndex((b) => b.page > currentPage);
-    const item = { id: `${Date.now()}`, page: currentPage, label: `หน้า ${currentPage + 1}`, level: 1 };
+    const item = {
+      id: `${Date.now()}`,
+      page: currentPage,
+      label: t("editor.hooks.session.defaultBookmarkLabel", { page: currentPage + 1 }),
+      level: 1,
+    };
     const next = [...bookmarks];
     next.splice(at === -1 ? next.length : at, 0, item);
     void commitBookmarks(next);

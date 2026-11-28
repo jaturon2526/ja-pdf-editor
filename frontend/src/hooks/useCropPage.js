@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import { clampMargins, mmToPt, resolveCropPages } from "../utils/cropGeometry.js";
 
 const DEFAULT_INSET_MM = 10;
@@ -11,6 +12,7 @@ export function useCropPage({
   runDocumentChange,
   onDone,
 }) {
+  const { t } = useI18n();
   const pageSize = session?.pageSizes?.[currentPage];
   const pageWidthPt = pageSize?.[0] || 595;
   const pageHeightPt = pageSize?.[1] || 842;
@@ -65,7 +67,7 @@ export function useCropPage({
       return;
     }
     if (Math.max(margins.left, margins.top, margins.right, margins.bottom) < 0.5) {
-      setError("กรุณากำหนดระยะตัดขอบอย่างน้อย 1 ด้าน");
+      setError(t("editor.hooks.crop.minMarginRequired"));
       return;
     }
     setApplying(true);
@@ -81,20 +83,20 @@ export function useCropPage({
             bottomPt: margins.bottom,
           }),
         {
-          busy: "กำลังตัดขอบหน้ากระดาษ...",
-          success: (res) => `ตัดขอบหน้ากระดาษเรียบร้อยแล้ว (${res?.cropped_pages || pages.length} หน้า)`,
-          failure: "ตัดขอบหน้ากระดาษไม่สำเร็จ",
-          noChange: "ไม่มีการเปลี่ยนแปลงระยะขอบ",
+          busy: t("editor.hooks.crop.busy"),
+          success: (res) => t("editor.hooks.crop.success", { count: res?.cropped_pages || pages.length }),
+          failure: t("editor.hooks.crop.failed"),
+          noChange: t("editor.hooks.crop.noChange"),
           rethrow: true,
         },
       );
       if (changed && onDone) onDone();
     } catch (err) {
-      setError(err?.message || "ตัดขอบหน้ากระดาษไม่สำเร็จ");
+      setError(err?.message || t("editor.hooks.crop.failed"));
     } finally {
       setApplying(false);
     }
-  }, [session, applying, scope, currentPage, rangeText, margins, runDocumentChange, onDone]);
+  }, [session, applying, scope, currentPage, rangeText, margins, runDocumentChange, onDone, t]);
 
   return {
     margins,

@@ -2,6 +2,7 @@
 // ทุกงานในนี้จบด้วยขั้นตอนเดียวกัน: เปิดปุ่ม Undo, ล้าง draft ที่ค้าง แล้วรีเฟรชหน้า/ข้อมูลประกอบ
 import { useRef } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import { reorderedPages } from "../utils/pageOrder.js";
 
 // เครื่องมือที่ไม่มี draft ค้าง (อ่านข้อมูลใหม่จากหน้าเอง) — undo/redo แล้วยังเปิดอยู่ แก้/ดูต่อได้
@@ -26,6 +27,7 @@ export function useDocumentHistory({
   setCanRedo,
   setStatusMessage,
 }) {
+  const { t } = useI18n();
   const historyBusyRef = useRef(false); // กันกด Ctrl+Z / Ctrl+Y รัวซ้อนกันระหว่างรอคำตอบ
 
   // ล้าง draft + pending ทุกชนิดทิ้ง (ใช้หลัง undo/redo/ย้ายหน้า — state ค้างไม่ valid แล้ว)
@@ -84,7 +86,7 @@ export function useDocumentHistory({
     const loadPage = api
       .renderPage(session.sessionId, targetPage, zoom)
       .then((data) => sessionHook.setPageImage(data.image_base64))
-      .catch((err) => setStatusMessage(`รีเฟรชหน้าไม่สำเร็จ: ${err.message}`));
+      .catch((err) => setStatusMessage(t("editor.hooks.history.refreshPageFailed", { error: err.message })));
 
     let loadModeData;
     if (editMode === "text") {
@@ -115,10 +117,9 @@ export function useDocumentHistory({
     if (!session || historyBusyRef.current) return;
     const isUndo = kind === "undo";
     if (isUndo && tryUndoPendingEdit()) {
-      setStatusMessage("ยกเลิกรายการแก้ไขล่าสุดที่รอยืนยันแล้ว");
+      setStatusMessage(t("editor.hooks.history.pendingEditUndone"));
       return;
     }
-    const label = isUndo ? "เลิกทำ" : "ทำซ้ำ";
     historyBusyRef.current = true;
     try {
       const res = await (isUndo ? api.undo : api.redo)(session.sessionId);
@@ -127,14 +128,22 @@ export function useDocumentHistory({
       // undo/redo อาจข้ามจุดที่เซ็น — อัปเดตสถานะเซ็นตามนั้น
       setSession((s) => (s ? { ...s, isSigned: res.is_signed, signatureType: res.signature_type } : s));
       if (res.status === (isUndo ? "nothing_to_undo" : "nothing_to_redo")) {
-        setStatusMessage(isUndo ? "ไม่มีขั้นตอนก่อนหน้าให้เลิกทำแล้ว" : "ไม่มีขั้นตอนที่ทำซ้ำได้แล้ว");
+        setStatusMessage(
+          isUndo ? t("editor.hooks.history.nothingToUndo") : t("editor.hooks.history.nothingToRedo")
+        );
         return;
       }
       resetTransientEditState({ keepTool: TOOLS_KEPT_ON_HISTORY.has(activeTool) });
       await refreshAfterHistoryChange();
-      setStatusMessage(`${label} (${isUndo ? "Undo" : "Redo"}) สำเร็จ`);
+      setStatusMessage(
+        isUndo ? t("editor.hooks.history.undoSuccess") : t("editor.hooks.history.redoSuccess")
+      );
     } catch (err) {
-      setStatusMessage(`${label}ไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(
+        isUndo
+          ? t("editor.hooks.history.undoFailed", { error: err.message })
+          : t("editor.hooks.history.redoFailed", { error: err.message })
+      );
     } finally {
       historyBusyRef.current = false;
     }
@@ -166,7 +175,8 @@ export function useDocumentHistory({
     }
   }
 
-  const plural = (pages, many, one) => (pages.length > 1 ? `${many} ${pages.length} หน้าสำเร็จ` : one);
+  const plural = (pages, manyKey, oneKey) =>
+    pages.length > 1 ? t(manyKey, { count: pages.length }) : t(oneKey);
   const hasPages = (pages) => session && pages && pages.length > 0;
 
   const pageOps = {
@@ -175,33 +185,50 @@ export function useDocumentHistory({
       const order = reorderedPages(session.pageCount, pageNumbers, { targetPage });
       return runDocumentChange((sid) => api.reorderPages(sid, pageNumbers, { targetPage }), {
         nextPage: order.indexOf(currentPage),
-        success: plural(pageNumbers, "ย้ายหน้าที่เลือก", "ย้ายหน้าสำเร็จ"),
-        failure: "ย้ายหน้าไม่สำเร็จ",
+        success: plural(
+          pageNumbers,
+          "editor.hooks.history.reorderManySuccess",
+          "editor.hooks.history.reorderOneSuccess"
+        ),
+        failure: t("editor.hooks.history.reorderFailed"),
       });
     },
     remove(pageNumbers) {
       if (!hasPages(pageNumbers)) return;
       return runDocumentChange((sid) => api.deletePages(sid, pageNumbers), {
-        success: plural(pageNumbers, "ลบหน้าที่เลือก", "ลบหน้าสำเร็จ"),
-        failure: "ลบหน้าไม่สำเร็จ",
+        success: plural(
+          pageNumbers,
+          "editor.hooks.history.deleteManySuccess",
+          "editor.hooks.history.deleteOneSuccess"
+        ),
+        failure: t("editor.hooks.history.deleteFailed"),
       });
     },
     rotate(pageNumbers, angle) {
       if (!hasPages(pageNumbers)) return;
       return runDocumentChange((sid) => api.rotatePages(sid, pageNumbers, angle), {
-        success: plural(pageNumbers, "หมุนหน้าที่เลือก", "หมุนหน้าสำเร็จ"),
-        failure: "หมุนหน้าไม่สำเร็จ",
+        success: plural(
+          pageNumbers,
+          "editor.hooks.history.rotateManySuccess",
+          "editor.hooks.history.rotateOneSuccess"
+        ),
+        failure: t("editor.hooks.history.rotateFailed"),
       });
     },
     // แทรกหน้า (v1.39.0): body = { position, source_session_id, pages } | { position, blank } — ไปที่หน้าแรกที่แทรก
     insert(body) {
       if (!session) return false;
       return runDocumentChange((sid) => api.insertPages(sid, body), {
-        busy: "กำลังแทรกหน้า...",
+        busy: t("editor.hooks.history.insertBusy"),
         nextPage: body.position,
-        success: (res) => `แทรก ${res.inserted} หน้าแล้ว${res.flattened_fields
-          ? ` · ช่องกรอกฟอร์ม ${res.flattened_fields} ช่องของไฟล์ที่แทรกกลายเป็นข้อความตายตัว` : ""}`,
-        failure: "แทรกหน้าไม่สำเร็จ",
+        success: (res) =>
+          res.flattened_fields
+            ? t("editor.hooks.history.insertSuccessWithFlattened", {
+                count: res.inserted,
+                flattened: res.flattened_fields,
+              })
+            : t("editor.hooks.history.insertSuccess", { count: res.inserted }),
+        failure: t("editor.hooks.history.insertFailed"),
         rethrow: true,
       });
     },
@@ -211,9 +238,9 @@ export function useDocumentHistory({
       const order = reorderedPages(session.pageCount, pageNumbers, { direction });
       return runDocumentChange((sid) => api.reorderPages(sid, pageNumbers, { direction }), {
         nextPage: order.indexOf(currentPage),
-        success: up ? "เลื่อนหน้าขึ้นสำเร็จ" : "เลื่อนหน้าลงสำเร็จ",
-        failure: "เลื่อนหน้าไม่สำเร็จ",
-        noChange: up ? "อยู่หน้าบนสุดแล้ว เลื่อนขึ้นต่อไม่ได้" : "อยู่หน้าล่างสุดแล้ว เลื่อนลงต่อไม่ได้",
+        success: up ? t("editor.hooks.history.moveUpSuccess") : t("editor.hooks.history.moveDownSuccess"),
+        failure: t("editor.hooks.history.moveFailed"),
+        noChange: up ? t("editor.hooks.history.moveUpNoChange") : t("editor.hooks.history.moveDownNoChange"),
       });
     },
   };

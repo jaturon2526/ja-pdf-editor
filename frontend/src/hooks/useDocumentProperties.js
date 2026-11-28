@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 export function useDocumentProperties({ session, setSession, setStatusMessage }) {
+  const { t } = useI18n();
   // ---------- Document Properties ----------
   const [docPropsOpen, setDocPropsOpen] = useState(false);
   const [docProps, setDocProps] = useState(null);
@@ -62,7 +64,8 @@ export function useDocumentProperties({ session, setSession, setStatusMessage })
       const res = await api.addPassword(session.sessionId, password, encryption);
       setSession((s) => (s ? { ...s, isPasswordProtected: res.is_password_protected } : s));
       setAddPasswordOpen(false);
-      setStatusMessage(`ตั้งรหัสผ่านสำเร็จ (${encryption === "aes128" ? "AES-128" : "AES-256"}) — มีผลตอนดาวน์โหลด/บันทึกครั้งถัดไป`);
+      const algorithm = encryption === "aes128" ? "AES-128" : "AES-256";
+      setStatusMessage(t("editor.hooks.docProps.addPasswordSuccess", { algorithm }));
     } catch (err) {
       setAddPasswordError(err.message);
     } finally {
@@ -73,16 +76,14 @@ export function useDocumentProperties({ session, setSession, setStatusMessage })
   // ลบรหัสผ่าน (เมนู File > ลบรหัสผ่าน — โชว์เฉพาะตอนมีรหัสผ่านป้องกันอยู่)
   async function handleRemovePassword() {
     if (!session) return;
-    const ok = window.confirm(
-      "ต้องการลบรหัสผ่านของเอกสารนี้หรือไม่? ไฟล์ที่ดาวน์โหลดครั้งถัดไปจะไม่มีรหัสผ่านป้องกันอีกต่อไป"
-    );
+    const ok = window.confirm(t("editor.hooks.docProps.removePasswordConfirm"));
     if (!ok) return;
     try {
       const res = await api.removePassword(session.sessionId);
       setSession((s) => (s ? { ...s, isPasswordProtected: res.is_password_protected } : s));
-      setStatusMessage("ลบรหัสผ่านสำเร็จ");
+      setStatusMessage(t("editor.hooks.docProps.removePasswordSuccess"));
     } catch (err) {
-      setStatusMessage(`ลบรหัสผ่านไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.docProps.removePasswordFailed", { error: err.message }));
     }
   }
 

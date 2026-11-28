@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import * as api from "../api";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 export default function useRedact({ session, currentPage, editMode, setStatusMessage, refreshAfterHistoryChange, resetTransientEditState }) {
+  const { t } = useI18n();
   const [pendingRedactions, setPendingRedactions] = useState([]);
   const [applying, setApplying] = useState(false);
 
@@ -18,13 +20,13 @@ export default function useRedact({ session, currentPage, editMode, setStatusMes
     if (pendingRedactions.length === 0 || !session) return;
     setApplying(true);
     try {
-      setStatusMessage("กำลังเซ็นเซอร์ข้อมูล... (Redacting)");
+      setStatusMessage(t("editor.hooks.redact.redacting"));
       await api.redactAreaBatch(session.sessionId, currentPage, pendingRedactions);
-      setStatusMessage("เซ็นเซอร์และลบข้อมูลถาวรสำเร็จ");
+      setStatusMessage(t("editor.hooks.redact.redactSuccess"));
       setPendingRedactions([]);
       await refreshAfterHistoryChange();
     } catch (err) {
-      setStatusMessage(`เซ็นเซอร์ล้มเหลว: ${err.message}`);
+      setStatusMessage(t("editor.hooks.redact.redactFailed", { message: err.message }));
     } finally {
       setApplying(false);
     }
@@ -35,7 +37,7 @@ export default function useRedact({ session, currentPage, editMode, setStatusMes
     if (pendingRedactions.length === 0 || !session) return;
     setApplying(true);
     try {
-      setStatusMessage("กำลังเซ็นเซอร์ข้อมูลทุกหน้า... (Redacting All Pages)");
+      setStatusMessage(t("editor.hooks.redact.redactingAllPages"));
       
       // Since redactAllPages in API expects a single rect, we will loop pendingRedactions
       // Wait, redactAllPages backend accepts a single `rect`. We can loop over pendingRedactions and call it for each, OR we can modify backend to accept an array of rects.
@@ -43,11 +45,11 @@ export default function useRedact({ session, currentPage, editMode, setStatusMes
       // Modifying API to accept array `rects` is better for performance.
       
       await api.redactAllPagesBatch(session.sessionId, pendingRedactions);
-      setStatusMessage("เซ็นเซอร์และลบข้อมูลทุกหน้าสำเร็จ");
+      setStatusMessage(t("editor.hooks.redact.redactAllPagesSuccess"));
       setPendingRedactions([]);
       await refreshAfterHistoryChange();
     } catch (err) {
-      setStatusMessage(`เซ็นเซอร์ล้มเหลว: ${err.message}`);
+      setStatusMessage(t("editor.hooks.redact.redactFailed", { message: err.message }));
     } finally {
       setApplying(false);
     }

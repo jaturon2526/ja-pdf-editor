@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import { sampleBackgroundColor } from "../utils/bgSample.js";
 import { colorIntToHex, guessDefaultFontKey } from "../utils/textEditUtils.js";
 
@@ -21,6 +22,7 @@ export function useTextEdit({
   fontFamilies,
   setStatusMessage,
 }) {
+  const { t } = useI18n();
   const [textBlocks, setTextBlocks] = useState([]);
   const [draftEdit, setDraftEdit] = useState(null);
   const [pendingEdits, setPendingEdits] = useState({});
@@ -46,7 +48,7 @@ export function useTextEdit({
     api
       .getTextBlocks(session.sessionId, currentPage)
       .then((blocks) => !cancelled && setTextBlocks(blocks))
-      .catch((err) => !cancelled && setStatusMessage(`โหลดข้อความไม่สำเร็จ: ${err.message}`));
+      .catch((err) => !cancelled && setStatusMessage(t("editor.hooks.textEdit.loadFailed", { message: err.message })));
     return () => {
       cancelled = true;
     };
@@ -135,7 +137,7 @@ export function useTextEdit({
       underline: false,
     });
     
-    setStatusMessage('พิมพ์ข้อความใหม่ที่ต้องการแทรก แล้วกด "ตกลง" หรือกดด้านนอกกรอบเพื่อยืนยัน');
+    setStatusMessage(t("editor.hooks.textEdit.insertHint"));
   }
 
   function handleCancelEdit() {
@@ -175,7 +177,7 @@ export function useTextEdit({
       [currentPage]: { ...(prev[currentPage] || {}), [blockId]: rest },
     }));
     setDraftEdit(null);
-    setStatusMessage('ยืนยันย่อหน้านี้แล้ว — กด "บันทึกการแก้ไข" บน toolbar เมื่อแก้ไขครบทุกจุด');
+    setStatusMessage(t("editor.hooks.textEdit.commitSuccess"));
   }
 
   // ยกเลิกการแก้ไขที่อยู่ในสถานะ pending (เช่นกดยกเลิกการลบ)

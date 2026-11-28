@@ -3,18 +3,20 @@
 // ทับข้อความอื่น → backend ตอบ 409 → ถามยืนยันในแผง (overlapWarning) แล้วส่ง allowOverlap
 import { useCallback, useEffect, useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import { translate } from "../utils/tableGeometry.js";
 
-const OP_LABELS = {
-  insert_row: "เพิ่มแถวแล้ว",
-  delete_row: "ลบแถวแล้ว",
-  insert_col: "เพิ่มคอลัมน์แล้ว",
-  delete_col: "ลบคอลัมน์แล้ว",
-  merge_cells: "รวมเซลล์แล้ว",
-  split_cell: "แยกเซลล์แล้ว",
+const OP_LABEL_KEYS = {
+  insert_row: "editor.hooks.tableEdit.opInsertRow",
+  delete_row: "editor.hooks.tableEdit.opDeleteRow",
+  insert_col: "editor.hooks.tableEdit.opInsertCol",
+  delete_col: "editor.hooks.tableEdit.opDeleteCol",
+  merge_cells: "editor.hooks.tableEdit.opMergeCells",
+  split_cell: "editor.hooks.tableEdit.opSplitCell",
 };
 
 export function useTableEdit({ session, currentPage, pageImage, active, runDocumentChange }) {
+  const { t } = useI18n();
   const [tables, setTables] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [draft, setDraft] = useState(null); // { xs, ys }
@@ -61,7 +63,7 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
         setSelectedId((id) => (list.some((t) => t.id === id) ? id : null));
         setDraft((d) => d);
       })
-      .catch((e) => { if (!cancelled) { setTables([]); setError(e.message || "อ่านตารางไม่สำเร็จ"); } });
+      .catch((e) => { if (!cancelled) { setTables([]); setError(e.message || t("editor.hooks.tableEdit.loadFailed")); } });
     return () => { cancelled = true; };
   }, [active, session?.sessionId, currentPage, pageImage]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -274,8 +276,8 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
         return result;
       }, {
         nextPage: currentPage,
-        success: "บันทึกข้อความในเซลล์แล้ว",
-        failure: "บันทึกข้อความในเซลล์ไม่สำเร็จ",
+        success: t("editor.hooks.tableEdit.saveCellSuccess"),
+        failure: t("editor.hooks.tableEdit.saveCellFailed"),
         rethrow: true,
         keepTool: true,
       });
@@ -284,7 +286,7 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
       advanceSelection();
       return result;
     } catch (e) {
-      setError(e.message || "บันทึกข้อความในเซลล์ไม่สำเร็จ");
+      setError(e.message || t("editor.hooks.tableEdit.saveCellFailed"));
       return null;
     } finally {
       setApplying(false);
@@ -304,8 +306,8 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
         return result;
       }, {
         nextPage: currentPage,
-        success: `สร้างตาราง ${cleanRows} แถว × ${cleanCols} คอลัมน์แล้ว`,
-        failure: "สร้างตารางไม่สำเร็จ",
+        success: t("editor.hooks.tableEdit.createSuccess", { rows: cleanRows, cols: cleanCols }),
+        failure: t("editor.hooks.tableEdit.createFailed"),
         rethrow: true,
         keepTool: true,
       });
@@ -318,7 +320,7 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
       }
       return result;
     } catch (e) {
-      setError(e.message || "สร้างตารางไม่สำเร็จ");
+      setError(e.message || t("editor.hooks.tableEdit.createFailed"));
       return null;
     } finally {
       setApplying(false);
@@ -368,11 +370,22 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
         nextPage: currentPage,
         success: (res) => {
           const notes = [];
-          if (res.wrapped_cells?.length) notes.push(`ตัดบรรทัดใหม่ ${res.wrapped_cells.length} ช่อง`);
-          if (res.adjusted_rows?.length) notes.push(`แถว ${res.adjusted_rows.map((r) => r + 1).join(", ")} สูงขึ้นให้ข้อความพอ`);
-          return `แก้ตารางแล้ว${notes.length ? ` — ${notes.join(" · ")}` : ""}`;
+          if (res.wrapped_cells?.length) {
+            notes.push(t("editor.hooks.tableEdit.wrappedCellsNote", { count: res.wrapped_cells.length }));
+          }
+          if (res.adjusted_rows?.length) {
+            notes.push(
+              t("editor.hooks.tableEdit.adjustedRowsNote", {
+                rows: res.adjusted_rows.map((r) => r + 1).join(", "),
+              })
+            );
+          }
+          if (notes.length) {
+            return t("editor.hooks.tableEdit.applySuccessWithNotes", { notes: notes.join(" · ") });
+          }
+          return t("editor.hooks.tableEdit.applySuccess");
         },
-        failure: "แก้ตารางไม่สำเร็จ",
+        failure: t("editor.hooks.tableEdit.applyFailed"),
         rethrow: true,
         keepTool: true,
       });
@@ -385,7 +398,7 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
         setOverlapWarning(e.message);
         setPendingOverlapOp(null);
       } else {
-        setError(e.message || "แก้ตารางไม่สำเร็จ");
+        setError(e.message || t("editor.hooks.tableEdit.applyFailed"));
       }
     } finally {
       setApplying(false);
@@ -428,8 +441,8 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
         return result;
       }, {
         nextPage: currentPage,
-        success: OP_LABELS[op] || "แก้โครงสร้างตารางแล้ว",
-        failure: "แก้โครงสร้างตารางไม่สำเร็จ",
+        success: t(OP_LABEL_KEYS[op] || "editor.hooks.tableEdit.structureSuccess"),
+        failure: t("editor.hooks.tableEdit.structureFailed"),
         rethrow: true,
         keepTool: true,
       });
@@ -453,7 +466,7 @@ export function useTableEdit({ session, currentPage, pageImage, active, runDocum
         setOverlapWarning(e.message);
         setPendingOverlapOp({ op, opts });
       } else {
-        setError(e.message || "แก้โครงสร้างตารางไม่สำเร็จ");
+        setError(e.message || t("editor.hooks.tableEdit.structureFailed"));
       }
     } finally {
       setApplying(false);

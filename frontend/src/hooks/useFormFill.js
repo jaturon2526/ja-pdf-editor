@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import { applyDraftChange, collectDirtyUpdates, initDraftValues } from "../utils/formFillUtils.js";
 
 function defaultRectForType(type, multiline, pageWidthPt, pageHeightPt) {
@@ -27,6 +28,7 @@ export function useFormFill({
   active,
   runDocumentChange,
 }) {
+  const { t } = useI18n();
   const [fields, setFields] = useState([]);
   const [draftValues, setDraftValues] = useState({});
   const [mode, setMode] = useState("fill"); // "fill" | "design"
@@ -49,11 +51,11 @@ export function useFormFill({
       setFields(list);
       setDraftValues(initDraftValues(list));
     } catch (err) {
-      setError(err?.message || "โหลดรายการช่องแบบฟอร์มไม่สำเร็จ");
+      setError(err?.message || t("editor.hooks.formFill.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [session?.sessionId]);
+  }, [session?.sessionId, t]);
 
   useEffect(() => {
     if (!active || !session?.sessionId) {
@@ -100,21 +102,21 @@ export function useFormFill({
       await runDocumentChange(
         (sid) => api.fillFormFields(sid, dirtyUpdates),
         {
-          busy: "กำลังบันทึกข้อมูลลงแบบฟอร์ม...",
-          success: (res) => `บันทึกแบบฟอร์มเรียบร้อยแล้ว (${res?.updated || dirtyUpdates.length} ช่อง)`,
-          failure: "บันทึกแบบฟอร์มไม่สำเร็จ",
-          noChange: "ไม่มีข้อมูลที่เปลี่ยนแปลง",
+          busy: t("editor.hooks.formFill.saving"),
+          success: (res) => t("editor.hooks.formFill.saveSuccess", { count: res?.updated || dirtyUpdates.length }),
+          failure: t("editor.hooks.formFill.saveFailed"),
+          noChange: t("editor.hooks.formFill.noChange"),
           keepTool: true,
           rethrow: true,
         },
       );
       await reload();
     } catch (err) {
-      setError(err?.message || "บันทึกแบบฟอร์มไม่สำเร็จ");
+      setError(err?.message || t("editor.hooks.formFill.saveFailed"));
     } finally {
       setSaving(false);
     }
-  }, [session, saving, dirtyUpdates, runDocumentChange, reload]);
+  }, [session, saving, dirtyUpdates, runDocumentChange, reload, t]);
 
   const resetDraft = useCallback(() => {
     setDraftValues(initDraftValues(fields));
@@ -124,20 +126,20 @@ export function useFormFill({
   const startPlaceField = useCallback(
     ({ type, label = "", name = "", multiline = false, options = [] }) => {
       if (type === "dropdown" && (!options || options.length === 0)) {
-        setError("กรุณาระบุตัวเลือกอย่างน้อย 1 รายการสำหรับดรอปดาวน์");
+        setError(t("editor.hooks.formFill.dropdownOptionsRequired"));
         return;
       }
       setError("");
       setDraftField({
         type,
-        label: label.trim() || "ช่องกรอกข้อมูล",
+        label: label.trim() || t("editor.hooks.formFill.defaultFieldLabel"),
         name: name.trim(),
         multiline: !!multiline,
         options,
         rect: defaultRectForType(type, multiline, pageWidthPt, pageHeightPt),
       });
     },
-    [pageWidthPt, pageHeightPt],
+    [pageWidthPt, pageHeightPt, t],
   );
 
   const updateDraftRect = useCallback((rect) => {
@@ -166,9 +168,9 @@ export function useFormFill({
             options: draftField.options,
           }),
         {
-          busy: "กำลังเพิ่มช่องแบบฟอร์ม...",
-          success: `เพิ่มช่อง "${draftField.label}" เรียบร้อยแล้ว`,
-          failure: "เพิ่มช่องแบบฟอร์มไม่สำเร็จ",
+          busy: t("editor.hooks.formFill.addingField"),
+          success: t("editor.hooks.formFill.addFieldSuccess", { label: draftField.label }),
+          failure: t("editor.hooks.formFill.addFieldFailed"),
           keepTool: true,
           rethrow: true,
         },
@@ -176,11 +178,11 @@ export function useFormFill({
       setDraftField(null);
       await reload();
     } catch (err) {
-      setError(err?.message || "เพิ่มช่องแบบฟอร์มไม่สำเร็จ");
+      setError(err?.message || t("editor.hooks.formFill.addFieldFailed"));
     } finally {
       setSaving(false);
     }
-  }, [session, draftField, saving, currentPage, runDocumentChange, reload]);
+  }, [session, draftField, saving, currentPage, runDocumentChange, reload, t]);
 
   const deleteField = useCallback(
     async (field) => {
@@ -191,21 +193,21 @@ export function useFormFill({
         await runDocumentChange(
           (sid) => api.deleteFormField(sid, field.xref, field.page),
           {
-            busy: "กำลังลบช่องแบบฟอร์ม...",
-            success: `ลบช่อง "${field.label}" แล้ว`,
-            failure: "ลบช่องแบบฟอร์มไม่สำเร็จ",
+            busy: t("editor.hooks.formFill.deletingField"),
+            success: t("editor.hooks.formFill.deleteFieldSuccess", { label: field.label }),
+            failure: t("editor.hooks.formFill.deleteFieldFailed"),
             keepTool: true,
             rethrow: true,
           },
         );
         await reload();
       } catch (err) {
-        setError(err?.message || "ลบช่องแบบฟอร์มไม่สำเร็จ");
+        setError(err?.message || t("editor.hooks.formFill.deleteFieldFailed"));
       } finally {
         setSaving(false);
       }
     },
-    [session, saving, runDocumentChange, reload],
+    [session, saving, runDocumentChange, reload, t],
   );
 
   const moveField = useCallback(
@@ -219,22 +221,22 @@ export function useFormFill({
         await runDocumentChange(
           (sid) => api.updateFormField(sid, field.xref, { page: field.page, rect }),
           {
-            busy: "กำลังย้ายตำแหน่งช่องแบบฟอร์ม...",
-            success: `ปรับตำแหน่งช่อง "${field.label}" แล้ว`,
-            failure: "ย้ายตำแหน่งช่องแบบฟอร์มไม่สำเร็จ",
+            busy: t("editor.hooks.formFill.movingField"),
+            success: t("editor.hooks.formFill.moveFieldSuccess", { label: field.label }),
+            failure: t("editor.hooks.formFill.moveFieldFailed"),
             keepTool: true,
             rethrow: true,
           },
         );
         await reload();
       } catch (err) {
-        setError(err?.message || "ย้ายตำแหน่งช่องแบบฟอร์มไม่สำเร็จ");
+        setError(err?.message || t("editor.hooks.formFill.moveFieldFailed"));
         await reload();
       } finally {
         setSaving(false);
       }
     },
-    [session, saving, runDocumentChange, reload],
+    [session, saving, runDocumentChange, reload, t],
   );
 
   return {

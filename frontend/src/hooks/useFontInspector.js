@@ -2,8 +2,10 @@
 // ไม่แก้ไฟล์ — โหลดใหม่เมื่อเปลี่ยนหน้า หรือภาพหน้าเปลี่ยน (แก้ไข/undo แล้ว)
 import { useEffect, useMemo, useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 export function useFontInspector({ session, currentPage, pageImage, active }) {
+  const { t } = useI18n();
   const [spans, setSpans] = useState(null);
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState("");
@@ -19,9 +21,9 @@ export function useFontInspector({ session, currentPage, pageImage, active }) {
     setSelected(null);
     api.getFontSpans(session.sessionId, currentPage)
       .then((list) => { if (!cancelled) setSpans(list); })
-      .catch((e) => { if (!cancelled) { setSpans([]); setError(e.message || "อ่านข้อมูลฟอนต์ไม่สำเร็จ"); } });
+      .catch((e) => { if (!cancelled) { setSpans([]); setError(e.message || t("editor.hooks.fontInspector.loadFailed")); } });
     return () => { cancelled = true; };
-  }, [active, session?.sessionId, currentPage, pageImage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active, session?.sessionId, currentPage, pageImage, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ฟอนต์ในหน้านี้ (ไม่ซ้ำตามชื่อ+ขนาด) — สรุปในแผงเมื่อยังไม่ได้เลือกข้อความ
   const pageFonts = useMemo(() => {

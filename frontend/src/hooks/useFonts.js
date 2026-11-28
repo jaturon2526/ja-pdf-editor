@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import { cssFontFamilyName } from "../utils/textEditUtils.js";
 
 export function useFonts({ setStatusMessage }) {
+  const { t } = useI18n();
   const [fonts, setFonts] = useState([]);
   const [fontFamilies, setFontFamilies] = useState([]);
   const [installFontOpen, setInstallFontOpen] = useState(false);
@@ -86,14 +88,14 @@ export function useFonts({ setStatusMessage }) {
         } catch (err) {
           await refreshFontsAndFamilies(latestFonts);
           setInstallFontError(
-            `ติดตั้งไฟล์สไตล์ "${style}" ไม่สำเร็จ: ${err.message} (สไตล์ก่อนหน้าที่สำเร็จแล้วยังใช้ได้ปกติ)`
+            t("editor.hooks.fonts.installStyleFailed", { style, message: err.message })
           );
           return false;
         }
       }
       await refreshFontsAndFamilies(latestFonts);
       setInstallFontNotice([...warnings]);
-      setStatusMessage("ติดตั้งฟอนต์ใหม่สำเร็จ");
+      setStatusMessage(t("editor.hooks.fonts.installSuccess"));
       return true;
     } catch (err) {
       setInstallFontError(err.message);
@@ -113,7 +115,7 @@ export function useFonts({ setStatusMessage }) {
       await refreshFontsAndFamilies(res.fonts);
       return true;
     } catch (err) {
-      setInstallFontError(err.message || "ติดตั้งฟอนต์ไม่สำเร็จ");
+      setInstallFontError(err.message || t("editor.hooks.fonts.installFailed"));
       return false;
     } finally {
       setInstallFontSubmitting(false);
@@ -127,7 +129,7 @@ export function useFonts({ setStatusMessage }) {
       const res = await api.installFont(file, null, { familyKey, style });
       await refreshFontsAndFamilies(res.fonts);
       setInstallFontNotice(res.warnings || []);
-      setStatusMessage("เพิ่มสไตล์ฟอนต์สำเร็จ");
+      setStatusMessage(t("editor.hooks.fonts.addStyleSuccess"));
       return true;
     } catch (err) {
       setInstallFontError(err.message);
@@ -141,7 +143,7 @@ export function useFonts({ setStatusMessage }) {
     try {
       const updated = await api.removeFontFamily(familyKey);
       await refreshFontsAndFamilies(updated);
-      setStatusMessage("ลบฟอนต์สำเร็จ");
+      setStatusMessage(t("editor.hooks.fonts.removeSuccess"));
     } catch (err) {
       setInstallFontError(err.message);
     }

@@ -1,8 +1,10 @@
 // ค้นหาข้อความในเอกสาร (Ctrl+F, v1.42.0): ค้นทุกหน้าผ่าน GET /pdf/{sid}/search → ไฮไลต์บนหน้า + กระโดดข้ามหน้า
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 export function useFindInDocument({ session, currentPage, goToPage }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [matchCase, setMatchCase] = useState(false);
@@ -30,7 +32,7 @@ export function useFindInDocument({ session, currentPage, goToPage }) {
   const openFind = useCallback(() => {
     if (!session) return;
     setOpen(true);
-    setFocusTick((t) => t + 1);
+    setFocusTick((n) => n + 1);
   }, [session]);
 
   const closeFind = useCallback(() => {
@@ -81,7 +83,7 @@ export function useFindInDocument({ session, currentPage, goToPage }) {
           setMatches([]);
           setTruncated(false);
           setActiveIndex(-1);
-          setError(err.message || "ค้นหาไม่สำเร็จ");
+          setError(err.message || t("editor.hooks.find.searchFailed"));
         })
         .finally(() => {
           if (!cancelled) setSearching(false);
@@ -92,7 +94,7 @@ export function useFindInDocument({ session, currentPage, goToPage }) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, session, query, matchCase]);
+  }, [open, session, query, matchCase, t]);
 
   const jumpTo = useCallback((nextIdx) => {
     if (matches.length === 0) return;

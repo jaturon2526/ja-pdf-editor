@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import { hexToRgb01, rgb01ToHex } from "../utils/textEditUtils.js";
 import { computeSelectedLineRects, unionRects } from "../utils/textSelectionUtils.js";
 
@@ -10,6 +11,7 @@ const EDITABLE_ANNOTATION_TYPES = ["highlight", "rect", "freetext", "text_note"]
 const MIN_DRAG_PT = 3;
 
 export function useAnnotation({ session, currentPage, editMode, zoom, fonts, setStatusMessage }) {
+  const { t } = useI18n();
   const [annotations, setAnnotations] = useState([]);
   const [annotationDraft, setAnnotationDraft] = useState(null);
   const [pendingAnnotation, setPendingAnnotation] = useState(null); // {rect, type} — รอผู้ใช้พิมพ์ข้อความ
@@ -28,11 +30,11 @@ export function useAnnotation({ session, currentPage, editMode, zoom, fonts, set
         if (!cancelled)
           setAnnotations(list.filter((a) => EDITABLE_ANNOTATION_TYPES.includes(a.type)));
       })
-      .catch((err) => !cancelled && setStatusMessage(`โหลด annotation ไม่สำเร็จ: ${err.message}`));
+      .catch((err) => !cancelled && setStatusMessage(t("editor.hooks.annotation.loadFailed", { error: err.message })));
     return () => {
       cancelled = true;
     };
-  }, [session, currentPage, editMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [session, currentPage, editMode, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function refreshAnnotations() {
     if (!session || editMode) return;
@@ -40,7 +42,7 @@ export function useAnnotation({ session, currentPage, editMode, zoom, fonts, set
       const list = await api.listAnnotations(session.sessionId, currentPage);
       setAnnotations(list.filter((a) => EDITABLE_ANNOTATION_TYPES.includes(a.type)));
     } catch (err) {
-      setStatusMessage(`โหลด annotation ไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.annotation.loadFailed", { error: err.message }));
     }
   }
 
@@ -67,9 +69,9 @@ export function useAnnotation({ session, currentPage, editMode, zoom, fonts, set
         _onPageRendered(data.image_base64, currentPage);
         await refreshAnnotations();
         _onHistoryChange(true, false);
-        setStatusMessage("สร้างกล่องสำเร็จ");
+        setStatusMessage(t("editor.hooks.annotation.rectCreated"));
       } catch (err) {
-        setStatusMessage(`สร้างกล่องไม่สำเร็จ: ${err.message}`);
+        setStatusMessage(t("editor.hooks.annotation.rectCreateFailed", { error: err.message }));
       }
       return;
     }
@@ -88,14 +90,14 @@ export function useAnnotation({ session, currentPage, editMode, zoom, fonts, set
     try {
       words = await api.getWords(session.sessionId, currentPage);
     } catch (err) {
-      setStatusMessage(`โหลดข้อความในหน้าไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.annotation.loadWordsFailed", { error: err.message }));
       return;
     }
     const lineRects = computeSelectedLineRects(words, rectPt);
 
     if (tool === "highlight") {
       if (lineRects.length === 0) {
-        setStatusMessage("ไม่พบข้อความในตำแหน่งที่เลือก — ลองลากคลุมข้อความให้ตรงขึ้น");
+        setStatusMessage(t("editor.hooks.annotation.noTextInSelection"));
         return;
       }
       try {
@@ -112,9 +114,13 @@ export function useAnnotation({ session, currentPage, editMode, zoom, fonts, set
         _onPageRendered(data.image_base64, currentPage);
         await refreshAnnotations();
         _onHistoryChange(true, false);
-        setStatusMessage(lineRects.length > 1 ? `ไฮไลท์ข้อความสำเร็จ (${lineRects.length} บรรทัด)` : "ไฮไลท์ข้อความสำเร็จ");
+        setStatusMessage(
+          lineRects.length > 1
+            ? t("editor.hooks.annotation.highlightCreatedMulti", { count: lineRects.length })
+            : t("editor.hooks.annotation.highlightCreated")
+        );
       } catch (err) {
-        setStatusMessage(`ไฮไลท์ไม่สำเร็จ: ${err.message}`);
+        setStatusMessage(t("editor.hooks.annotation.highlightFailed", { error: err.message }));
       }
       return;
     }
@@ -160,9 +166,17 @@ export function useAnnotation({ session, currentPage, editMode, zoom, fonts, set
       _onPageRendered(data.image_base64, currentPage);
       await refreshAnnotations();
       _onHistoryChange(true, false);
-      setStatusMessage(type === "text_note" ? "เพิ่มบันทึกย่อสำเร็จ" : "เพิ่มกล่องข้อความสำเร็จ");
+      setStatusMessage(
+        type === "text_note"
+          ? t("editor.hooks.annotation.noteCreated")
+          : t("editor.hooks.annotation.freetextCreated")
+      );
     } catch (err) {
-      setStatusMessage(`${type === "text_note" ? "เพิ่มบันทึกย่อ" : "เพิ่มกล่องข้อความ"}ไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(
+        type === "text_note"
+          ? t("editor.hooks.annotation.noteCreateFailed", { error: err.message })
+          : t("editor.hooks.annotation.freetextCreateFailed", { error: err.message })
+      );
     }
   }
 
@@ -236,9 +250,9 @@ export function useAnnotation({ session, currentPage, editMode, zoom, fonts, set
       _onPageRendered(data.image_base64, currentPage);
       await refreshAnnotations();
       _onHistoryChange(true, false);
-      setStatusMessage("แก้ไขสำเร็จ");
+      setStatusMessage(t("editor.hooks.annotation.updateSuccess"));
     } catch (err) {
-      setStatusMessage(`แก้ไขไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.annotation.updateFailed", { error: err.message }));
     }
   }
 
@@ -250,9 +264,9 @@ export function useAnnotation({ session, currentPage, editMode, zoom, fonts, set
       _onPageRendered(data.image_base64, currentPage);
       await refreshAnnotations();
       _onHistoryChange(true, false);
-      setStatusMessage("ย้ายบันทึกย่อสำเร็จ");
+      setStatusMessage(t("editor.hooks.annotation.moveNoteSuccess"));
     } catch (err) {
-      setStatusMessage(`ย้ายบันทึกย่อไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.annotation.moveNoteFailed", { error: err.message }));
     }
   }
 
@@ -268,9 +282,9 @@ export function useAnnotation({ session, currentPage, editMode, zoom, fonts, set
       _onPageRendered(data.image_base64, currentPage);
       await refreshAnnotations();
       _onHistoryChange(true, false);
-      setStatusMessage("ลบสำเร็จ");
+      setStatusMessage(t("editor.hooks.annotation.deleteSuccess"));
     } catch (err) {
-      setStatusMessage(`ลบ annotation ไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.annotation.deleteFailed", { error: err.message }));
     }
   }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import { sampleBackgroundColor } from "../utils/bgSample.js";
 import { genLocalId, loadImageDimensions, rectsEqual } from "../utils/imageUtils.js";
 
@@ -23,6 +24,7 @@ export function useImageEdit({
   pageImgElRef,
   setStatusMessage,
 }) {
+  const { t } = useI18n();
   const imageInsertInputRef = useRef(null); // hidden input[type=file] สำหรับเลือกรูปใหม่ที่จะแทรก
 
   const [images, setImages] = useState([]);
@@ -77,7 +79,7 @@ export function useImageEdit({
           setImages(list);
         }
       })
-      .catch((err) => !cancelled && setStatusMessage(`โหลดรูปภาพไม่สำเร็จ: ${err.message}`));
+      .catch((err) => !cancelled && setStatusMessage(t("editor.hooks.imageEdit.loadFailed", { message: err.message })));
     return () => {
       cancelled = true;
     };
@@ -102,7 +104,7 @@ export function useImageEdit({
   async function placeNewImage(file, point = null, customBox = null) {
     if (!file || !session) return;
     if (!/^image\//.test(file.type || "")) {
-      setStatusMessage("ไฟล์นี้ไม่ใช่รูปภาพ — ใช้ได้เฉพาะ JPG, PNG, WebP ฯลฯ");
+      setStatusMessage(t("editor.hooks.imageEdit.invalidImageFile"));
       return;
     }
     const [pw, ph] = session.pageSizes?.[currentPage] || [595, 842];
@@ -148,7 +150,7 @@ export function useImageEdit({
     }
     if (editModeRef.current === "image") setDraftImageEdit(draft);
     else queuedDraftRef.current = draft; // effect ด้านบนวางให้หลังเปลี่ยนเป็นโหมดแก้ไขรูป
-    setStatusMessage('ลากรูปเพื่อย้าย ลากมุมเพื่อปรับขนาด แล้วกด "ตกลง" และ "บันทึกการแก้ไข"');
+    setStatusMessage(t("editor.hooks.imageEdit.dragToPlaceHint"));
   }
 
   // คัดลอกรูปภาพที่กำลังเลือกอยู่ไปยังคลิปบอร์ด (ทั้งในแอปและ System Clipboard ถ้ารองรับ)
@@ -171,10 +173,10 @@ export function useImageEdit({
       if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined" && file.type === "image/png") {
         navigator.clipboard.write([new ClipboardItem({ "image/png": file })]).catch(() => {});
       }
-      setStatusMessage('คัดลอกรูปภาพแล้ว — กด Ctrl+V หรือปุ่ม "วางรูป" เพื่อวาง');
+      setStatusMessage(t("editor.hooks.imageEdit.copySuccess"));
       return true;
     } catch (err) {
-      setStatusMessage(`คัดลอกรูปภาพไม่สำเร็จ: ${err.message}`);
+      setStatusMessage(t("editor.hooks.imageEdit.copyFailed", { message: err.message }));
       return false;
     }
   }
@@ -192,7 +194,7 @@ export function useImageEdit({
         x0: nextX0,
         y0: nextY0,
       });
-      setStatusMessage('วางรูปภาพที่คัดลอกแล้ว — ลากจัดตำแหน่งแล้วกด "ตกลง" และ "บันทึกการแก้ไข"');
+      setStatusMessage(t("editor.hooks.imageEdit.pasteSuccess"));
       return true;
     }
     if (externalFile) {
@@ -252,7 +254,7 @@ export function useImageEdit({
           return d;
         });
       })
-      .catch((err) => setStatusMessage(`โหลดรูปภาพไม่สำเร็จ: ${err.message}`));
+      .catch((err) => setStatusMessage(t("editor.hooks.imageEdit.loadFailed", { message: err.message })));
   }
 
   // คลิกกล่อง pending ที่ "ตกลง" ไปแล้วแต่ยังไม่กด "บันทึกการแก้ไข" — กลับมาแก้ไขต่อ
@@ -281,7 +283,7 @@ export function useImageEdit({
       [currentPage]: { ...(prev[currentPage] || {}), [key]: rest },
     }));
     setDraftImageEdit(null);
-    setStatusMessage('ยืนยันรูปภาพนี้แล้ว — กด "บันทึกการแก้ไข" บน toolbar เมื่อแก้ไขครบทุกจุด');
+    setStatusMessage(t("editor.hooks.imageEdit.commitSuccess"));
   }
 
   // ยกเลิก draft ปัจจุบัน — เพิกถอน blob URL ถ้าเป็น URL ที่สร้างเองและไม่ได้ถูก commit ไปแล้ว

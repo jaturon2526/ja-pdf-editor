@@ -1,6 +1,7 @@
 // "บันทึกการแก้ไข" — ส่งการแก้ข้อความ/รูปภาพที่ค้างอยู่ทุกหน้าไป server ทีละจุด (แยกมาจาก Editor.jsx)
 // ถ้าผิดพลาดกลางทาง จุดที่ยังไม่ได้บันทึกจะยังค้างอยู่ให้กดบันทึกใหม่ได้
 import * as api from "../api.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import { hexToRgb01 } from "../utils/textEditUtils.js";
 
 // รวม draft ที่กำลังแก้อยู่เข้า pending ของหน้าปัจจุบัน
@@ -38,6 +39,7 @@ export function useApplyEdits({
   setCanRedo,
   setStatusMessage,
 }) {
+  const { t } = useI18n();
   const pendingEditCount =
     textEditHook.textPendingCount +
     imageEditHook.imagePendingCount +
@@ -92,7 +94,7 @@ export function useApplyEdits({
           }
         }
       } catch (err) {
-        setStatusMessage(`รีเฟรชหน้าปัจจุบันไม่สำเร็จ: ${err.message}`);
+        setStatusMessage(t("editor.hooks.applyEdits.refreshPageFailed", { error: err.message }));
       }
     }
     if (touchedPages.size > 0) {
@@ -185,12 +187,12 @@ export function useApplyEdits({
 
       textEditHook.setPendingEdits({});
       imageEditHook.setPendingImageEdits({});
-      setStatusMessage(`บันทึกการแก้ไขทั้งหมดสำเร็จ (${succeededCount} จุด)`);
+      setStatusMessage(t("editor.hooks.applyEdits.saveAllSuccess", { count: succeededCount }));
     } catch (err) {
       textEditHook.setPendingEdits(remainingText);
       imageEditHook.setPendingImageEdits(remainingImages);
       setStatusMessage(
-        `บันทึกสำเร็จ ${succeededCount} จุด แต่มีจุดที่ผิดพลาด: ${err.message} (จุดที่เหลือยังไม่หายไป กดบันทึกใหม่ได้)`
+        t("editor.hooks.applyEdits.savePartialFailed", { count: succeededCount, error: err.message })
       );
     } finally {
       textEditHook.setApplyingEdits(false);
