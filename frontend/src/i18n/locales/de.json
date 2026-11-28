@@ -2315,5 +2315,16 @@
       "rejectedSuccess": "Signatur abgelehnt",
       "cancelledSuccess": "Signaturanfrage storniert"
     }
+  },
+  "fontInfo": {
+    "embeddedSubset": "Eingebettet (Untergruppe)",
+    "embeddedFull": "Vollständig eingebettet",
+    "base14": "PDF-Standardschriftart (keine Einbettung nötig)",
+    "notEmbedded": "Nicht eingebettet — andere Geräte zeigen möglicherweise eine Ersatzschriftart",
+    "boldItalic": "Fett kursiv",
+    "bold": "Fett",
+    "italic": "Kursiv",
+    "regular": "Normal",
+    "charsCount": "{{count}} Zeichen"
   }
 }

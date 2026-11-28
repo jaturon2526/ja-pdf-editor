@@ -2315,5 +2315,16 @@
       "rejectedSuccess": "Đã từ chối ký",
       "cancelledSuccess": "Đã hủy yêu cầu ký"
     }
+  },
+  "fontInfo": {
+    "embeddedSubset": "Đã nhúng (chỉ ký tự đã dùng)",
+    "embeddedFull": "Đã nhúng toàn bộ",
+    "base14": "Phông chữ PDF chuẩn (không cần nhúng)",
+    "notEmbedded": "Chưa nhúng — thiết bị khác có thể hiển thị bằng phông chữ khác",
+    "boldItalic": "Đậm nghiêng",
+    "bold": "Đậm",
+    "italic": "Nghiêng",
+    "regular": "Thường",
+    "charsCount": "{{count}} ký tự"
   }
 }

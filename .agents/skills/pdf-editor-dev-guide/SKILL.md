@@ -96,3 +96,32 @@ When the user asks to build or restart the application, use these exact commands
 - **Image Editing Unique Keys in React:** NEVER key images solely by `img-${img.xref}` in React state (`pendingImageEdits`) or component keys. If a page has 5 instances of `xref: 101`, duplicate keys corrupt React reconciliation, cause masks to stack or fail to unmount, and break restore. Always use a unique instance key (`img.id || img-${img.xref}-${idx}`).
 - **Pointer Events on Canvas Masks:** `.image-edit-original-mask` has `pointer-events: none`. Any child or clickable overlay (like `.deleted-mask` or restore buttons) MUST set `pointer-events: auto !important` and `onPointerDown={(e) => e.stopPropagation()}` to prevent the canvas `onPointerDown` handler from capturing clicks.
 - **Editor `touchedPages` Set:** After saving edits in `Editor.jsx`, pages only re-render if present in `touchedPages`. Every delete task must call `touchedPages.add(pageNumber)`.
+
+## 7. Multi-Language (15 Locales) & Release Cheatsheet
+- **Supported locales (15):** `th` (default), `en`, `ko`, `ja`, `zh`, `vi`, `id`, `hi`, `ar` (auto `dir="rtl"`), `es`, `pt`, `fr`, `de`, `it`, `ru`.
+- **Where languages are registered (update all when adding a language):**
+  - Backend: `backend/app/core/i18n.py` (`SUPPORTED_LANGUAGES`), `backend/app/models/auth_schemas.py` (`LanguageUpdate.language` pattern), `backend/tests/test_backend_i18n.py`.
+  - Frontend: `frontend/src/i18n/index.js` (`SUPPORTED_LANGS`, `LOCALE_META`, `dateLocale`), `frontend/src/i18n/I18nContext.jsx` (sets `document.documentElement.lang` & `dir`), `frontend/src/i18n/locales/<lang>.json`, `frontend/src/__tests__/i18n.test.js`.
+- **Parity & missing-key check before committing i18n edits:**
+  ```bash
+  python3 -c '
+  import glob, json, re
+  locales = {p.split("/")[-1][:-5]: json.load(open(p)) for p in sorted(glob.glob("frontend/src/i18n/locales/*.json"))}
+  def flat(d, p=""):
+      out = {}
+      for k, v in d.items():
+          nk = f"{p}.{k}" if p else k
+          out.update(flat(v, nk) if isinstance(v, dict) else {nk: v})
+      return out
+  base = flat(locales["th"])
+  for lang, data in locales.items():
+      cur = flat(data)
+      assert set(cur) == set(base), f"{lang}: key mismatch"
+      for k, v in base.items():
+          assert set(re.findall(r"\{\{\w+\}\}", str(v))) == set(re.findall(r"\{\{\w+\}\}", str(cur[k]))), f"{lang}:{k} placeholder mismatch"
+  print(f"OK: {len(locales)} locales x {len(base)} keys")
+  '
+  ```
+- **Non-interactive Mac release scripts:** pass `</dev/null` so `read` prompts don't hang in automated shells:
+  - `./sonar-scan-bundle.command </dev/null`
+  - `./ship-now.command </dev/null && ./publish-source.command </dev/null`

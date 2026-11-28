@@ -2315,5 +2315,16 @@
       "rejectedSuccess": "已拒绝签署",
       "cancelledSuccess": "已取消签署请求"
     }
+  },
+  "fontInfo": {
+    "embeddedSubset": "已嵌入（仅限已用字符）",
+    "embeddedFull": "已完整嵌入",
+    "base14": "标准 PDF 字体（无需嵌入）",
+    "notEmbedded": "未嵌入 — 其他设备可能会替换为其他字体显示",
+    "boldItalic": "粗斜体",
+    "bold": "粗体",
+    "italic": "斜体",
+    "regular": "常规",
+    "charsCount": "{{count}} 个字符"
   }
 }

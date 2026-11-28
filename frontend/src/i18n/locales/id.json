@@ -2315,5 +2315,16 @@
       "rejectedSuccess": "Penandatanganan ditolak",
       "cancelledSuccess": "Permintaan tanda tangan dibatalkan"
     }
+  },
+  "fontInfo": {
+    "embeddedSubset": "Disematkan (hanya karakter terpakai)",
+    "embeddedFull": "Disematkan (lengkap)",
+    "base14": "Font standar PDF (tidak perlu disematkan)",
+    "notEmbedded": "Tidak disematkan — perangkat lain mungkin mengganti dengan font lain",
+    "boldItalic": "Tebal Miring",
+    "bold": "Tebal",
+    "italic": "Miring",
+    "regular": "Reguler",
+    "charsCount": "{{count}} karakter"
   }
 }

@@ -2315,5 +2315,16 @@
       "rejectedSuccess": "Firma rifiutata",
       "cancelledSuccess": "Richiesta di firma annullata"
     }
+  },
+  "fontInfo": {
+    "embeddedSubset": "Incorporato (sottoinsieme)",
+    "embeddedFull": "Incorporato (completo)",
+    "base14": "Font PDF standard (incorporamento non necessario)",
+    "notEmbedded": "Non incorporato — altri dispositivi potrebbero sostituirlo con un altro font",
+    "boldItalic": "Grassetto corsivo",
+    "bold": "Grassetto",
+    "italic": "Corsivo",
+    "regular": "Normale",
+    "charsCount": "{{count}} caratteri"
   }
 }

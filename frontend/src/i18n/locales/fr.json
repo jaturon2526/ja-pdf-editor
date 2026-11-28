@@ -2315,5 +2315,16 @@
       "rejectedSuccess": "Signature refusée",
       "cancelledSuccess": "Demande de signature annulée"
     }
+  },
+  "fontInfo": {
+    "embeddedSubset": "Incorporée (sous-ensemble)",
+    "embeddedFull": "Incorporée (complète)",
+    "base14": "Police PDF standard (incorporation non requise)",
+    "notEmbedded": "Non incorporée — d’autres appareils peuvent utiliser une police de substitution",
+    "boldItalic": "Gras italique",
+    "bold": "Gras",
+    "italic": "Italique",
+    "regular": "Normal",
+    "charsCount": "{{count}} caractères"
   }
 }

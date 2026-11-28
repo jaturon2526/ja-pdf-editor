@@ -16,5 +16,17 @@ describe("fontInfo", () => {
     expect(sizeLabel(10.5)).toBe("10.5 pt");
     expect(sizeLabel(12)).toBe("12 pt");
     expect(styleLabel({ bold: true, italic: true })).toBe("ตัวหนาเอียง");
+    expect(styleLabel({ bold: false, italic: false })).toBe("ปกติ");
+  });
+  it("รองรับฟังก์ชันแปลภาษา t", () => {
+    const t = (key) => `i18n:${key}`;
+    expect(embedLabel({ embedded: true, subset: true }, t)).toBe("i18n:fontInfo.embeddedSubset");
+    expect(embedLabel({ embedded: true, subset: false }, t)).toBe("i18n:fontInfo.embeddedFull");
+    expect(embedLabel({ embedded: false, base14: true }, t)).toBe("i18n:fontInfo.base14");
+    expect(embedLabel({ embedded: false, base14: false }, t)).toBe("i18n:fontInfo.notEmbedded");
+    expect(styleLabel({ bold: true, italic: true }, t)).toBe("i18n:fontInfo.boldItalic");
+    expect(styleLabel({ bold: true, italic: false }, t)).toBe("i18n:fontInfo.bold");
+    expect(styleLabel({ bold: false, italic: true }, t)).toBe("i18n:fontInfo.italic");
+    expect(styleLabel({ bold: false, italic: false }, t)).toBe("i18n:fontInfo.regular");
   });
 });

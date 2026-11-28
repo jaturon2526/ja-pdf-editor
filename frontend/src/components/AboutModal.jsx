@@ -1,7 +1,7 @@
 import React from "react";
 import SourceCodeLink from "./SourceCodeLink.jsx";
 
-export const APP_VERSION = "v1.60.0";
+export const APP_VERSION = "v1.60.1";
 
 const OSS_CREDITS = [
   // ---- Backend (Python) ----

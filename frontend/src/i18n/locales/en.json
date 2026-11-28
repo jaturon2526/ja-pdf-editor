@@ -2315,5 +2315,16 @@
       "rejectedSuccess": "Signing declined",
       "cancelledSuccess": "Signing request cancelled"
     }
+  },
+  "fontInfo": {
+    "embeddedSubset": "Embedded (subset)",
+    "embeddedFull": "Embedded (full set)",
+    "base14": "Standard PDF font (no embedding required)",
+    "notEmbedded": "Not embedded — other devices may substitute another font",
+    "boldItalic": "Bold Italic",
+    "bold": "Bold",
+    "italic": "Italic",
+    "regular": "Regular",
+    "charsCount": "{{count}} chars"
   }
 }

@@ -2315,5 +2315,16 @@
       "rejectedSuccess": "Assinatura recusada",
       "cancelledSuccess": "Solicitação de assinatura cancelada"
     }
+  },
+  "fontInfo": {
+    "embeddedSubset": "Incorporada (subconjunto)",
+    "embeddedFull": "Incorporada (completa)",
+    "base14": "Fonte PDF padrão (não requer incorporação)",
+    "notEmbedded": "Não incorporada — outros dispositivos podem substituir por outra fonte",
+    "boldItalic": "Negrito itálico",
+    "bold": "Negrito",
+    "italic": "Itálico",
+    "regular": "Normal",
+    "charsCount": "{{count}} caracteres"
   }
 }

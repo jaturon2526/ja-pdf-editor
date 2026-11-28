@@ -2315,5 +2315,16 @@
       "rejectedSuccess": "Firma rechazada",
       "cancelledSuccess": "Solicitud de firma cancelada"
     }
+  },
+  "fontInfo": {
+    "embeddedSubset": "Incrustada (subconjunto)",
+    "embeddedFull": "Incrustada (completa)",
+    "base14": "Fuente PDF estándar (no requiere incrustación)",
+    "notEmbedded": "No incrustada — otros dispositivos pueden sustituirla por otra fuente",
+    "boldItalic": "Negrita cursiva",
+    "bold": "Negrita",
+    "italic": "Cursiva",
+    "regular": "Normal",
+    "charsCount": "{{count}} caracteres"
   }
 }

@@ -2315,5 +2315,16 @@
       "rejectedSuccess": "署名を辞退しました",
       "cancelledSuccess": "署名依頼をキャンセルしました"
     }
+  },
+  "fontInfo": {
+    "embeddedSubset": "埋め込み済み（使用文字のみ）",
+    "embeddedFull": "埋め込み済み（フルセット）",
+    "base14": "標準PDFフォント（埋め込み不要）",
+    "notEmbedded": "未埋め込み — 他の端末では別のフォントで表示される場合があります",
+    "boldItalic": "太字斜体",
+    "bold": "太字",
+    "italic": "斜体",
+    "regular": "標準",
+    "charsCount": "{{count}}文字"
   }
 }

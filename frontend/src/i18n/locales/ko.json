@@ -2315,5 +2315,16 @@
       "rejectedSuccess": "서명을 거절했습니다",
       "cancelledSuccess": "서명 요청이 취소되었습니다"
     }
+  },
+  "fontInfo": {
+    "embeddedSubset": "파일에 포함됨 (사용된 글자만)",
+    "embeddedFull": "파일에 전체 포함됨",
+    "base14": "표준 PDF 글꼴 (포함 불필요)",
+    "notEmbedded": "파일에 포함되지 않음 — 다른 기기에서 대체 글꼴로 표시될 수 있음",
+    "boldItalic": "굵은 기울임꼴",
+    "bold": "굵게",
+    "italic": "기울임꼴",
+    "regular": "보통",
+    "charsCount": "{{count}}자"
   }
 }

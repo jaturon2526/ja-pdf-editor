@@ -2315,5 +2315,16 @@
       "rejectedSuccess": "تم رفض التوقيع",
       "cancelledSuccess": "تم إلغاء طلب التوقيع"
     }
+  },
+  "fontInfo": {
+    "embeddedSubset": "مضمّن (الأحرف المستخدمة فقط)",
+    "embeddedFull": "مضمّن بالكامل",
+    "base14": "خط PDF قياسي (لا يلزم التضمين)",
+    "notEmbedded": "غير مضمّن — قد تستخدم الأجهزة الأخرى خطاً بديلاً",
+    "boldItalic": "عريض مائل",
+    "bold": "عريض",
+    "italic": "مائل",
+    "regular": "عادي",
+    "charsCount": "{{count}} حرف"
   }
 }

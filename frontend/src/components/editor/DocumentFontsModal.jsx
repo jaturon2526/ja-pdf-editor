@@ -48,7 +48,7 @@ export default function DocumentFontsModal({ sessionId, onClose }) {
                     <span className="block text-xs text-slate-600">
                       {t("editor.panels.fontInspector.docFontsMeta", { type: f.type, pages: pagesLabel(f.pages) })}
                     </span>
-                    <span className={`block text-xs ${embedTone(f) === "warn" ? "text-amber-700" : "text-slate-500"}`}>{embedLabel(f)}</span>
+                    <span className={`block text-xs ${embedTone(f) === "warn" ? "text-amber-700" : "text-slate-500"}`}>{embedLabel(f, t)}</span>
                   </li>
                 ))}
               </ul>
