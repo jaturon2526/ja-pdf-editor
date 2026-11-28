@@ -10,6 +10,7 @@
 // - ปากกา (Apple Pencil ฯลฯ) ใช้แรงกดกำหนดความหนา
 // - ส่งออกเป็น PNG พื้นใส ครอปให้พอดีลายเซ็น ความละเอียดสูง
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
 const BASE_WIDTH = 2.6; // ความหนาเส้น (CSS px) ที่ความกว้างแผ่น 480px — ปรับตามขนาดแผ่น
 
@@ -44,6 +45,7 @@ function drawStroke(ctx, stroke, w) {
 }
 
 const SignaturePad = forwardRef(function SignaturePad({ color, onChange, className = "" }, ref) {
+  const { t } = useI18n();
   const wrapRef = useRef(null);
   const canvasRef = useRef(null);
   const strokesRef = useRef([]);
@@ -207,7 +209,7 @@ const SignaturePad = forwardRef(function SignaturePad({ color, onChange, classNa
       <canvas
         ref={canvasRef}
         data-testid="signature-pad"
-        aria-label="พื้นที่วาดลายเซ็น"
+        aria-label={t("editor.modals.sigCreator.padAria")}
         className="absolute inset-0 w-full h-full cursor-crosshair"
         style={{ touchAction: "none" }}
         onPointerDown={handleDown}

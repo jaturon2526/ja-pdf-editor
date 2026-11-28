@@ -3,14 +3,17 @@
 // - ลำดับตามที่พิมพ์ ("5, 1-3" → หน้า 5,1,2,3) · ช่วงถอยหลังได้ ("6-4") · "-3" = หน้า 1-3 · "8-" = หน้า 8 ถึงหน้าสุดท้าย
 // - ตรวจเลขหน้ากับจำนวนหน้าจริงก่อนส่ง และแสดงสรุปว่าจะได้หน้าไหนบ้าง (กฎเดียวกับ backend parse_page_range)
 // - ไฟล์ที่ได้มีการแก้ไขล่าสุด (ยังไม่บันทึกก็ได้) ช่องกรอกฟอร์ม/ลิงก์/บุ๊กมาร์กยังอยู่ และใส่รหัสผ่านเดียวกับเอกสาร ถ้าตั้งไว้
-import { useState } from "react";  // Esc ปิดผ่าน useEscapeStack ใน Editor
+import { useEffect, useRef, useState } from "react";  // Esc ปิดผ่าน useEscapeStack ใน Editor
+import { useI18n } from "../i18n/I18nContext.jsx";
+import { translate } from "../i18n/index.js";
+import thDict from "../i18n/locales/th.json";
 
-const THAI_DIGITS = "๐๑๒๓๔๕๖๗๘๙";
+const defaultT = (key, params) => translate(thDict, thDict, key, params);
 
 /** แปลงข้อความช่วงหน้าเป็นเลขหน้า (1-based) ตามลำดับที่พิมพ์ ไม่ซ้ำ — คืน { pages } หรือ { error } */
-export function parsePageRange(text, total) {
+export function parsePageRange(text, total, t = defaultT) {
   const norm = String(text || "")
-    .replace(/[๐-๙]/g, (d) => String(THAI_DIGITS.indexOf(d)))
+    .replace(/[\u0E50-\u0E59]/g, (d) => String(d.charCodeAt(0) - 0x0E50))
     .replace(/[–—−~]/g, "-")
     .replace(/[，、;]/g, ",")
     .replace(/\s+/g, "");
@@ -23,9 +26,9 @@ export function parsePageRange(text, total) {
     }
   };
   const num = (tok, part) => {
-    if (!/^\d+$/.test(tok)) throw new Error(`รูปแบบเลขหน้าไม่ถูกต้อง: ${part}`);
+    if (!/^\d+$/.test(tok)) throw new Error(t("editor.modals.extract.errInvalidPage", { part }));
     const n = Number(tok);
-    if (n < 1 || n > total) throw new Error(`ไม่มีหน้า ${n} (เอกสารมี ${total} หน้า)`);
+    if (n < 1 || n > total) throw new Error(t("editor.modals.extract.errNoPage", { page: n, total }));
     return n;
   };
   try {
@@ -33,7 +36,9 @@ export function parsePageRange(text, total) {
       if (!part) continue;
       if (part.includes("-")) {
         const bits = part.split("-");
-        if (bits.length !== 2 || (!bits[0] && !bits[1])) throw new Error(`รูปแบบช่วงหน้าไม่ถูกต้อง: ${part}`);
+        if (bits.length !== 2 || (!bits[0] && !bits[1])) {
+          throw new Error(t("editor.modals.extract.errInvalidRange", { part }));
+        }
         const start = bits[0] ? num(bits[0], part) : 1;
         const end = bits[1] ? num(bits[1], part) : total;
         const step = end >= start ? 1 : -1;
@@ -45,7 +50,7 @@ export function parsePageRange(text, total) {
   } catch (e) {
     return { error: e.message };
   }
-  return pages.length ? { pages } : { error: "กรุณาระบุเลขหน้า" };
+  return pages.length ? { pages } : { error: t("editor.modals.extract.errEmptyRange") };
 }
 
 /** [1,2,3,5] → "1-3, 5" */
@@ -61,22 +66,39 @@ export function rangeLabel(pages) {
 }
 
 const MODES = [
-  { value: "single", label: "รวมเป็นไฟล์เดียว", hint: "หน้าที่เลือกทั้งหมดเป็น PDF ไฟล์เดียว เรียงตามลำดับที่พิมพ์" },
-  { value: "split", label: "แยกไฟล์ละหน้า", hint: "PDF หน้าละ 1 ไฟล์ ดาวน์โหลดรวมเป็นไฟล์ .zip" },
+  { value: "single", labelKey: "editor.modals.extract.modeSingleLabel", hintKey: "editor.modals.extract.modeSingleHint" },
+  { value: "split", labelKey: "editor.modals.extract.modeSplitLabel", hintKey: "editor.modals.extract.modeSplitHint" },
 ];
 
 const FORMATS = [
-  { value: "pdf", label: "PDF" },
-  { value: "png", label: "รูป PNG" },
-  { value: "jpg", label: "รูป JPG" },
-];
-const QUALITIES = [
-  { value: 100, label: "เล็ก (100 dpi) — ส่งแชต/ดูบนจอ" },
-  { value: 150, label: "ปกติ (150 dpi)" },
-  { value: 300, label: "คมชัดสูง (300 dpi) — พิมพ์/ซูมดูรายละเอียด" },
+  { value: "pdf", labelKey: "editor.modals.extract.formatPdf" },
+  { value: "png", labelKey: "editor.modals.extract.formatPng" },
+  { value: "jpg", labelKey: "editor.modals.extract.formatJpg" },
 ];
 
+const QUALITIES = [
+  { value: 100, labelKey: "editor.modals.extract.dpi100" },
+  { value: 150, labelKey: "editor.modals.extract.dpi150" },
+  { value: 300, labelKey: "editor.modals.extract.dpi300" },
+];
+
+function getSubmitLabel({ submitting, isImage, mode, count, t }) {
+  if (submitting) {
+    return isImage ? t("editor.modals.extract.submittingImages") : t("editor.modals.extract.submittingPages");
+  }
+  if (isImage) {
+    return count > 1
+      ? t("editor.modals.extract.downloadImagesZip", { count })
+      : t("editor.modals.extract.downloadImage");
+  }
+  if (mode === "split" && count > 1) {
+    return t("editor.modals.extract.downloadFilesZip", { count });
+  }
+  return t("editor.modals.extract.download");
+}
+
 function ExtractPagesForm({ onClose, onExtract, totalPages, currentPage }) {
+  const { t } = useI18n();
   const [pageRange, setPageRange] = useState("");
   const [mode, setMode] = useState("single");
   const [format, setFormat] = useState("pdf");
@@ -85,8 +107,13 @@ function ExtractPagesForm({ onClose, onExtract, totalPages, currentPage }) {
   const [touched, setTouched] = useState(false);
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const rangeInputRef = useRef(null);
 
-  const parsed = parsePageRange(pageRange, totalPages);
+  useEffect(() => {
+    rangeInputRef.current?.focus();
+  }, []);
+
+  const parsed = parsePageRange(pageRange, totalPages, t);
   const showError = (touched || pageRange.trim()) && parsed.error;
 
   async function handleSubmit(e) {
@@ -98,62 +125,74 @@ function ExtractPagesForm({ onClose, onExtract, totalPages, currentPage }) {
     try {
       await onExtract(pageRange, mode, format, dpi);
     } catch (err) {
-      setServerError(err.message || "แยกหน้าเอกสารไม่สำเร็จ");
+      setServerError(err.message || t("editor.modals.extract.errFailed"));
       setSubmitting(false);
     }
   }
 
   const chip = "px-2.5 py-1 min-h-[32px] text-xs rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50";
   const count = parsed.pages?.length || 0;
+  const submitLabel = getSubmitLabel({ submitting, isImage, mode, count, t });
 
   return (
     <div role="presentation" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
       onMouseDown={(e) => e.target === e.currentTarget && !submitting && onClose()}>
-      <form role="dialog" aria-modal="true" aria-labelledby="extract-title" onSubmit={handleSubmit}
+      <form role="dialog" aria-modal="true" aria-labelledby="extract-title" onSubmit={(e) => void handleSubmit(e)}
         className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-xl shadow-xl flex flex-col max-h-[92dvh]">
         <div className="p-4 border-b border-gray-100">
-          <h2 id="extract-title" className="text-lg font-bold text-gray-900">แยกหน้า / ส่งออกเป็นรูปภาพ</h2>
-          <p className="mt-1 text-sm text-gray-500">ดาวน์โหลดเฉพาะหน้าที่ต้องการเป็นไฟล์ PDF ใหม่ หรือรูปภาพ PNG/JPG — เอกสารที่เปิดอยู่ไม่ถูกแก้</p>
+          <h2 id="extract-title" className="text-lg font-bold text-gray-900">{t("editor.modals.extract.title")}</h2>
+          <p className="mt-1 text-sm text-gray-500">{t("editor.modals.extract.subtitle")}</p>
         </div>
 
         <div className="p-4 space-y-4 overflow-y-auto">
           <div>
             <label htmlFor="extract-range" className="block text-sm font-medium text-gray-800">
-              หน้าที่ต้องการ <span className="font-normal text-gray-500">(เอกสารมี {totalPages} หน้า)</span>
+              {t("editor.modals.extract.pagesLabel")}{" "}
+              <span className="font-normal text-gray-500">{t("editor.modals.extract.totalPagesHint", { total: totalPages })}</span>
             </label>
-            <input id="extract-range" type="text" inputMode="text" autoFocus autoComplete="off" maxLength={500}
-              placeholder="เช่น 1-3, 5, 8-10"
+            <input ref={rangeInputRef} id="extract-range" type="text" inputMode="text" autoComplete="off" maxLength={500}
+              placeholder={t("editor.modals.extract.rangePlaceholder")}
               aria-invalid={showError ? "true" : "false"}
               value={pageRange}
               onChange={(e) => { setPageRange(e.target.value); setServerError(""); }}
               className={`mt-1 block w-full px-3 py-2 border rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-1 ${showError ? "border-red-400 focus:ring-red-500 focus:border-red-500" : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"}`} />
             <div className="mt-2 flex flex-wrap gap-1.5">
               {currentPage >= 1 && totalPages > 1 && (
-                <button type="button" className={chip} onClick={() => setPageRange(String(currentPage))}>หน้านี้ (หน้า {currentPage})</button>
+                <button type="button" className={chip} onClick={() => setPageRange(String(currentPage))}>
+                  {t("editor.modals.extract.thisPage", { page: currentPage })}
+                </button>
               )}
-              <button type="button" className={chip} onClick={() => setPageRange(`1-${totalPages}`)}>ทุกหน้า</button>
-              {totalPages > 1 && <button type="button" className={chip} onClick={() => setPageRange(`${totalPages}-1`)}>ทุกหน้า (กลับลำดับ)</button>}
+              <button type="button" className={chip} onClick={() => setPageRange(`1-${totalPages}`)}>
+                {t("editor.modals.extract.allPages")}
+              </button>
+              {totalPages > 1 && (
+                <button type="button" className={chip} onClick={() => setPageRange(`${totalPages}-1`)}>
+                  {t("editor.modals.extract.allPagesReversed")}
+                </button>
+              )}
             </div>
             <p className="mt-2 text-xs text-gray-500">
-              คั่นด้วยจุลภาค (,) และใช้ขีด (-) สำหรับช่วงหน้า · เรียงตามลำดับที่พิมพ์ เช่น <code>5, 1-3</code> = หน้า 5 ก่อน
+              {t("editor.modals.extract.rangeHelpPrefix")} <code>5, 1-3</code> {t("editor.modals.extract.rangeHelpSuffix")}
             </p>
-            {showError ? (
+            {showError && (
               <p className="mt-1 text-sm text-red-600" role="alert">{parsed.error}</p>
-            ) : count > 0 ? (
+            )}
+            {!showError && count > 0 && (
               <p className="mt-1 text-sm text-gray-700" data-testid="extract-summary">
-                จะได้ <strong>{count} หน้า</strong>: {rangeLabel(parsed.pages)}
+                {t("editor.modals.extract.summaryPrefix")}{" "}
+                <strong>{t("editor.modals.extract.summaryCount", { count })}</strong>: {rangeLabel(parsed.pages)}
               </p>
-            ) : null}
+            )}
           </div>
 
           <fieldset>
-            <legend className="text-sm font-medium text-gray-800 mb-1.5">ชนิดไฟล์</legend>
-            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="ชนิดไฟล์">
+            <legend className="text-sm font-medium text-gray-800 mb-1.5">{t("editor.modals.extract.fileTypeLabel")}</legend>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t("editor.modals.extract.fileTypeLabel")}>
               {FORMATS.map((f) => (
                 <button key={f.value} type="button" role="radio" aria-checked={format === f.value}
                   onClick={() => { setFormat(f.value); setServerError(""); }}
                   className={`min-h-[40px] rounded-lg border text-sm font-medium ${format === f.value ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}>
-                  {f.label}
+                  {t(f.labelKey)}
                 </button>
               ))}
             </div>
@@ -161,26 +200,26 @@ function ExtractPagesForm({ onClose, onExtract, totalPages, currentPage }) {
 
           {isImage ? (
             <div data-testid="extract-image-options">
-              <label htmlFor="extract-dpi" className="block text-sm font-medium text-gray-800">ความละเอียด</label>
+              <label htmlFor="extract-dpi" className="block text-sm font-medium text-gray-800">{t("editor.modals.extract.resolutionLabel")}</label>
               <select id="extract-dpi" value={dpi} onChange={(e) => setDpi(Number(e.target.value))}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white">
-                {QUALITIES.map((q) => <option key={q.value} value={q.value}>{q.label}</option>)}
+                {QUALITIES.map((q) => <option key={q.value} value={q.value}>{t(q.labelKey)}</option>)}
               </select>
               <p className="mt-2 text-xs text-gray-500">
-                ได้รูปหน้าละ 1 ไฟล์ — เลือกหน้าเดียวได้ไฟล์รูปทันที เลือกหลายหน้ารวมเป็นไฟล์ .zip
-                {format === "jpg" ? " · JPG ไฟล์เล็ก เหมาะกับเอกสารสแกน/รูปถ่าย" : " · PNG ตัวหนังสือคมที่สุด"}
+                {t("editor.modals.extract.imageHintBase")}
+                {format === "jpg" ? t("editor.modals.extract.imageHintJpg") : t("editor.modals.extract.imageHintPng")}
               </p>
             </div>
           ) : (
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-gray-800 mb-1">รูปแบบไฟล์</legend>
+              <legend className="text-sm font-medium text-gray-800 mb-1">{t("editor.modals.extract.fileModeLabel")}</legend>
               {MODES.map((m) => (
                 <label key={m.value}
                   className={`grid grid-cols-[auto_1fr] gap-x-3 items-start p-3 rounded-lg border cursor-pointer ${mode === m.value ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
                   <input type="radio" name="extract-mode" className="mt-1 row-span-2" value={m.value} checked={mode === m.value}
                     onChange={() => setMode(m.value)} />
-                  <span className="block text-sm font-medium text-gray-900">{m.label}</span>
-                  <span className="block text-xs text-gray-500">{m.hint}</span>
+                  <span className="block text-sm font-medium text-gray-900">{t(m.labelKey)}</span>
+                  <span className="block text-xs text-gray-500">{t(m.hintKey)}</span>
                 </label>
               ))}
             </fieldset>
@@ -190,12 +229,12 @@ function ExtractPagesForm({ onClose, onExtract, totalPages, currentPage }) {
 
         <div className="p-3 border-t border-gray-100 flex justify-end gap-2">
           <button type="button" onClick={onClose} disabled={submitting}
-            className="px-4 py-2 min-h-[40px] text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">ยกเลิก</button>
+            className="px-4 py-2 min-h-[40px] text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+            {t("editor.modals.extract.cancel")}
+          </button>
           <button type="submit" disabled={submitting || (touched && !!parsed.error)}
             className="px-4 py-2 min-h-[40px] text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-40">
-            {submitting ? (isImage ? "กำลังสร้างรูป…" : "กำลังแยกหน้า…")
-              : isImage ? (count > 1 ? `ดาวน์โหลด ${count} รูป (.zip)` : "ดาวน์โหลดรูป")
-              : mode === "split" && count > 1 ? `ดาวน์โหลด ${count} ไฟล์ (.zip)` : "ดาวน์โหลด"}
+            {submitLabel}
           </button>
         </div>
       </form>

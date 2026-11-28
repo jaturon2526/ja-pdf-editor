@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 export default function AnnotationTextPrompt({ type, onSubmit, onCancel }) {
+  const { t } = useI18n();
   const [text, setText] = useState("");
   const textRef = useRef(null);
-  const title =
-    type === "freetext" ? "เพิ่มกล่องข้อความ" : type === "rect" ? "เพิ่มกรอบสี่เหลี่ยม" : "เพิ่มโน้ต";
+
+  let title = t("editor.modals.annotPrompt.titleNote");
+  if (type === "freetext") {
+    title = t("editor.modals.annotPrompt.titleFreetext");
+  } else if (type === "rect") {
+    title = t("editor.modals.annotPrompt.titleRect");
+  }
+
   // กรอบสี่เหลี่ยม (rect) ไม่บังคับว่าต้องมีข้อความ — วาดกรอบเปล่าๆ ก็ได้
   const textOptional = type === "rect";
 
@@ -25,20 +33,25 @@ export default function AnnotationTextPrompt({ type, onSubmit, onCancel }) {
           ref={textRef}
           className="modal-textarea"
           rows={3}
-          placeholder={textOptional ? "พิมพ์ข้อความในกรอบ (ไม่บังคับ)..." : "พิมพ์ข้อความ..."}
+          placeholder={
+            textOptional
+              ? t("editor.modals.annotPrompt.placeholderRect")
+              : t("editor.modals.annotPrompt.placeholderDefault")
+          }
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
         <div className="modal-actions">
           <button type="button" className="secondary-btn" onClick={onCancel}>
-            ยกเลิก
+            {t("editor.modals.annotPrompt.cancel")}
           </button>
-          <button type="button"
+          <button
+            type="button"
             className="primary-btn"
             onClick={() => onSubmit(text)}
             disabled={!textOptional && !text.trim()}
           >
-            เพิ่ม
+            {t("editor.modals.annotPrompt.add")}
           </button>
         </div>
       </div>

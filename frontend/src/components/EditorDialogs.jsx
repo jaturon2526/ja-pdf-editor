@@ -1,42 +1,55 @@
 // กล่องโต้ตอบเล็กๆ ของหน้า Editor ที่เดิมเขียน inline อยู่ใน Editor.jsx (แยกออกมาให้ Editor.jsx สั้นลง)
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 export const PDF_VERSION_OPTIONS = [
-  { value: "", label: "ไม่เปลี่ยน (ตามไฟล์ปัจจุบัน)" },
-  { value: "1.4", label: "PDF 1.4 — โปรแกรมรุ่นเก่าเปิดได้" },
-  { value: "1.5", label: "PDF 1.5 — เลเยอร์, JPEG 2000" },
-  { value: "1.6", label: "PDF 1.6 — เข้ารหัส AES-128" },
-  { value: "1.7", label: "PDF 1.7 — ISO 32000-1 ใช้ทั่วไป (แนะนำ เข้ารหัส AES-256 ได้)" },
-  { value: "2.0", label: "PDF 2.0 — ISO 32000-2 ล่าสุด" },
+  { value: "", labelKey: "editor.modals.dialogs.pdfVersionUnchanged" },
+  { value: "1.4", labelKey: "editor.modals.dialogs.pdfVersion14" },
+  { value: "1.5", labelKey: "editor.modals.dialogs.pdfVersion15" },
+  { value: "1.6", labelKey: "editor.modals.dialogs.pdfVersion16" },
+  { value: "1.7", labelKey: "editor.modals.dialogs.pdfVersion17" },
+  { value: "2.0", labelKey: "editor.modals.dialogs.pdfVersion20" },
 ];
 
 // PDF/A (ISO 19005) — เก็บเอกสารระยะยาว
 export const PDFA_OPTIONS = [
-  { value: "pdfa-1b", label: "PDF/A-1b — เข้ากันได้กว้างสุด (PDF 1.4)" },
-  { value: "pdfa-2b", label: "PDF/A-2b — แนะนำ (PDF 1.7)" },
-  { value: "pdfa-3b", label: "PDF/A-3b — แบบ 2b ที่แนบไฟล์ได้" },
+  { value: "pdfa-1b", labelKey: "editor.modals.dialogs.pdfa1b" },
+  { value: "pdfa-2b", labelKey: "editor.modals.dialogs.pdfa2b" },
+  { value: "pdfa-3b", labelKey: "editor.modals.dialogs.pdfa3b" },
 ];
 
 export function SaveCopyModal({ filename, onFilenameChange, pdfVersion = "", onPdfVersionChange, currentVersion, encrypted, onCancel, onConfirm }) {
+  const { t } = useI18n();
+  const versionLabel = currentVersion
+    ? t("editor.modals.dialogs.saveCopyPdfVersionCurrent", { version: currentVersion })
+    : t("editor.modals.dialogs.saveCopyPdfVersionLabel");
+  const encryptedWarning =
+    pdfVersion === "1.6"
+      ? t("editor.modals.dialogs.pdfVersionEncrypted16Warning")
+      : t("editor.modals.dialogs.pdfVersionEncryptedLegacyWarning", { version: pdfVersion });
+
   return (
     <div className="modal-overlay">
       <div className="modal-card">
-        <h2 className="modal-title">บันทึกเป็นไฟล์ใหม่</h2>
+        <h2 className="modal-title">{t("editor.modals.dialogs.saveCopyTitle")}</h2>
         <div style={{ marginTop: 16 }}>
-          <label htmlFor="editordialogs-f25" style={{ fontSize: 14, color: "#475569", marginBottom: 8, display: "block" }}>ตั้งชื่อไฟล์ใหม่:</label>
-          <input id="editordialogs-f25" 
-            type="text" 
-            value={filename} 
-            onChange={(e) => onFilenameChange(e.target.value)} 
+          <label htmlFor="editordialogs-f25" style={{ fontSize: 14, color: "#475569", marginBottom: 8, display: "block" }}>
+            {t("editor.modals.dialogs.saveCopyFilenameLabel")}
+          </label>
+          <input
+            id="editordialogs-f25"
+            type="text"
+            value={filename}
+            onChange={(e) => onFilenameChange(e.target.value)}
             style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #cbd5e1" }}
           />
           <p style={{ fontSize: 12, color: "#64748b", marginTop: 8 }}>
-            * ไฟล์เดิมในหน้าแรก (Dashboard) จะยังคงเป็นเวอร์ชันก่อนหน้านี้ไม่ถูกแก้ไข
+            {t("editor.modals.dialogs.saveCopyNote")}
           </p>
         </div>
         {onPdfVersionChange && (
           <div style={{ marginTop: 16 }}>
             <label htmlFor="save-copy-pdf-version" style={{ fontSize: 14, color: "#475569", marginBottom: 8, display: "block" }}>
-              เวอร์ชัน PDF{currentVersion ? ` (ไฟล์ปัจจุบัน: ${currentVersion})` : ""}:
+              {versionLabel}
             </label>
             <select
               id="save-copy-pdf-version"
@@ -44,33 +57,30 @@ export function SaveCopyModal({ filename, onFilenameChange, pdfVersion = "", onP
               onChange={(e) => onPdfVersionChange(e.target.value)}
               style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff" }}
             >
-              <optgroup label="เวอร์ชัน PDF">
-                {PDF_VERSION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              <optgroup label={t("editor.modals.dialogs.optgroupPdfVersion")}>
+                {PDF_VERSION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
               </optgroup>
-              <optgroup label="PDF/A — เก็บเอกสารระยะยาว (ISO 19005)">
-                {PDFA_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              <optgroup label={t("editor.modals.dialogs.optgroupPdfa")}>
+                {PDFA_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
               </optgroup>
             </select>
             {pdfVersion.startsWith("pdfa-") && (
               <p style={{ fontSize: 12, color: "#64748b", marginTop: 8 }}>
-                PDF/A สำหรับเก็บเอกสารระยะยาว — เปิดแล้วหน้าตาเหมือนเดิมทุกโปรแกรม: ฝังฟอนต์ทั้งหมด ใส่โปรไฟล์สี sRGB
-                และไฮไลต์ กล่องข้อความ ช่องฟอร์มถูกรวมลงเนื้อหน้า (แก้ไขต่อไม่ได้) ข้อความยังค้นหาได้ ลิงก์และบุ๊กมาร์กยังใช้ได้
-                {pdfVersion === "pdfa-1b" && " · PDF/A-1 ไม่รองรับความโปร่งใส รูปที่มีพื้นโปร่งใสจะถูกเติมพื้นขาว"}
+                {t("editor.modals.dialogs.pdfaHint")}
+                {pdfVersion === "pdfa-1b" && t("editor.modals.dialogs.pdfa1bTransparencyNote")}
                 {encrypted && (
                   <strong style={{ display: "block", color: "#b91c1c", marginTop: 4 }}>
-                    PDF/A ห้ามตั้งรหัสผ่าน — เอกสารนี้มีรหัสผ่านอยู่ ลบรหัสผ่านก่อนจึงจะบันทึกเป็น PDF/A ได้
+                    {t("editor.modals.dialogs.pdfaEncryptedWarning")}
                   </strong>
                 )}
               </p>
             )}
             {pdfVersion && !pdfVersion.startsWith("pdfa-") && (
               <p style={{ fontSize: 12, color: "#64748b", marginTop: 8 }}>
-                ไฟล์ใหม่จะตรงมาตรฐาน PDF {pdfVersion} — ส่วนที่เวอร์ชันนี้ไม่รองรับจะถูกแปลง (เช่น เลเยอร์ถูกรวม รูป JPEG 2000
-                ถูกแปลงโดยไม่ลดความคมชัด) ข้อความ ลิงก์ บุ๊กมาร์ก ไฮไลต์ และช่องฟอร์มยังอยู่ครบ
+                {t("editor.modals.dialogs.pdfVersionHint", { version: pdfVersion })}
                 {encrypted && (pdfVersion === "1.4" || pdfVersion === "1.5" || pdfVersion === "1.6") && (
                   <strong style={{ display: "block", color: "#b45309", marginTop: 4 }}>
-                    {pdfVersion === "1.6" ? "PDF 1.6 เข้ารหัสได้แบบ AES-128" : `PDF ${pdfVersion} เข้ารหัสได้แค่แบบ RC4 128 บิต ซึ่งปลอดภัยน้อยกว่า AES`}
-                    {" "}และใช้รหัสผ่านภาษาไทยไม่ได้ — ถ้าไม่จำเป็นแนะนำ PDF 1.7
+                    {encryptedWarning}
                   </strong>
                 )}
               </p>
@@ -78,8 +88,10 @@ export function SaveCopyModal({ filename, onFilenameChange, pdfVersion = "", onP
           </div>
         )}
         <div className="modal-actions" style={{ marginTop: 24 }}>
-          <button className="secondary-btn" onClick={onCancel}>ยกเลิก</button>
-          <button className="primary-btn" onClick={onConfirm} disabled={!filename || (encrypted && pdfVersion.startsWith("pdfa-"))}>บันทึก</button>
+          <button type="button" className="secondary-btn" onClick={onCancel}>{t("editor.modals.dialogs.cancel")}</button>
+          <button type="button" className="primary-btn" onClick={onConfirm} disabled={!filename || (encrypted && pdfVersion.startsWith("pdfa-"))}>
+            {t("editor.modals.dialogs.save")}
+          </button>
         </div>
       </div>
     </div>
@@ -87,31 +99,32 @@ export function SaveCopyModal({ filename, onFilenameChange, pdfVersion = "", onP
 }
 
 export function CompressModal({ profile, onProfileChange, onCancel, onConfirm }) {
+  const { t } = useI18n();
   return (
     <div className="modal-overlay">
       <div className="modal-card">
-        <h2 className="modal-title">ลดขนาดไฟล์ (Compress PDF)</h2>
-        <p className="modal-subtitle">เลือกระดับการบีบอัดที่ต้องการ</p>
+        <h2 className="modal-title">{t("editor.modals.dialogs.compressTitle")}</h2>
+        <p className="modal-subtitle">{t("editor.modals.dialogs.compressSubtitle")}</p>
         <div style={{ margin: "20px 0", display: "flex", flexDirection: "column", gap: "10px" }}>
           <label>
             <input type="radio" name="profile" value="screen" checked={profile === "screen"} onChange={() => onProfileChange("screen")} />
-            {" "}เล็กสุด (Screen - สำหรับดูบนจอ)
+            {" "}{t("editor.modals.dialogs.compressScreen")}
           </label>
           <label>
             <input type="radio" name="profile" value="ebook" checked={profile === "ebook"} onChange={() => onProfileChange("ebook")} />
-            {" "}ปานกลาง (eBook - ภาพชัดปานกลาง)
+            {" "}{t("editor.modals.dialogs.compressEbook")}
           </label>
           <label>
             <input type="radio" name="profile" value="printer" checked={profile === "printer"} onChange={() => onProfileChange("printer")} />
-            {" "}ใหญ่ (Printer - สำหรับพิมพ์)
+            {" "}{t("editor.modals.dialogs.compressPrinter")}
           </label>
         </div>
         <p className="modal-subtitle" style={{ fontSize: "0.85rem" }}>
-          ไฮไลต์ กล่องข้อความ และช่องฟอร์มยังอยู่และแก้ไขได้ตามเดิม · ถ้าบีบแล้วเล็กลงไม่ถึง 3% ระบบจะไม่เปลี่ยนไฟล์
+          {t("editor.modals.dialogs.compressNote")}
         </p>
         <div className="modal-actions">
-          <button className="secondary-btn" onClick={onCancel}>ยกเลิก</button>
-          <button className="primary-btn" onClick={onConfirm}>ตกลง</button>
+          <button type="button" className="secondary-btn" onClick={onCancel}>{t("editor.modals.dialogs.cancel")}</button>
+          <button type="button" className="primary-btn" onClick={onConfirm}>{t("editor.modals.dialogs.confirm")}</button>
         </div>
       </div>
     </div>
@@ -119,18 +132,26 @@ export function CompressModal({ profile, onProfileChange, onCancel, onConfirm })
 }
 
 export function FlattenModal({ onCancel, onConfirm }) {
+  const { t } = useI18n();
   return (
     <div className="modal-overlay">
       <div className="modal-card">
-        <h2 className="modal-title" style={{ color: "var(--color-danger, #ef4444)" }}>รวมเลเยอร์ (Flatten PDF)</h2>
+        <h2 className="modal-title" style={{ color: "var(--color-danger, #ef4444)" }}>{t("editor.modals.dialogs.flattenTitle")}</h2>
         <p className="modal-subtitle" style={{ marginTop: "10px", lineHeight: "1.5" }}>
-          การทำ Flatten จะผสาน <strong>ลายเซ็น, กล่องข้อความ, ลายน้ำ, รูปภาพที่วางทับ, และฟอร์มที่กรอกไว้</strong> ให้กลายเป็นเนื้อเดียวกับหน้ากระดาษ (เหมือนสั่งพิมพ์ออกมาเป็นแผ่นใหม่)<br/><br/>
-          <strong>คำเตือน:</strong> คุณจะไม่สามารถใช้เครื่องมือยางลบ หรือคลิกแก้ไขสิ่งที่วางทับไปแล้วได้อีก (แต่ตัวหนังสือดั้งเดิมจะยัง Select ได้ปกติ)<br/><br/>
-          คุณแน่ใจหรือไม่ว่าต้องการรวมเลเยอร์?
+          {t("editor.modals.dialogs.flattenBodyPrefix")}
+          <strong>{t("editor.modals.dialogs.flattenBodyItems")}</strong>
+          {t("editor.modals.dialogs.flattenBodySuffix")}
+          <br /><br />
+          <strong>{t("editor.modals.dialogs.flattenWarningLabel")}</strong>
+          {t("editor.modals.dialogs.flattenWarningBody")}
+          <br /><br />
+          {t("editor.modals.dialogs.flattenConfirmQuestion")}
         </p>
         <div className="modal-actions" style={{ marginTop: "24px" }}>
-          <button className="secondary-btn" onClick={onCancel}>ยกเลิก</button>
-          <button className="primary-btn" style={{ backgroundColor: "var(--color-danger, #ef4444)" }} onClick={onConfirm}>ตกลง</button>
+          <button type="button" className="secondary-btn" onClick={onCancel}>{t("editor.modals.dialogs.cancel")}</button>
+          <button type="button" className="primary-btn" style={{ backgroundColor: "var(--color-danger, #ef4444)" }} onClick={onConfirm}>
+            {t("editor.modals.dialogs.confirm")}
+          </button>
         </div>
       </div>
     </div>
@@ -139,23 +160,24 @@ export function FlattenModal({ onCancel, onConfirm }) {
 
 // เลือกรูปแบบการพิมพ์ เมื่อเอกสารมีหน้าแนวนอน (เช่น หน้าที่หมุน 90°)
 export function PrintOptionsModal({ onChoose, onCancel }) {
+  const { t } = useI18n();
   const options = [
     {
       key: "as_shown",
-      title: "พิมพ์ตามที่เห็นบนจอ (แนะนำ)",
-      detail: "วางทุกหน้าบนกระดาษแนวตั้งในทิศเดียวกับที่เห็นบนจอ หน้าแนวนอนจะถูกย่อให้พอดี ไม่มีหน้ากลับหัว",
+      title: t("editor.modals.dialogs.printAsShownTitle"),
+      detail: t("editor.modals.dialogs.printAsShownDetail"),
     },
     {
       key: "auto",
-      title: "เต็มกระดาษ (ให้เครื่องพิมพ์หมุนหน้าเอง)",
-      detail: "หน้าแนวนอนถูกหมุนให้เต็มแผ่น — ทิศที่ได้ขึ้นกับเครื่องพิมพ์ หน้าที่หมุนซ้ายอาจดูกลับหัวในตัวอย่างก่อนพิมพ์",
+      title: t("editor.modals.dialogs.printAutoTitle"),
+      detail: t("editor.modals.dialogs.printAutoDetail"),
     },
   ];
   return (
     <div className="modal-overlay">
       <div className="modal-card">
-        <h2 className="modal-title">พิมพ์เอกสาร</h2>
-        <p className="modal-subtitle">เอกสารนี้มีหน้าแนวนอน เลือกรูปแบบการพิมพ์</p>
+        <h2 className="modal-title">{t("editor.modals.dialogs.printTitle")}</h2>
+        <p className="modal-subtitle">{t("editor.modals.dialogs.printSubtitle")}</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10, margin: "16px 0" }}>
           {options.map((o) => (
             <button
@@ -171,7 +193,7 @@ export function PrintOptionsModal({ onChoose, onCancel }) {
           ))}
         </div>
         <div className="modal-actions">
-          <button className="secondary-btn" onClick={onCancel}>ยกเลิก</button>
+          <button type="button" className="secondary-btn" onClick={onCancel}>{t("editor.modals.dialogs.cancel")}</button>
         </div>
       </div>
     </div>

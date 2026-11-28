@@ -1,7 +1,9 @@
 // กรอบหน้าต่างลงนาม: มือถือ = เต็มจอ (ปุ่มยืนยันติดด้านล่างเสมอ) · จอใหญ่ = การ์ดกลางจอ
 import { useEffect } from "react";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 
 export default function SignModalShell({ title, subtitle, icon, onCancel, footer, children, labelledBy = "sign-modal-title" }) {
+  const { t } = useI18n();
   // ล็อกการเลื่อนหน้าหลังระหว่างเปิด (กันหน้าเลื่อนตอนเซ็นบน iOS)
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -26,7 +28,7 @@ export default function SignModalShell({ title, subtitle, icon, onCancel, footer
             </h2>
             {subtitle && <p className="text-sm text-slate-500 mt-0.5 short:hidden">{subtitle}</p>}
           </div>
-          <button type="button" onClick={onCancel} aria-label="ปิด" className="p-2 -mr-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200">
+          <button type="button" onClick={onCancel} aria-label={t("editor.modals.sigCreator.closeAria")} className="p-2 -mr-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>

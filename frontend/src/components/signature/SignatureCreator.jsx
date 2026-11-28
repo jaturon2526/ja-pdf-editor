@@ -3,6 +3,7 @@
 // optional=true: เพิ่มแท็บ "ไม่ใส่รูป" (ลายเซ็นดิจิทัลแสดงเป็นข้อความได้)
 // ref.getDataUrl() → PNG data URL หรือ null · onReadyChange(boolean) บอกว่ากด "ตกลง" ได้หรือยัง
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 import { getSavedSignatureBlob, listSavedSignatures } from "../../api/signature.js";
 import {
   sigPasskeyErrorMessage,
@@ -12,15 +13,15 @@ import {
 import SignaturePad from "./SignaturePad.jsx";
 
 export const SIGN_COLOR_PRESETS = [
-  { key: "black", label: "ดำ", value: "#12172b" },
-  { key: "blue", label: "น้ำเงิน", value: "#1a56db" },
-  { key: "red", label: "แดง", value: "#d32f2f" },
+  { key: "black", labelKey: "editor.modals.sigCreator.colorBlack", value: "#12172b" },
+  { key: "blue", labelKey: "editor.modals.sigCreator.colorBlue", value: "#1a56db" },
+  { key: "red", labelKey: "editor.modals.sigCreator.colorRed", value: "#d32f2f" },
 ];
 
 const TEXT_FONTS = [
-  { key: "script", label: "ลายมือ", css: 'italic {size}px "Segoe Script", "Brush Script MT", "Snell Roundhand", cursive, sans-serif' },
-  { key: "thai", label: "ไทย", css: '{size}px "Sarabun", "Thonburi", "Leelawadee UI", sans-serif' },
-  { key: "serif", label: "ทางการ", css: 'italic {size}px Georgia, "Times New Roman", serif' },
+  { key: "script", labelKey: "editor.modals.sigCreator.fontScript", css: 'italic {size}px "Segoe Script", "Brush Script MT", "Snell Roundhand", cursive, sans-serif' },
+  { key: "thai", labelKey: "editor.modals.sigCreator.fontThai", css: '{size}px "Sarabun", "Thonburi", "Leelawadee UI", sans-serif' },
+  { key: "serif", labelKey: "editor.modals.sigCreator.fontSerif", css: 'italic {size}px Georgia, "Times New Roman", serif' },
 ];
 
 const isTouch = () => typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
@@ -77,32 +78,36 @@ export async function cleanSignatureImage(dataUrl, removeBackground) {
 }
 
 function ColorPicker({ value, onChange }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-      <span className="text-sm font-medium text-slate-700">สีปากกา</span>
-      <div className="flex items-center gap-2" role="radiogroup" aria-label="สีปากกา">
-        {SIGN_COLOR_PRESETS.map((c) => (
-          <button
-            key={c.key}
-            type="button"
-            role="radio"
-            aria-checked={value === c.value}
-            aria-label={c.label}
-            title={c.label}
-            onClick={() => onChange(c.value)}
-            className={`w-9 h-9 short:w-8 short:h-8 rounded-full border-2 transition ${value === c.value ? "border-sky-500 ring-2 ring-sky-200 scale-105" : "border-white shadow"}`}
-            style={{ backgroundColor: c.value }}
-          />
-        ))}
+      <span className="text-sm font-medium text-slate-700">{t("editor.modals.sigCreator.penColor")}</span>
+      <div className="flex items-center gap-2" role="radiogroup" aria-label={t("editor.modals.sigCreator.penColor")}>
+        {SIGN_COLOR_PRESETS.map((c) => {
+          const label = t(c.labelKey);
+          return (
+            <button
+              key={c.key}
+              type="button"
+              role="radio"
+              aria-checked={value === c.value}
+              aria-label={label}
+              title={label}
+              onClick={() => onChange(c.value)}
+              className={`w-9 h-9 short:w-8 short:h-8 rounded-full border-2 transition ${value === c.value ? "border-sky-500 ring-2 ring-sky-200 scale-105" : "border-white shadow"}`}
+              style={{ backgroundColor: c.value }}
+            />
+          );
+        })}
         {(() => {
           const custom = !SIGN_COLOR_PRESETS.some((c) => c.value === value);
           return (
             <label
               className={`relative w-9 h-9 rounded-full overflow-hidden border-2 cursor-pointer flex items-center justify-center ${custom ? "border-sky-500 ring-2 ring-sky-200" : "border-white shadow"}`}
               style={{ background: custom ? value : "conic-gradient(#ef4444,#f59e0b,#22c55e,#06b6d4,#6366f1,#ec4899,#ef4444)" }}
-              title="เลือกสีอื่น"
+              title={t("editor.modals.sigCreator.customColor")}
             >
-              <span className="sr-only">เลือกสีอื่น</span>
+              <span className="sr-only">{t("editor.modals.sigCreator.customColor")}</span>
               {!custom && <span className="w-5 h-5 rounded-full bg-white/90 text-slate-700 text-sm leading-5 text-center font-bold">+</span>}
               <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
             </label>
@@ -119,6 +124,7 @@ function initialTab(optional) {
 }
 
 const SignatureCreator = forwardRef(function SignatureCreator({ optional = false, onReadyChange }, ref) {
+  const { t } = useI18n();
   // ลายเซ็นที่บันทึกไว้ (เข้ารหัสด้วย Passkey)
   const [savedList, setSavedList] = useState([]);
   const [selectedSavedId, setSelectedSavedId] = useState(null);
@@ -129,11 +135,11 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
   const [unlockError, setUnlockError] = useState("");
 
   const tabs = [
-    ...(optional ? [{ key: "none", label: "ไม่ใส่รูป" }] : []),
-    ...(savedList.length > 0 ? [{ key: "saved", label: "ที่บันทึกไว้" }] : []),
-    { key: "draw", label: "เซ็นสด" },
-    { key: "text", label: "พิมพ์" },
-    { key: "image", label: "รูปภาพ" },
+    ...(optional ? [{ key: "none", label: t("editor.modals.sigCreator.tabNone") }] : []),
+    ...(savedList.length > 0 ? [{ key: "saved", label: t("editor.modals.sigCreator.tabSaved") }] : []),
+    { key: "draw", label: t("editor.modals.sigCreator.tabDraw") },
+    { key: "text", label: t("editor.modals.sigCreator.tabText") },
+    { key: "image", label: t("editor.modals.sigCreator.tabImage") },
   ];
   const [tab, setTab] = useState(() => initialTab(optional));
   const [color, setColor] = useState(SIGN_COLOR_PRESETS[0].value);
@@ -142,6 +148,7 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
   const [text, setText] = useState("");
   const [font, setFont] = useState(TEXT_FONTS[0].key);
   const textCanvasRef = useRef(null);
+  const textInputRef = useRef(null);
 
   // รูปภาพ
   const [rawImage, setRawImage] = useState(null);
@@ -163,9 +170,16 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
         setSavedList(items);
         if (items.length > 0) setSelectedSavedId(items[0].id);
       })
-      .catch(() => {});
+      .catch(() => { /* ข้ามเงียบๆ หากไม่ได้ล็อกอิน */ });
     return () => { cancelled = true; };
   }, []);
+
+  // โฟกัสช่องพิมพ์ข้อความอัตโนมัติบนเดสก์ท็อปเมื่อเปิดแท็บพิมพ์
+  useEffect(() => {
+    if (tab === "text" && !isTouch()) {
+      textInputRef.current?.focus();
+    }
+  }, [tab]);
 
   // โหลด ciphertext blob ล่วงหน้าเมื่อเปลี่ยนลายเซ็นที่เลือก เพื่อให้การกด "ปลดล็อกด้วย Passkey"
   // เรียก navigator.credentials.get() ได้ทันทีภายใน user gesture (รองรับ Safari)
@@ -185,14 +199,14 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
       .catch(() => {
         if (!cancelled) {
           setSavedBlob(null);
-          setUnlockError("โหลดข้อมูลลายเซ็นไม่สำเร็จ กรุณาลองใหม่");
+          setUnlockError(t("editor.modals.sigCreator.loadSavedFailed"));
         }
       })
       .finally(() => {
         if (!cancelled) setBlobLoading(false);
       });
     return () => { cancelled = true; };
-  }, [selectedSavedId]);
+  }, [selectedSavedId, t]);
 
   const handleUnlockSaved = async () => {
     if (!savedBlob || unlocking) return;
@@ -265,33 +279,33 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
     },
   }));
 
-  const tabBtn = (t) => (
+  const tabBtn = (item) => (
     <button
-      key={t.key}
+      key={item.key}
       type="button"
       role="tab"
-      aria-selected={tab === t.key}
-      onClick={() => setTab(t.key)}
-      className={`flex-1 min-w-0 px-2 py-2.5 short:py-1.5 text-sm font-medium rounded-lg transition ${tab === t.key ? "bg-white text-sky-700 shadow" : "text-slate-600 hover:text-slate-900"}`}
+      aria-selected={tab === item.key}
+      onClick={() => setTab(item.key)}
+      className={`flex-1 min-w-0 px-2 py-2.5 short:py-1.5 text-sm font-medium rounded-lg transition ${tab === item.key ? "bg-white text-sky-700 shadow" : "text-slate-600 hover:text-slate-900"}`}
     >
-      {t.label}
+      {item.label}
     </button>
   );
 
   return (
     <div className="space-y-3 short:space-y-2">
-      <div className="flex gap-1 p-1 rounded-xl bg-slate-100" role="tablist" aria-label="วิธีสร้างลายเซ็น">{tabs.map(tabBtn)}</div>
+      <div className="flex gap-1 p-1 rounded-xl bg-slate-100" role="tablist" aria-label={t("editor.modals.sigCreator.methodAria")}>{tabs.map(tabBtn)}</div>
 
 
       {tab === "none" && (
         <p className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-600">
-          ไม่ใส่รูปลายเซ็น — ในเอกสารจะแสดงเป็นข้อความชื่อผู้ลงนามและเวลา
+          {t("editor.modals.sigCreator.noImageHint")}
         </p>
       )}
 
       {tab === "saved" && (
         <div className="space-y-3">
-          <div className="space-y-1.5" role="radiogroup" aria-label="เลือกลายเซ็นที่บันทึกไว้">
+          <div className="space-y-1.5" role="radiogroup" aria-label={t("editor.modals.sigCreator.savedListAria")}>
             {savedList.map((s) => {
               const selected = s.id === selectedSavedId;
               return (
@@ -310,11 +324,11 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
                   <div className="min-w-0">
                     <div className="text-sm font-medium truncate">{s.label}</div>
                     <div className="text-xs text-slate-500 truncate">
-                      ปลดล็อกด้วย Passkey: {s.passkey_name || "Passkey"}
+                      {t("editor.modals.sigCreator.unlockWithPasskeyName", { name: s.passkey_name || "Passkey" })}
                     </div>
                   </div>
                   <span className="text-xs shrink-0 px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-600">
-                    {selected && unlockedUrl ? "ปลดล็อกแล้ว" : "ล็อกอยู่"}
+                    {selected && unlockedUrl ? t("editor.modals.sigCreator.unlockedBadge") : t("editor.modals.sigCreator.lockedBadge")}
                   </span>
                 </button>
               );
@@ -328,7 +342,7 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
               onClick={() => void handleUnlockSaved()}
               className="w-full py-2.5 px-4 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium disabled:opacity-50 transition"
             >
-              {unlocking ? "กำลังยืนยันตัวตนด้วย Passkey..." : "ปลดล็อกด้วย Passkey"}
+              {unlocking ? t("editor.modals.sigCreator.verifyingPasskey") : t("editor.modals.sigCreator.unlockPasskey")}
             </button>
           )}
 
@@ -340,10 +354,10 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
 
           <div className="flex items-center justify-center min-h-[140px] rounded-xl border-2 border-dashed border-slate-300 bg-[repeating-conic-gradient(#f1f5f9_0%_25%,#fff_0%_50%)] bg-[length:16px_16px]">
             {unlockedUrl ? (
-              <img src={unlockedUrl} alt="พรีวิวลายเซ็นที่ปลดล็อกแล้ว" className="max-h-56 max-w-full object-contain p-2" />
+              <img src={unlockedUrl} alt={t("editor.modals.sigCreator.unlockedPreviewAlt")} className="max-h-56 max-w-full object-contain p-2" />
             ) : (
               <span className="text-sm text-slate-400 px-4 text-center">
-                กด &ldquo;ปลดล็อกด้วย Passkey&rdquo; เพื่อถอดรหัสและแสดงรูปลายเซ็น
+                {t("editor.modals.sigCreator.lockedPreviewHint")}
               </span>
             )}
           </div>
@@ -357,19 +371,19 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
             <div className="flex items-center gap-2 ml-auto">
               <button type="button" onClick={() => padRef.current?.undo()} disabled={!hasInk}
                 className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-white text-slate-700 disabled:opacity-40">
-                ↶ เลิกทำ
+                {t("editor.modals.sigCreator.undo")}
               </button>
               <button type="button" onClick={() => padRef.current?.clear()} disabled={!hasInk}
                 className="px-3 py-2 text-sm rounded-lg border border-slate-300 bg-white text-slate-700 disabled:opacity-40">
-                ล้าง
+                {t("editor.modals.sigCreator.clear")}
               </button>
             </div>
           </div>
           <SignaturePad ref={padRef} color={color} onChange={setHasInk}
             className="h-[clamp(180px,42dvh,360px)] sm:h-[clamp(200px,34dvh,280px)] short:h-[max(140px,calc(100dvh-210px))]" />
           <p className="text-xs text-slate-500 short:hidden">
-            เซ็นเหนือเส้น — ระบบตัดขอบว่างให้อัตโนมัติ
-            {isTouch() && <span className="portrait:inline landscape:hidden"> · 💡 หมุนจอเป็นแนวนอนเพื่อให้มีพื้นที่เซ็นกว้างขึ้น</span>}
+            {t("editor.modals.sigCreator.drawHint")}
+            {isTouch() && <span className="portrait:inline landscape:hidden">{t("editor.modals.sigCreator.rotateHint")}</span>}
           </p>
         </div>
       )}
@@ -377,20 +391,20 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
       {tab === "text" && (
         <div className="space-y-3">
           <input
-            autoFocus={!isTouch()}
+            ref={textInputRef}
             type="text"
             maxLength={60}
             className="w-full px-4 py-3 text-base border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
-            placeholder="พิมพ์ข้อความที่จะใช้เป็นลายเซ็น..."
+            placeholder={t("editor.modals.sigCreator.textPlaceholder")}
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">แบบอักษร</span>
+            <span className="text-sm font-medium text-slate-700">{t("editor.modals.sigCreator.fontLabel")}</span>
             {TEXT_FONTS.map((f) => (
               <button key={f.key} type="button" onClick={() => setFont(f.key)}
                 className={`px-3 py-1.5 text-sm rounded-full border ${font === f.key ? "border-sky-500 bg-sky-50 text-sky-700" : "border-slate-300 bg-white text-slate-600"}`}>
-                {f.label}
+                {t(f.labelKey)}
               </button>
             ))}
           </div>
@@ -418,17 +432,17 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
           />
           <button type="button" onClick={() => fileRef.current?.click()}
             className="w-full py-3 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50">
-            {rawImage ? "เปลี่ยนรูป..." : "เลือกรูป หรือถ่ายรูปลายเซ็นบนกระดาษ..."}
+            {rawImage ? t("editor.modals.sigCreator.changeImage") : t("editor.modals.sigCreator.chooseImage")}
           </button>
           <label className="flex items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" className="h-4 w-4" checked={removeBg} onChange={(e) => setRemoveBg(e.target.checked)} />
-            ลบพื้นหลังสีขาวและตัดขอบให้อัตโนมัติ
+            {t("editor.modals.sigCreator.removeBgLabel")}
           </label>
           <div className="flex items-center justify-center min-h-[140px] rounded-xl border-2 border-dashed border-slate-300 bg-[repeating-conic-gradient(#f1f5f9_0%_25%,#fff_0%_50%)] bg-[length:16px_16px]">
             {imageUrl ? (
-              <img src={imageUrl} alt="พรีวิวลายเซ็นที่อัปโหลด" className="max-h-56 max-w-full object-contain p-2" />
+              <img src={imageUrl} alt={t("editor.modals.sigCreator.uploadedPreviewAlt")} className="max-h-56 max-w-full object-contain p-2" />
             ) : (
-              <span className="text-sm text-slate-400">ยังไม่ได้เลือกรูปภาพ</span>
+              <span className="text-sm text-slate-400">{t("editor.modals.sigCreator.noImageSelected")}</span>
             )}
           </div>
         </div>

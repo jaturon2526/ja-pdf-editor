@@ -2,6 +2,7 @@
 // onConfirm(base64ไม่มีหัว data:, dataUrl) — Editor ใช้ base64 เพื่อวางตำแหน่งต่อ · หน้าลงนามใช้ dataUrl
 // ทุกอย่างประมวลผลในเบราว์เซอร์ (ข้อความไทยใช้ฟอนต์ของเบราว์เซอร์ วาดลง canvas)
 import { useRef, useState } from "react";
+import { useI18n } from "../i18n/I18nContext.jsx";
 import SignModalShell from "./signature/SignModalShell.jsx";
 import SignatureCreator from "./signature/SignatureCreator.jsx";
 
@@ -11,6 +12,7 @@ function dataUrlToBase64(dataUrl) {
 }
 
 export default function ElectronicSignModal({ onConfirm, onCancel }) {
+  const { t } = useI18n();
   const creatorRef = useRef(null);
   const [ready, setReady] = useState(false);
 
@@ -22,15 +24,17 @@ export default function ElectronicSignModal({ onConfirm, onCancel }) {
 
   return (
     <SignModalShell
-      title="ลายเซ็นอิเล็กทรอนิกส์"
-      subtitle="เซ็นสดด้วยนิ้ว/ปากกา พิมพ์ชื่อ หรือใช้รูปลายเซ็น"
+      title={t("editor.modals.electronicSign.title")}
+      subtitle={t("editor.modals.electronicSign.subtitle")}
       onCancel={onCancel}
       footer={
         <>
-          <button type="button" onClick={onCancel} className="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100">ยกเลิก</button>
+          <button type="button" onClick={onCancel} className="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100">
+            {t("editor.modals.electronicSign.cancel")}
+          </button>
           <button type="button" onClick={handleConfirm} disabled={!ready}
             className="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 disabled:opacity-50 shadow-sm">
-            ตกลง
+            {t("editor.modals.electronicSign.confirm")}
           </button>
         </>
       }

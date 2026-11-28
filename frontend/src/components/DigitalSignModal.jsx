@@ -2,6 +2,8 @@
 // onConfirm(pfxFile, password, reason, location, contact, name, imageFile, certInfo) — ตรวจใบรับรอง/รหัสผ่านก่อนเรียก
 // pfxFile = File ที่เลือก หรือ { certificateId } = ใบรับรองที่บันทึกไว้ (หน้าความปลอดภัย) — ระบบไม่เก็บรหัส ต้องกรอกทุกครั้ง
 import React, { useEffect, useRef, useState } from "react";
+import { useI18n } from "../i18n/I18nContext.jsx";
+import { dateLocale } from "../i18n/index.js";
 import SignModalShell from "./signature/SignModalShell.jsx";
 import SignatureCreator from "./signature/SignatureCreator.jsx";
 import * as api from "../api.js";
@@ -16,18 +18,27 @@ function dataUrlToFile(dataUrl, name) {
   return new File([arr], name, { type: mime });
 }
 
-const fmtDate = (iso) => new Date(iso).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
+const fmtDate = (iso, locale) => new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
 
 // บรรทัดรองของใบที่บันทึกไว้ (ข้อความล้วนในป้ายของ radio — ไม่ซ้อน element)
-function certSummary(c) {
-  const parts = [c.subject_cn || "—", `ออกโดย ${c.issuer_cn || "—"}`, c.expired ? "หมดอายุแล้ว" : `ใช้ได้ถึง ${fmtDate(c.valid_to)}`];
-  if (c.passkeys?.length) parts.push("ปลดล็อกด้วย passkey ได้");
+function certSummary(c, t, locale) {
+  const validity = c.expired
+    ? t("editor.modals.digitalSign.expired")
+    : t("editor.modals.digitalSign.validUntil", { date: fmtDate(c.valid_to, locale) });
+  const parts = [
+    c.subject_cn || "—",
+    t("editor.modals.digitalSign.issuedBy", { issuer: c.issuer_cn || "—" }),
+    validity,
+  ];
+  if (c.passkeys?.length) parts.push(t("editor.modals.digitalSign.passkeyAvailable"));
   return parts.join(" · ");
 }
 
 const INPUT = "w-full px-4 py-2.5 text-base sm:text-sm border border-slate-300 rounded-lg bg-white text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500";
 
 export default function DigitalSignModal({ onConfirm, onCancel }) {
+  const { lang, t } = useI18n();
+  const locale = dateLocale(lang);
   // ที่มาของใบรับรอง: "saved" = ที่บันทึกไว้บนระบบ · "file" = เลือกไฟล์จากเครื่อง (ไม่มีใบที่บันทึกไว้ → file)
   const [savedCerts, setSavedCerts] = useState(null);
   const [source, setSource] = useState("file");
@@ -61,7 +72,10 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
     return () => { alive = false; };
   }, []);
 
-  const certificate = source === "saved" ? (certId ? { certificateId: certId } : null) : file;
+  let certificate = file;
+  if (source === "saved") {
+    certificate = certId ? { certificateId: certId } : null;
+  }
   const selectedCert = source === "saved" ? savedCerts?.find((c) => c.id === certId) : null;
   const passkeyReady = !!selectedCert?.passkeys?.length && supportsWebAuthn();
 
@@ -99,7 +113,7 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
       info = await api.checkCertificate(certificate, password);
       setCertInfo(info);
     } catch (err) {
-      setCertError(err.message || "ตรวจใบรับรองไม่สำเร็จ");
+      setCertError(err.message || t("editor.modals.digitalSign.checkFailed"));
       setChecking(false);
       return;
     }
@@ -109,10 +123,22 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
     onConfirm(certificate, password, reason || undefined, location || undefined, contact || undefined, name || undefined, imageFile, info);
   }
 
+  let passkeyButtonLabel = t("editor.modals.digitalSign.unlockPasskey");
+  if (unlocking) {
+    passkeyButtonLabel = t("editor.modals.digitalSign.unlockingPasskey");
+  } else if (unlockedBy === certId) {
+    passkeyButtonLabel = t("editor.modals.digitalSign.unlockedPasskey");
+  }
+
+  const sourceOptions = [
+    ["saved", t("editor.modals.digitalSign.sourceSaved")],
+    ["file", t("editor.modals.digitalSign.sourceFile")],
+  ];
+
   return (
     <SignModalShell
-      title="ลายเซ็นดิจิทัล (ใบรับรอง)"
-      subtitle="เลือกใบรับรองที่บันทึกไว้ หรือไฟล์ .p12 / .pfx และระบุข้อมูลผู้เซ็น"
+      title={t("editor.modals.digitalSign.title")}
+      subtitle={t("editor.modals.digitalSign.subtitle")}
       icon={
         <svg className="w-5 h-5 text-sky-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -122,24 +148,24 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
       footer={
         <>
           <button type="button" className="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100" onClick={onCancel}>
-            ยกเลิก
+            {t("editor.modals.digitalSign.cancel")}
           </button>
           <button type="submit" form="digital-sign-form" disabled={!canConfirm}
             className="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
-            {checking ? "กำลังตรวจใบรับรอง…" : "ตกลง"}
+            {checking ? t("editor.modals.digitalSign.checking") : t("editor.modals.digitalSign.confirm")}
           </button>
         </>
       }
     >
-        <form id="digital-sign-form" onSubmit={handleSubmit} className="space-y-6">
+        <form id="digital-sign-form" onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
           
           {/* Certificate Selection Section */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-200 pb-2">1. ใบรับรองและรหัสผ่าน</h3>
+            <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-200 pb-2">{t("editor.modals.digitalSign.sectionCert")}</h3>
             
             {savedCerts?.length > 0 && (
-              <div role="radiogroup" aria-label="ที่มาของใบรับรอง" className="grid grid-cols-2 gap-2">
-                {[["saved", "ใบรับรองที่บันทึกไว้"], ["file", "เลือกไฟล์จากเครื่อง"]].map(([value, text]) => (
+              <div role="radiogroup" aria-label={t("editor.modals.digitalSign.sourceAria")} className="grid grid-cols-2 gap-2">
+                {sourceOptions.map(([value, text]) => (
                   <button key={value} type="button" role="radio" aria-checked={source === value}
                     onClick={() => { setSource(value); setCertError(""); setCertInfo(null); }}
                     className={`py-2 text-sm rounded-lg border ${source === value ? "border-sky-600 bg-sky-50 text-sky-800 font-medium" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>
@@ -157,7 +183,7 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
                       <input type="radio" name="saved-cert" className="mt-1 row-span-2" disabled={c.expired} checked={certId === c.id}
                         onChange={() => { setCertId(c.id); setCertError(""); setCertInfo(null); if (unlockedBy) { setPassword(""); setUnlockedBy(null); } }} />
                       <span className="block min-w-0 font-medium text-slate-900 break-words">{c.label}</span>
-                      <span className="block min-w-0 text-xs text-slate-600 break-words">{certSummary(c)}</span>
+                      <span className="block min-w-0 text-xs text-slate-600 break-words">{certSummary(c, t, locale)}</span>
                     </label>
                   </li>
                 ))}
@@ -181,37 +207,37 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
                 onClick={() => fileInputRef.current?.click()}
               >
                 <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                เลือกไฟล์ .p12 / .pfx...
+                {t("editor.modals.digitalSign.chooseFile")}
               </button>
               <div className="text-sm text-slate-600 flex items-center gap-2">
                 {file ? (
                   <><svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> <span className="font-medium text-green-700 truncate">{file.name}</span></>
                 ) : (
-                  <><span className="w-2 h-2 rounded-full bg-amber-400"></span> ยังไม่ได้เลือกไฟล์</>
+                  <><span className="w-2 h-2 rounded-full bg-amber-400"></span> {t("editor.modals.digitalSign.noFileSelected")}</>
                 )}
               </div>
               {/* แสดงตั้งแต่เปิด (ไม่รอผลโหลดรายการ) — กันเนื้อหาด้านล่างเลื่อนลงหลังเปิดหน้าต่าง */}
               {!savedCerts?.length && (
-                <p className="mt-2 text-xs text-slate-500">ใช้บ่อย? บันทึกใบรับรองไว้ที่หน้า “ความปลอดภัย” จะได้ไม่ต้องเลือกไฟล์ทุกครั้ง</p>
+                <p className="mt-2 text-xs text-slate-500">{t("editor.modals.digitalSign.saveCertHint")}</p>
               )}
             </div>
             )}
 
             {passkeyReady && (
-              <button type="button" onClick={handlePasskeyUnlock} disabled={unlocking || unlockedBy === certId}
+              <button type="button" onClick={() => void handlePasskeyUnlock()} disabled={unlocking || unlockedBy === certId}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-sky-600 bg-white text-sm font-medium text-sky-700 hover:bg-sky-50 disabled:opacity-60">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4.5" /><path d="M10.7 12.3L21 2M16 7l3 3M18.5 4.5l2 2" /></svg>
-                {unlocking ? "กำลังรอ passkey..." : unlockedBy === certId ? "ปลดล็อกด้วย passkey แล้ว" : "ปลดล็อกด้วย passkey"}
+                {passkeyButtonLabel}
               </button>
             )}
             {unlockedBy === certId && (
-              <p className="text-xs text-green-700" role="status">เติมรหัสให้แล้ว — กรอกรายละเอียดที่เหลือ (ถ้ามี) แล้วกด “ตกลง”</p>
+              <p className="text-xs text-green-700" role="status">{t("editor.modals.digitalSign.unlockedHint")}</p>
             )}
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 className={`${INPUT} pr-12`}
-                placeholder="รหัสผ่านสำหรับเปิดคีย์ (Passphrase) *"
+                placeholder={t("editor.modals.digitalSign.passphrasePlaceholder")}
                 value={password}
                 onChange={(e) => changePassword(e.target.value)}
               />
@@ -219,7 +245,7 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
                 type="button"
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors rounded"
                 onClick={() => setShowPassword(!showPassword)}
-                title={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                title={showPassword ? t("editor.modals.digitalSign.hidePassword") : t("editor.modals.digitalSign.showPassword")}
               >
                 {showPassword ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
@@ -238,33 +264,33 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
 
           {/* Additional Details Section */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-200 pb-2">2. รายละเอียดเพิ่มเติม (Optional)</h3>
+            <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-200 pb-2">{t("editor.modals.digitalSign.sectionDetails")}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input
                 type="text"
                 className={INPUT}
-                placeholder="ชื่อผู้เซ็น (Name)"
+                placeholder={t("editor.modals.digitalSign.namePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
               <input
                 type="text"
                 className={INPUT}
-                placeholder="เหตุผลในการเซ็น (Reason)"
+                placeholder={t("editor.modals.digitalSign.reasonPlaceholder")}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
               />
               <input
                 type="text"
                 className={INPUT}
-                placeholder="สถานที่เซ็น (Location)"
+                placeholder={t("editor.modals.digitalSign.locationPlaceholder")}
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
               />
               <input
                 type="text"
                 className={INPUT}
-                placeholder="ข้อมูลติดต่อ (Contact Info)"
+                placeholder={t("editor.modals.digitalSign.contactPlaceholder")}
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
               />
@@ -273,7 +299,7 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
 
           {/* รูปลายเซ็น (ไม่บังคับ) */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-200 pb-2">3. รูปลายเซ็น (ไม่บังคับ)</h3>
+            <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-200 pb-2">{t("editor.modals.digitalSign.sectionImage")}</h3>
             <SignatureCreator ref={creatorRef} optional onReadyChange={setImageReady} />
           </div>
         </form>

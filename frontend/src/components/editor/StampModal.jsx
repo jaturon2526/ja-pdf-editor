@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 import {
   STAMP_ANGLES,
   STAMP_COLORS,
@@ -9,14 +10,29 @@ import {
   renderStampPngFile,
 } from "../../utils/stampRenderer.js";
 
+const COLOR_KEYS = {
+  "#1d4ed8": "editor.modals.stamp.color_blue",
+  "#dc2626": "editor.modals.stamp.color_red",
+  "#15803d": "editor.modals.stamp.color_green",
+  "#475569": "editor.modals.stamp.color_gray",
+  "#7c3aed": "editor.modals.stamp.color_purple",
+};
+
+const ANGLE_KEYS = {
+  0: "editor.modals.stamp.angle_0",
+  "-12": "editor.modals.stamp.angle_m12",
+  "-20": "editor.modals.stamp.angle_m20",
+};
+
 /**
  * หน้าต่างเลือกและปรับแต่งตราประทับสำเร็จรูป (Stamps)
  * แสดงตัวอย่างแบบเรียลไทม์บน <canvas> แล้วสร้าง PNG โปร่งใสส่งเข้าโหมดวางรูป (ลาก ย่อ/ขยาย Undo ได้)
  */
 export default function StampModal({ onClose, onSubmit }) {
+  const { t } = useI18n();
   const firstPreset = STAMP_PRESETS[0];
   const [presetId, setPresetId] = useState(firstPreset.id);
-  const [text, setText] = useState(firstPreset.text);
+  const [text, setText] = useState(() => t(`editor.modals.stamp.presetText_${firstPreset.id}`));
   const [includeDate, setIncludeDate] = useState(firstPreset.includeDate);
   const [subText, setSubText] = useState(firstPreset.includeDate ? formatThaiDate() : "");
   const [color, setColor] = useState(firstPreset.color);
@@ -42,7 +58,7 @@ export default function StampModal({ onClose, onSubmit }) {
 
   function selectPreset(preset) {
     setPresetId(preset.id);
-    setText(preset.text);
+    setText(t(`editor.modals.stamp.presetText_${preset.id}`));
     setColor(preset.color);
     setAngleDeg(preset.angleDeg);
     setIncludeDate(preset.includeDate);
@@ -59,7 +75,7 @@ export default function StampModal({ onClose, onSubmit }) {
 
   async function handleConfirm() {
     if (!text.trim()) {
-      setError("กรุณากรอกข้อความบนตราประทับ");
+      setError(t("editor.modals.stamp.errEmptyText"));
       return;
     }
     setSubmitting(true);
@@ -74,7 +90,7 @@ export default function StampModal({ onClose, onSubmit }) {
       });
       onSubmit(file, text.trim());
     } catch (err) {
-      setError(err?.message || "สร้างตราประทับไม่สำเร็จ");
+      setError(err?.message || t("editor.modals.stamp.errCreateFailed"));
       setSubmitting(false);
     }
   }
@@ -84,7 +100,7 @@ export default function StampModal({ onClose, onSubmit }) {
       className="fixed inset-0 z-50 bg-slate-900/50 flex items-end sm:items-center justify-center sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="ตราประทับสำเร็จรูป"
+      aria-label={t("editor.modals.stamp.dialogAria")}
     >
       <div className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-xl shadow-2xl border border-slate-200 max-h-[92dvh] flex flex-col overflow-hidden">
         {/* Header */}
@@ -94,12 +110,12 @@ export default function StampModal({ onClose, onSubmit }) {
               <path d="M5 20h14" />
               <path d="M5 17h14v-2a3 3 0 0 0-3-3h-1.5a2 2 0 0 1-1.9-2.6l.6-2.1a3 3 0 1 0-5.4 0l.6 2.1A2 2 0 0 1 6.5 12H5a3 3 0 0 0-3 3v2z" />
             </svg>
-            <h2 className="text-base font-semibold text-slate-800">ตราประทับสำเร็จรูป</h2>
+            <h2 className="text-base font-semibold text-slate-800">{t("editor.modals.stamp.title")}</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="ปิดหน้าต่างตราประทับ"
+            aria-label={t("editor.modals.stamp.closeAria")}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -127,13 +143,13 @@ export default function StampModal({ onClose, onSubmit }) {
               width={480}
               height={220}
               className="w-full max-w-[360px] h-auto"
-              aria-label="ตัวอย่างตราประทับ"
+              aria-label={t("editor.modals.stamp.previewAria")}
             />
           </div>
 
           {/* Preset Chips */}
           <div>
-            <div className="text-xs font-medium text-slate-600 mb-1.5">เลือกแบบสำเร็จรูป</div>
+            <div className="text-xs font-medium text-slate-600 mb-1.5">{t("editor.modals.stamp.presetsLabel")}</div>
             <div className="flex flex-wrap gap-1.5">
               {STAMP_PRESETS.map((preset) => {
                 const active = presetId === preset.id;
@@ -148,7 +164,7 @@ export default function StampModal({ onClose, onSubmit }) {
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    {preset.label}
+                    {t(`editor.modals.stamp.preset_${preset.id}`)}
                   </button>
                 );
               })}
@@ -158,7 +174,7 @@ export default function StampModal({ onClose, onSubmit }) {
           {/* Main Text */}
           <div>
             <label htmlFor="stamp-main-text" className="block text-xs font-medium text-slate-600 mb-1">
-              ข้อความบนตราประทับ
+              {t("editor.modals.stamp.mainTextLabel")}
             </label>
             <input
               id="stamp-main-text"
@@ -169,7 +185,7 @@ export default function StampModal({ onClose, onSubmit }) {
                 setText(e.target.value);
                 setError("");
               }}
-              placeholder="เช่น สำเนาถูกต้อง, อนุมัติแล้ว, ลับ"
+              placeholder={t("editor.modals.stamp.mainTextPlaceholder")}
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -183,16 +199,16 @@ export default function StampModal({ onClose, onSubmit }) {
                 onChange={(e) => handleToggleDate(e.target.checked)}
                 className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
               />
-              <span>แสดงบรรทัดรอง / วันที่อัตโนมัติ (พ.ศ.)</span>
+              <span>{t("editor.modals.stamp.includeDateLabel")}</span>
             </label>
             {includeDate && (
               <input
                 type="text"
-                aria-label="ข้อความบรรทัดรองหรือวันที่"
+                aria-label={t("editor.modals.stamp.subTextAria")}
                 value={subText}
                 maxLength={48}
                 onChange={(e) => setSubText(e.target.value)}
-                placeholder={`เช่น ${formatThaiDate()} หรือ ลงชื่อ ................`}
+                placeholder={t("editor.modals.stamp.subTextPlaceholder", { date: formatThaiDate() })}
                 className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             )}
@@ -201,17 +217,18 @@ export default function StampModal({ onClose, onSubmit }) {
           {/* Color & Angle & Opacity */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <div className="text-xs font-medium text-slate-600 mb-1.5">สีหมึก</div>
+              <div className="text-xs font-medium text-slate-600 mb-1.5">{t("editor.modals.stamp.inkColorLabel")}</div>
               <div className="flex items-center gap-2">
                 {STAMP_COLORS.map((c) => {
                   const active = color === c.value;
+                  const colorName = COLOR_KEYS[c.value] ? t(COLOR_KEYS[c.value]) : c.name;
                   return (
                     <button
                       key={c.value}
                       type="button"
                       onClick={() => setColor(c.value)}
-                      aria-label={`สี${c.name}`}
-                      title={c.name}
+                      aria-label={t("editor.modals.stamp.colorAria", { name: colorName })}
+                      title={colorName}
                       className={`w-7 h-7 rounded-full border-2 transition ${
                         active ? "ring-2 ring-offset-1 ring-blue-500 border-white scale-105" : "border-slate-200"
                       }`}
@@ -224,7 +241,7 @@ export default function StampModal({ onClose, onSubmit }) {
 
             <div>
               <label htmlFor="stamp-angle" className="block text-xs font-medium text-slate-600 mb-1.5">
-                มุมเอียง
+                {t("editor.modals.stamp.angleLabel")}
               </label>
               <select
                 id="stamp-angle"
@@ -234,7 +251,7 @@ export default function StampModal({ onClose, onSubmit }) {
               >
                 {STAMP_ANGLES.map((a) => (
                   <option key={a.value} value={a.value}>
-                    {a.label}
+                    {ANGLE_KEYS[a.value] ? t(ANGLE_KEYS[a.value]) : a.label}
                   </option>
                 ))}
               </select>
@@ -242,7 +259,7 @@ export default function StampModal({ onClose, onSubmit }) {
 
             <div>
               <label htmlFor="stamp-opacity" className="block text-xs font-medium text-slate-600 mb-1.5">
-                ความทึบ
+                {t("editor.modals.stamp.opacityLabel")}
               </label>
               <select
                 id="stamp-opacity"
@@ -273,7 +290,7 @@ export default function StampModal({ onClose, onSubmit }) {
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200/70 rounded-lg"
           >
-            ยกเลิก
+            {t("editor.modals.stamp.cancel")}
           </button>
           <button
             type="button"
@@ -281,7 +298,7 @@ export default function StampModal({ onClose, onSubmit }) {
             onClick={() => void handleConfirm()}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg shadow-sm"
           >
-            {submitting ? "กำลังสร้าง..." : "วางตราประทับ"}
+            {submitting ? t("editor.modals.stamp.submitting") : t("editor.modals.stamp.submit")}
           </button>
         </div>
       </div>
