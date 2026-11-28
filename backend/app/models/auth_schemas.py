@@ -23,7 +23,7 @@ class UserCreate(BaseModel):
     def password_complexity(cls, v):
         return validate_strong_password(v)
 
-SUPPORTED_LANGUAGES = ("th", "en", "ko", "ja", "zh", "vi", "id")
+SUPPORTED_LANGUAGES = ("th", "en", "ko", "ja", "zh", "vi", "id", "hi", "ar", "es", "pt", "fr", "de", "it", "ru")
 
 
 class UserResponse(BaseModel):

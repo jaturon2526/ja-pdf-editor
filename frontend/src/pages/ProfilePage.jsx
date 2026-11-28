@@ -105,7 +105,7 @@ export default function ProfilePage() {
               className="w-full border border-gray-300 rounded px-3 py-2 bg-white focus:ring-blue-500 focus:border-blue-500"
             >
               {supportedLangs.map((item) => (
-                <option key={item.code} value={item.code}>{item.nativeLabel}</option>
+                <option key={item.code} value={item.code}>{item.flag} {item.nativeLabel}</option>
               ))}
             </select>
             <p className="text-xs text-gray-500 mt-1">{t("profile.languageHint")}</p>

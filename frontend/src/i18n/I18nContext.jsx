@@ -4,6 +4,7 @@ import {
   DEFAULT_LANG,
   SUPPORTED_LANGS,
   getStoredLanguage,
+  langDir,
   setStoredLanguage,
   translate,
 } from "./index.js";
@@ -16,6 +17,14 @@ const LOADERS = {
   zh: async () => (await import("./locales/zh.json")).default,
   vi: async () => (await import("./locales/vi.json")).default,
   id: async () => (await import("./locales/id.json")).default,
+  hi: async () => (await import("./locales/hi.json")).default,
+  ar: async () => (await import("./locales/ar.json")).default,
+  es: async () => (await import("./locales/es.json")).default,
+  pt: async () => (await import("./locales/pt.json")).default,
+  fr: async () => (await import("./locales/fr.json")).default,
+  de: async () => (await import("./locales/de.json")).default,
+  it: async () => (await import("./locales/it.json")).default,
+  ru: async () => (await import("./locales/ru.json")).default,
 };
 
 const I18nContext = createContext({
@@ -34,6 +43,7 @@ export function I18nProvider({ children }) {
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.lang = lang;
+      document.documentElement.dir = langDir(lang);
     }
     if (dicts[lang]) return undefined;
     let cancelled = false;

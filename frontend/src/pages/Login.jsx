@@ -9,6 +9,7 @@ import { authLogin, authRegister, authGoogleLogin, resendVerification, browserSu
 import { WebAuthnAbortService } from '@simplewebauthn/browser';
 import { validatePassword } from "../utils/password";
 import { useI18n } from "../i18n/I18nContext.jsx";
+import LanguageDropdown from "../components/LanguageDropdown.jsx";
 
 // ความกว้างปุ่ม Google และ LINE (px) — Google รับได้ไม่เกิน 400
 const GOOGLE_BUTTON_WIDTH = 320;
@@ -16,7 +17,7 @@ const GOOGLE_BUTTON_WIDTH = 320;
 const FALLBACK_GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || null;
 
 export default function Login() {
-  const { lang, setLanguage, t, supportedLangs } = useI18n();
+  const { lang, t } = useI18n();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -268,19 +269,8 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative">
-      <div className="absolute top-4 right-4 max-w-[calc(100vw-2rem)] flex flex-wrap justify-end items-center gap-1 bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm" data-testid="login-lang-switcher">
-        {supportedLangs.map((item) => (
-          <button
-            key={item.code}
-            type="button"
-            onClick={() => setLanguage(item.code)}
-            className={`px-2 py-1 rounded-md text-xs font-semibold transition-colors ${lang === item.code ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
-            aria-pressed={lang === item.code}
-            title={item.nativeLabel}
-          >
-            {item.shortLabel}
-          </button>
-        ))}
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageDropdown />
       </div>
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center"><AppBrand size="lg" /></div>

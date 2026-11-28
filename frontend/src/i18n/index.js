@@ -4,13 +4,21 @@ export const DEFAULT_LANG = "th";
 export const LANG_STORAGE_KEY = "ja_lang";
 
 export const SUPPORTED_LANGS = Object.freeze([
-  { code: "th", shortLabel: "TH", label: "ภาษาไทย", nativeLabel: "ภาษาไทย (Thai)" },
-  { code: "en", shortLabel: "EN", label: "English", nativeLabel: "English" },
-  { code: "ko", shortLabel: "KO", label: "한국어", nativeLabel: "한국어 (Korean)" },
-  { code: "ja", shortLabel: "JA", label: "日本語", nativeLabel: "日本語 (Japanese)" },
-  { code: "zh", shortLabel: "中文", label: "简体中文", nativeLabel: "简体中文 (Chinese)" },
-  { code: "vi", shortLabel: "VI", label: "Tiếng Việt", nativeLabel: "Tiếng Việt (Vietnamese)" },
-  { code: "id", shortLabel: "ID", label: "Bahasa Indonesia", nativeLabel: "Bahasa Indonesia (Indonesian)" },
+  { code: "th", shortLabel: "TH", flag: "🇹🇭", dir: "ltr", label: "ภาษาไทย", nativeLabel: "ภาษาไทย (Thai)" },
+  { code: "en", shortLabel: "EN", flag: "🇺🇸", dir: "ltr", label: "English", nativeLabel: "English" },
+  { code: "ko", shortLabel: "KO", flag: "🇰🇷", dir: "ltr", label: "한국어", nativeLabel: "한국어 (Korean)" },
+  { code: "ja", shortLabel: "JA", flag: "🇯🇵", dir: "ltr", label: "日本語", nativeLabel: "日本語 (Japanese)" },
+  { code: "zh", shortLabel: "中文", flag: "🇨🇳", dir: "ltr", label: "简体中文", nativeLabel: "简体中文 (Chinese)" },
+  { code: "vi", shortLabel: "VI", flag: "🇻🇳", dir: "ltr", label: "Tiếng Việt", nativeLabel: "Tiếng Việt (Vietnamese)" },
+  { code: "id", shortLabel: "ID", flag: "🇮🇩", dir: "ltr", label: "Bahasa Indonesia", nativeLabel: "Bahasa Indonesia (Indonesian)" },
+  { code: "hi", shortLabel: "HI", flag: "🇮🇳", dir: "ltr", label: "हिन्दी", nativeLabel: "हिन्दी (Hindi)" },
+  { code: "ar", shortLabel: "AR", flag: "🇸🇦", dir: "rtl", label: "العربية", nativeLabel: "العربية (Arabic)" },
+  { code: "es", shortLabel: "ES", flag: "🇪🇸", dir: "ltr", label: "Español", nativeLabel: "Español (Spanish)" },
+  { code: "pt", shortLabel: "PT", flag: "🇧🇷", dir: "ltr", label: "Português", nativeLabel: "Português (Portuguese)" },
+  { code: "fr", shortLabel: "FR", flag: "🇫🇷", dir: "ltr", label: "Français", nativeLabel: "Français (French)" },
+  { code: "de", shortLabel: "DE", flag: "🇩🇪", dir: "ltr", label: "Deutsch", nativeLabel: "Deutsch (German)" },
+  { code: "it", shortLabel: "IT", flag: "🇮🇹", dir: "ltr", label: "Italiano", nativeLabel: "Italiano (Italian)" },
+  { code: "ru", shortLabel: "RU", flag: "🇷🇺", dir: "ltr", label: "Русский", nativeLabel: "Русский (Russian)" },
 ]);
 
 const DATE_LOCALES = {
@@ -21,10 +29,22 @@ const DATE_LOCALES = {
   zh: "zh-CN",
   vi: "vi-VN",
   id: "id-ID",
+  hi: "hi-IN",
+  ar: "ar-SA",
+  es: "es-ES",
+  pt: "pt-BR",
+  fr: "fr-FR",
+  de: "de-DE",
+  it: "it-IT",
+  ru: "ru-RU",
 };
 
 export function dateLocale(lang) {
   return DATE_LOCALES[lang] || "th-TH";
+}
+
+export function langDir(lang) {
+  return SUPPORTED_LANGS.find((l) => l.code === lang)?.dir || "ltr";
 }
 
 const SUPPORTED_CODES = new Set(SUPPORTED_LANGS.map((l) => l.code));
