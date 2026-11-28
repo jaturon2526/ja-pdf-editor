@@ -3,50 +3,45 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getNotifications, markNotificationsRead } from "../../api/signing.js";
 import { useI18n } from "../../i18n/I18nContext.jsx";
+import { dateLocale } from "../../i18n/index.js";
 
 const POLL_MS = 60000;
 
 /**
- * แปลข้อความแจ้งเตือนที่ถูกบันทึกไว้ใน DB (กรณีผู้ใช้สลับภาษาเป็น EN ภายหลัง)
+ * แปลข้อความแจ้งเตือนที่ถูกบันทึกไว้ใน DB (กรณีผู้ใช้สลับภาษาเป็นภาษาอื่นภายหลัง)
  * ครอบคลุมทั้งการลงนาม (signing_service) และรับบริจาค/แพ็กเกจ (donation_service)
  */
-const EN_PATTERNS = [
-  [/^ถึงคิวคุณลงนาม "(.+)" \(ส่งโดย (.+)\)$/, (_, title, owner) => `Your turn to sign "${title}" (sent by ${owner})`],
-  [/^"(.+)" ลงนามครบทุกคนแล้ว$/, (_, title) => `"${title}" has been signed by everyone`],
-  [/^(.+) ลงนาม "(.+)" แล้ว \((.+)\)$/, (_, who, title, progress) => `${who} signed "${title}" (${progress})`],
-  [/^(.+) ลงนาม "(.+)" แล้ว$/, (_, who, title) => `${who} signed "${title}"`],
-  [/^(.+) ปฏิเสธการลงนาม "(.+)"$/, (_, who, title) => `${who} declined to sign "${title}"`],
-  [/^(.+) ลบบัญชีแล้ว — คำขอ "(.+)" ถูกปฏิเสธอัตโนมัติ$/, (_, who, title) => `${who} deleted their account — signing request "${title}" was automatically declined`],
-  [/^(.+) ยกเลิกคำขอลงนาม "(.+)"$/, (_, who, title) => `${who} cancelled the signing request "${title}"`],
-  [/^(.+) เตือนให้ลงนาม "(.+)"$/, (_, who, title) => `${who} sent a reminder to sign "${title}"`],
-  [/^"(.+)" เลยกำหนดลงนามแล้ว \(รอ (.+)\)$/, (_, title, names) => `"${title}" is overdue for signing (waiting for ${names})`],
-  [/^"(.+)" เลยกำหนดลงนามแล้ว — รอคุณลงนาม$/, (_, title) => `"${title}" is overdue — waiting for your signature`],
-  [/^"(.+)" เกินกำหนดลงนามแล้ว$/, (_, title) => `"${title}" is overdue for signing`],
-  [/^"(.+)" ใกล้ครบกำหนดลงนาม$/, (_, title) => `"${title}" is due soon for signing`],
-  [/^แจ้งเตือนลงนาม "(.+)"$/, (_, title) => `Reminder to sign "${title}"`],
-  [/^มีผู้แจ้งโอนสนับสนุน ([\d,.]+) บาท — รอตรวจสอบ$/, (_, amt) => `New support transfer reported (${amt} THB) — pending review`],
-  [/^มีแจ้งโอนสนับสนุน ฿([\d,.]+) จาก (.+)$/, (_, amt, who) => `New donation report of ฿${amt} from ${who}`],
-  [/^ขอบคุณที่สนับสนุน ([\d,.]+) บาท(?: — ได้รับสิทธิ์ (\S+) (\d+) วัน)?$/, (_, amt, plan, days) => (plan ? `Thank you for supporting ${amt} THB — ${plan} plan granted for ${days} days` : `Thank you for supporting ${amt} THB`)],
-  [/^ได้รับเงินสนับสนุนแล้ว — ขอบคุณมากครับ(?: \(ได้รับสิทธิ์ (\S+) (\d+) วัน\))?$/, (_, plan, days) => (plan ? `Donation verified — thank you! (${plan} for ${days} days)` : "Donation verified — thank you!")],
-  [/^ไม่พบยอดโอนที่แจ้งไว้(.*?) — ติดต่อผู้ดูแลระบบได้$/, (_, reason) => `Transfer could not be verified${reason || ""} — please contact support`],
-  [/^ไม่พบยอดโอนสนับสนุน(?:: (.+))?$/, (_, note) => (note ? `Donation transfer not found: ${note}` : "Donation transfer not found")],
-  [/^สิทธิ์ผู้สนับสนุน \((.+)\) ครบกำหนดแล้ว — ขอบคุณที่ร่วมสนับสนุน$/, (_, plan) => `Your supporter plan (${plan}) has expired — thank you for your support`],
-  [/^สิทธิ์ผู้สนับสนุนหมดอายุแล้ว — กลับเป็นแพ็กเกจฟรี$/, () => "Supporter perks expired — reverted to Free plan"],
+const TITLE_PATTERNS = [
+  [/^ถึงคิวคุณลงนาม "(.+)" \(ส่งโดย (.+)\)$/, (t, _, title, owner) => t("notifications.patterns.signTurn", { title, owner })],
+  [/^"(.+)" ลงนามครบทุกคนแล้ว$/, (t, _, title) => t("notifications.patterns.signCompleted", { title })],
+  [/^(.+) ลงนาม "(.+)" แล้ว \((.+)\)$/, (t, _, who, title, progress) => t("notifications.patterns.signProgress", { who, title, progress })],
+  [/^(.+) ลงนาม "(.+)" แล้ว$/, (t, _, who, title) => t("notifications.patterns.signSigned", { who, title })],
+  [/^(.+) ปฏิเสธการลงนาม "(.+)"$/, (t, _, who, title) => t("notifications.patterns.signRejected", { who, title })],
+  [/^(.+) ลบบัญชีแล้ว — คำขอ "(.+)" ถูกปฏิเสธอัตโนมัติ$/, (t, _, who, title) => t("notifications.patterns.signDeletedAccount", { who, title })],
+  [/^(.+) ยกเลิกคำขอลงนาม "(.+)"$/, (t, _, who, title) => t("notifications.patterns.signCancelled", { who, title })],
+  [/^(.+) เตือนให้ลงนาม "(.+)"$/, (t, _, who, title) => t("notifications.patterns.signReminded", { who, title })],
+  [/^"(.+)" เลยกำหนดลงนามแล้ว \(รอ (.+)\)$/, (t, _, title, names) => t("notifications.patterns.signOverdueWaiting", { title, names })],
+  [/^"(.+)" เลยกำหนดลงนามแล้ว — รอคุณลงนาม$/, (t, _, title) => t("notifications.patterns.signOverdueYou", { title })],
+  [/^"(.+)" เกินกำหนดลงนามแล้ว$/, (t, _, title) => t("notifications.patterns.signOverdue", { title })],
+  [/^"(.+)" ใกล้ครบกำหนดลงนาม$/, (t, _, title) => t("notifications.patterns.signDueSoon", { title })],
+  [/^แจ้งเตือนลงนาม "(.+)"$/, (t, _, title) => t("notifications.patterns.signReminderGeneric", { title })],
+  [/^มีผู้แจ้งโอนสนับสนุน ([\d,.]+) บาท — รอตรวจสอบ$/, (t, _, amt) => t("notifications.patterns.donationNew", { amt })],
+  [/^มีแจ้งโอนสนับสนุน ฿([\d,.]+) จาก (.+)$/, (t, _, amt, who) => t("notifications.patterns.donationNewFrom", { amt, who })],
+  [/^ขอบคุณที่สนับสนุน ([\d,.]+) บาท(?: — ได้รับสิทธิ์ (\S+) (\d+) วัน)?$/, (t, _, amt, plan, days) => (plan ? t("notifications.patterns.donationApprovedPerk", { amt, plan, days }) : t("notifications.patterns.donationApproved", { amt }))],
+  [/^ได้รับเงินสนับสนุนแล้ว — ขอบคุณมากครับ(?: \(ได้รับสิทธิ์ (\S+) (\d+) วัน\))?$/, (t, _, plan, days) => (plan ? t("notifications.patterns.donationVerifiedPerk", { plan, days }) : t("notifications.patterns.donationVerified"))],
+  [/^ไม่พบยอดโอนที่แจ้งไว้(.*?) — ติดต่อผู้ดูแลระบบได้$/, (t, _, reason) => t("notifications.patterns.donationRejectedReason", { reason: reason || "" })],
+  [/^ไม่พบยอดโอนสนับสนุน(?:: (.+))?$/, (t, _, note) => (note ? t("notifications.patterns.donationNotFoundNote", { note }) : t("notifications.patterns.donationNotFound"))],
+  [/^สิทธิ์ผู้สนับสนุน \((.+)\) ครบกำหนดแล้ว — ขอบคุณที่ร่วมสนับสนุน$/, (t, _, plan) => t("notifications.patterns.planExpiredNamed", { plan })],
+  [/^สิทธิ์ผู้สนับสนุนหมดอายุแล้ว — กลับเป็นแพ็กเกจฟรี$/, (t) => t("notifications.patterns.planExpired")],
 ];
 
-function localizeNotificationTitle(title, lang) {
+function localizeNotificationTitle(title, lang, t) {
   if (!title || lang === "th") return title;
-  for (const [re, format] of EN_PATTERNS) {
+  for (const [re, format] of TITLE_PATTERNS) {
     const m = title.match(re);
-    if (m) return format(...m);
+    if (m) return format(t, ...m);
   }
   return title;
-}
-
-function getDateLocale(lang) {
-  if (lang === "ko") return "ko-KR";
-  if (lang === "en") return "en-US";
-  return "th-TH";
 }
 
 export default function NotificationBell() {
@@ -119,9 +114,9 @@ export default function NotificationBell() {
                 onClick={() => void openItem(item)}
                 className={`w-full text-left px-4 py-3 text-sm border-b border-gray-50 hover:bg-blue-50 ${item.read ? "text-gray-500" : "text-gray-900 font-medium bg-blue-50/40"}`}
               >
-                {localizeNotificationTitle(item.title, lang)}
+                {localizeNotificationTitle(item.title, lang, t)}
                 <span className="block text-xs text-gray-400 mt-0.5">
-                  {item.created_at ? new Date(item.created_at).toLocaleString(getDateLocale(lang), { dateStyle: "medium", timeStyle: "short" }) : ""}
+                  {item.created_at ? new Date(item.created_at).toLocaleString(dateLocale(lang), { dateStyle: "medium", timeStyle: "short" }) : ""}
                 </span>
               </button>
             ))

@@ -268,14 +268,15 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative">
-      <div className="absolute top-4 right-4 flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm" data-testid="login-lang-switcher">
+      <div className="absolute top-4 right-4 max-w-[calc(100vw-2rem)] flex flex-wrap justify-end items-center gap-1 bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm" data-testid="login-lang-switcher">
         {supportedLangs.map((item) => (
           <button
             key={item.code}
             type="button"
             onClick={() => setLanguage(item.code)}
-            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${lang === item.code ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+            className={`px-2 py-1 rounded-md text-xs font-semibold transition-colors ${lang === item.code ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
             aria-pressed={lang === item.code}
+            title={item.nativeLabel}
           >
             {item.shortLabel}
           </button>

@@ -7,7 +7,25 @@ export const SUPPORTED_LANGS = Object.freeze([
   { code: "th", shortLabel: "TH", label: "ภาษาไทย", nativeLabel: "ภาษาไทย (Thai)" },
   { code: "en", shortLabel: "EN", label: "English", nativeLabel: "English" },
   { code: "ko", shortLabel: "KO", label: "한국어", nativeLabel: "한국어 (Korean)" },
+  { code: "ja", shortLabel: "JA", label: "日本語", nativeLabel: "日本語 (Japanese)" },
+  { code: "zh", shortLabel: "中文", label: "简体中文", nativeLabel: "简体中文 (Chinese)" },
+  { code: "vi", shortLabel: "VI", label: "Tiếng Việt", nativeLabel: "Tiếng Việt (Vietnamese)" },
+  { code: "id", shortLabel: "ID", label: "Bahasa Indonesia", nativeLabel: "Bahasa Indonesia (Indonesian)" },
 ]);
+
+const DATE_LOCALES = {
+  th: "th-TH",
+  en: "en-US",
+  ko: "ko-KR",
+  ja: "ja-JP",
+  zh: "zh-CN",
+  vi: "vi-VN",
+  id: "id-ID",
+};
+
+export function dateLocale(lang) {
+  return DATE_LOCALES[lang] || "th-TH";
+}
 
 const SUPPORTED_CODES = new Set(SUPPORTED_LANGS.map((l) => l.code));
 

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getAdminQuotas } from "../../api";
 import { useI18n } from "../../i18n/I18nContext.jsx";
+import { dateLocale } from "../../i18n/index.js";
 
 function fmt(value, unit, locale) {
   if (value === null || value === undefined) return "-";
@@ -33,120 +34,120 @@ const STATUS = {
 const SOURCE_KEY = { api: "admin.quota.sourceApi", internal: "admin.quota.sourceInternal", system: "admin.quota.sourceSystem" };
 const PERIOD_KEY = { day: "admin.quota.periodDay", month: "admin.quota.periodMonth", plan: "admin.quota.periodPlan" };
 
-const NAME_EN = {
-  "LINE (ข้อความ push)": "LINE (Push Messages)",
-  "อีเมล (SMTP)": "Email (SMTP)",
-  "อีเมล (Brevo)": "Email (Brevo)",
-  "AI — key ส่วนตัวผู้ใช้ (คำขอวันนี้)": "AI — User Personal Keys (Requests Today)",
-  "พื้นที่ดิสก์เซิร์ฟเวอร์": "Server Disk Space",
-  "ฐานข้อมูล": "Database",
-  "หน่วยความจำ (RAM) เครื่อง": "Server Memory (RAM)",
-  "การใช้ CPU (เฉลี่ย 5 นาที)": "CPU Usage (5-min avg)",
-  "Redis (แคช/session)": "Redis (Cache/Session)",
-  "สำรองข้อมูลล่าสุด (ในเครื่อง)": "Last Backup (Local)",
-  "สำรองข้อมูลล่าสุด (นอกเครื่อง)": "Last Backup (Offsite)",
+const NAME_KEY = {
+  "LINE (ข้อความ push)": "admin.quota.names.line",
+  "อีเมล (SMTP)": "admin.quota.names.emailSmtp",
+  "อีเมล (Brevo)": "admin.quota.names.emailBrevo",
+  "AI — key ส่วนตัวผู้ใช้ (คำขอวันนี้)": "admin.quota.names.aiPersonal",
+  "พื้นที่ดิสก์เซิร์ฟเวอร์": "admin.quota.names.disk",
+  "ฐานข้อมูล": "admin.quota.names.database",
+  "หน่วยความจำ (RAM) เครื่อง": "admin.quota.names.memory",
+  "การใช้ CPU (เฉลี่ย 5 นาที)": "admin.quota.names.cpu",
+  "Redis (แคช/session)": "admin.quota.names.redis",
+  "สำรองข้อมูลล่าสุด (ในเครื่อง)": "admin.quota.names.backupLocal",
+  "สำรองข้อมูลล่าสุด (นอกเครื่อง)": "admin.quota.names.backupOffsite",
 };
 
-const UNIT_EN = {
-  "ข้อความ": "messages",
-  "ฉบับ": "emails",
-  "คำขอ": "requests",
-  "ชม. ที่แล้ว": "hrs ago",
+const UNIT_KEY = {
+  "ข้อความ": "admin.quota.units.messages",
+  "ฉบับ": "admin.quota.units.emails",
+  "คำขอ": "admin.quota.units.requests",
+  "ชม. ที่แล้ว": "admin.quota.units.hrsAgo",
 };
 
 const NOTE_PART_PATTERNS = [
-  [/^ระบบส่งเอง (\d+)$/, (_, n) => `Sent by system: ${n}`],
-  [/^ส่งอีเมลแทนเมื่อถึง (\d+)$/, (_, n) => `Fallback to email at ${n}`],
-  [/^ส่งผ่าน (.+)$/, (_, host) => `Sent via ${host}`],
-  [/^นับจากระบบเอง \(ไม่มีเพดานรายวัน\)$/, () => "Tracked internally (no daily limit)"],
-  [/^นับจากระบบเอง \(ไม่ได้ตั้ง BREVO_API_KEY\)$/, () => "Tracked internally (BREVO_API_KEY not set)"],
-  [/^แพ็กเกจฟรี$/, () => "Free plan"],
-  [/^ระบบส่งเอง (\d+) วันนี้$/, (_, n) => `System sent ${n} today`],
-  [/^รีเซ็ตทุกวันตามรอบของ Brevo$/, () => "Resets daily on Brevo's cycle"],
-  [/^แพ็กเกจ (.+)$/, (_, plan) => `Plan: ${plan}`],
-  [/^เหลือ ([\d,]+) เครดิต$/, (_, n) => `${n} credits remaining`],
-  [/^แปลงด้วย AI ของระบบ (\d+) ครั้ง$/, (_, n) => `System AI conversions: ${n}`],
-  [/^key ส่วนตัวผู้ใช้ (\d+) คำขอ$/, (_, n) => `User personal keys: ${n} requests`],
-  [/^จำกัด (\d+) ครั้ง\/ผู้ใช้\/วัน$/, (_, n) => `Limit: ${n}/user/day`],
-  [/^รุ่น (.+)$/, (_, model) => `Model: ${model}`],
-  [/^ระบบยังไม่ได้ตั้ง AI_PROVIDER \/ AI_API_KEY$/, () => "AI_PROVIDER / AI_API_KEY not configured"],
-  [/^Google ไม่มี API บอกเครดิตคงเหลือ ดูยอดจริงที่ AI Studio$/, () => "Google provides no credit balance API — check AI Studio"],
-  [/^ดูเครดิต\/ค่าใช้จ่ายจริงที่ Claude Console$/, () => "Check credits & usage in Claude Console"],
-  [/^ดูค่าใช้จ่ายจริงที่หน้า Usage ของผู้ให้บริการ$/, () => "Check actual usage on provider's Usage page"],
-  [/^ดิสก์ที่เก็บไฟล์ผู้ใช้ \(\/data\)$/, () => "User file storage disk (/data)"],
-  [/^รวมทุกโปรแกรมบนเครื่อง$/, () => "All processes on host"],
-  [/^ใกล้เต็ม = ลด BACKEND_WORKERS หรือเพิ่ม RAM$/, () => "Nearly full = reduce BACKEND_WORKERS or add RAM"],
-  [/^(\d+) core$/, (_, n) => `${n} cores`],
-  [/^100% = 1 core เต็ม$/, () => "100% = 1 full core"],
-  [/^สูงต่อเนื่อง = เครื่องรับคนพร้อมกันได้ใกล้เพดาน$/, () => "Sustained high load = approaching concurrency limit"],
-  [/^ใกล้เต็ม = ขยาย REDIS_MAXMEMORY ใน \.env\.prod$/, () => "Nearly full = increase REDIS_MAXMEMORY in .env.prod"],
-  [/^ยังไม่พบประวัติการสำรองข้อมูล — ตั้งสำรองอัตโนมัติรายวัน: \.\/deploy\.sh backup-schedule$/, () => "No backup history found — enable daily backups: ./deploy.sh backup-schedule"],
-  [/^ครั้งล่าสุด ([\d/]+ [\d:]+) น\.$/, (_, dt) => `Last run: ${dt}`],
+  [/^ระบบส่งเอง (\d+)$/, (t, _, n) => t("admin.quota.notes.systemSent", { n })],
+  [/^ส่งอีเมลแทนเมื่อถึง (\d+)$/, (t, _, n) => t("admin.quota.notes.emailFallbackAt", { n })],
+  [/^ส่งผ่าน (.+)$/, (t, _, host) => t("admin.quota.notes.sentVia", { host })],
+  [/^นับจากระบบเอง \(ไม่มีเพดานรายวัน\)$/, (t) => t("admin.quota.notes.internalNoLimit")],
+  [/^นับจากระบบเอง \(ไม่ได้ตั้ง BREVO_API_KEY\)$/, (t) => t("admin.quota.notes.internalNoBrevoKey")],
+  [/^แพ็กเกจฟรี$/, (t) => t("admin.quota.notes.freePlan")],
+  [/^ระบบส่งเอง (\d+) วันนี้$/, (t, _, n) => t("admin.quota.notes.systemSentToday", { n })],
+  [/^รีเซ็ตทุกวันตามรอบของ Brevo$/, (t) => t("admin.quota.notes.brevoCycle")],
+  [/^แพ็กเกจ (.+)$/, (t, _, plan) => t("admin.quota.notes.planName", { plan })],
+  [/^เหลือ ([\d,]+) เครดิต$/, (t, _, n) => t("admin.quota.notes.creditsLeft", { n })],
+  [/^แปลงด้วย AI ของระบบ (\d+) ครั้ง$/, (t, _, n) => t("admin.quota.notes.aiConversions", { n })],
+  [/^key ส่วนตัวผู้ใช้ (\d+) คำขอ$/, (t, _, n) => t("admin.quota.notes.aiPersonalReqs", { n })],
+  [/^จำกัด (\d+) ครั้ง\/ผู้ใช้\/วัน$/, (t, _, n) => t("admin.quota.notes.aiDailyLimit", { n })],
+  [/^รุ่น (.+)$/, (t, _, model) => t("admin.quota.notes.modelName", { model })],
+  [/^ระบบยังไม่ได้ตั้ง AI_PROVIDER \/ AI_API_KEY$/, (t) => t("admin.quota.notes.aiNotConfigured")],
+  [/^Google ไม่มี API บอกเครดิตคงเหลือ ดูยอดจริงที่ AI Studio$/, (t) => t("admin.quota.notes.geminiHint")],
+  [/^ดูเครดิต\/ค่าใช้จ่ายจริงที่ Claude Console$/, (t) => t("admin.quota.notes.claudeHint")],
+  [/^ดูค่าใช้จ่ายจริงที่หน้า Usage ของผู้ให้บริการ$/, (t) => t("admin.quota.notes.openaiHint")],
+  [/^ดิสก์ที่เก็บไฟล์ผู้ใช้ \(\/data\)$/, (t) => t("admin.quota.notes.diskData")],
+  [/^รวมทุกโปรแกรมบนเครื่อง$/, (t) => t("admin.quota.notes.ramAllProcs")],
+  [/^ใกล้เต็ม = ลด BACKEND_WORKERS หรือเพิ่ม RAM$/, (t) => t("admin.quota.notes.ramNearFull")],
+  [/^(\d+) core$/, (t, _, n) => t("admin.quota.notes.cpuCores", { n })],
+  [/^100% = 1 core เต็ม$/, (t) => t("admin.quota.notes.cpuFullCore")],
+  [/^สูงต่อเนื่อง = เครื่องรับคนพร้อมกันได้ใกล้เพดาน$/, (t) => t("admin.quota.notes.cpuHighLoad")],
+  [/^ใกล้เต็ม = ขยาย REDIS_MAXMEMORY ใน \.env\.prod$/, (t) => t("admin.quota.notes.redisNearFull")],
+  [/^ยังไม่พบประวัติการสำรองข้อมูล — ตั้งสำรองอัตโนมัติรายวัน: \.\/deploy\.sh backup-schedule$/, (t) => t("admin.quota.notes.backupNone")],
+  [/^ครั้งล่าสุด ([\d/]+ [\d:]+) น\.$/, (t, _, dt) => t("admin.quota.notes.backupLastRun", { dt })],
 ];
 
 const ERROR_PATTERNS = [
-  [/^ดึงยอดจาก LINE ไม่ได้ — แสดงตัวนับของระบบ \((.+)\)$/, (_, detail) => `Could not fetch LINE quota — showing internal counter (${detail})`],
-  [/^Brevo ปฏิเสธ API key \((\d+)\) — key อาจหมดอายุ\/ถูกลบ\/สิทธิ์ไม่พอ(.*)$/, (_, code, detail) => `Brevo rejected API key (${code}) — key may be expired, deleted, or lack permissions${detail}`],
-  [/^ติดต่อ Brevo ไม่ได้: (.+)$/, (_, detail) => `Cannot reach Brevo: ${detail}`],
-  [/^ไม่พบข้อมูลเครดิตในบัญชี Brevo$/, () => "No credit info found in Brevo account"],
-  [/^เชื่อมต่อ Redis ไม่ได้ — ระบบใช้หน่วยความจำของแต่ละ worker แทน \(เอกสารอาจหลุดเมื่อสลับ worker\)$/, () => "Cannot connect to Redis — falling back to per-worker memory (sessions may drop across workers)"],
-  [/^อ่านสถานะ Redis ไม่ได้: (.+)$/, (_, detail) => `Could not read Redis status: ${detail}`],
+  [/^ดึงยอดจาก LINE ไม่ได้ — แสดงตัวนับของระบบ \((.+)\)$/, (t, _, detail) => t("admin.quota.errors.lineFetch", { detail })],
+  [/^Brevo ปฏิเสธ API key \((\d+)\) — key อาจหมดอายุ\/ถูกลบ\/สิทธิ์ไม่พอ(.*)$/, (t, _, code, detail) => t("admin.quota.errors.brevoAuth", { code, detail })],
+  [/^ติดต่อ Brevo ไม่ได้: (.+)$/, (t, _, detail) => t("admin.quota.errors.brevoUnreachable", { detail })],
+  [/^ไม่พบข้อมูลเครดิตในบัญชี Brevo$/, (t) => t("admin.quota.errors.brevoNoCredit")],
+  [/^เชื่อมต่อ Redis ไม่ได้ — ระบบใช้หน่วยความจำของแต่ละ worker แทน \(เอกสารอาจหลุดเมื่อสลับ worker\)$/, (t) => t("admin.quota.errors.redisDisconnected")],
+  [/^อ่านสถานะ Redis ไม่ได้: (.+)$/, (t, _, detail) => t("admin.quota.errors.redisStatus", { detail })],
 ];
 
-function localizeQuotaName(name, lang) {
+function localizeQuotaName(name, lang, t) {
   if (!name || lang === "th") return name;
-  if (NAME_EN[name]) return NAME_EN[name];
+  if (NAME_KEY[name]) return t(NAME_KEY[name]);
   const aiMatch = /^(.+) \(คำขอวันนี้\)$/.exec(name);
-  if (aiMatch) return `${aiMatch[1]} (Requests Today)`;
+  if (aiMatch) return t("admin.quota.names.aiProvider", { provider: aiMatch[1] });
   return name;
 }
 
-function localizeQuotaUnit(unit, lang) {
+function localizeQuotaUnit(unit, lang, t) {
   if (!unit || lang === "th") return unit;
-  return UNIT_EN[unit] || unit;
+  return UNIT_KEY[unit] ? t(UNIT_KEY[unit]) : unit;
 }
 
-function localizeQuotaNote(note, lang) {
+function localizeQuotaNote(note, lang, t) {
   if (!note || lang === "th") return note;
   return note
     .split(" · ")
     .map((part) => {
       for (const [re, format] of NOTE_PART_PATTERNS) {
         const m = re.exec(part);
-        if (m) return format(...m);
+        if (m) return format(t, ...m);
       }
       return part;
     })
     .join(" · ");
 }
 
-function localizeQuotaError(error, lang) {
+function localizeQuotaError(error, lang, t) {
   if (!error || lang === "th") return error;
   for (const [re, format] of ERROR_PATTERNS) {
     const m = re.exec(error);
-    if (m) return format(...m);
+    if (m) return format(t, ...m);
   }
   return error;
 }
 
-function localizeStatusLabel(label, lang) {
+function localizeStatusLabel(label, lang, t) {
   if (!label || lang === "th") return label;
-  if (label === "ขาดหาย") return "Overdue";
+  if (label === "ขาดหาย") return t("admin.quota.statusOverdue");
   return label;
 }
 
 function QuotaCard({ item }) {
   const { lang, t } = useI18n();
-  const locale = lang === "en" ? "en-US" : "th-TH";
+  const locale = dateLocale(lang);
   const st = STATUS[item.status] || STATUS.info;
   const pct = item.percent ?? null;
   const periodLabel = PERIOD_KEY[item.period] ? t(PERIOD_KEY[item.period]) : "";
   const sourceLabel = SOURCE_KEY[item.source] ? t(SOURCE_KEY[item.source]) : "";
-  const displayName = localizeQuotaName(item.name, lang);
-  const displayUnit = localizeQuotaUnit(item.unit, lang);
-  const displayNote = localizeQuotaNote(item.note, lang);
-  const displayError = localizeQuotaError(item.error, lang);
-  const displayStatusLabel = localizeStatusLabel(item.status_label, lang);
+  const displayName = localizeQuotaName(item.name, lang, t);
+  const displayUnit = localizeQuotaUnit(item.unit, lang, t);
+  const displayNote = localizeQuotaNote(item.note, lang, t);
+  const displayError = localizeQuotaError(item.error, lang, t);
+  const displayStatusLabel = localizeStatusLabel(item.status_label, lang, t);
   return (
     <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col" data-testid={`quota-${item.key}`}>
       <div className="flex items-start justify-between gap-2 mb-2">
@@ -208,7 +209,7 @@ function QuotaCard({ item }) {
 // available: แท็บที่ backend บอกว่าเปิดใช้ (ไม่ได้ตั้ง SMTP / ปิด LINE = ไม่แสดงแท็บนั้น)
 function UsageChart({ history, available }) {
   const { lang, t } = useI18n();
-  const locale = lang === "en" ? "en-US" : "th-TH";
+  const locale = dateLocale(lang);
   const [series, setSeries] = useState("ai");
   const allSeries = [
     { key: "ai", label: "AI", unit: t("admin.quota.seriesAiUnit"), color: "#16a34a" },
@@ -288,7 +289,7 @@ function UsageChart({ history, available }) {
 
 export default function QuotaPanel() {
   const { lang, t } = useI18n();
-  const locale = lang === "en" ? "en-US" : "th-TH";
+  const locale = dateLocale(lang);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);

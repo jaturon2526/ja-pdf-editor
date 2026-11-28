@@ -1,5 +1,6 @@
 // สถานะ/ประเภทลายเซ็น และคอมโพเนนต์แสดงผล (รองรับ TH/EN)
 import { useI18n } from "../../i18n/I18nContext.jsx";
+import { dateLocale } from "../../i18n/index.js";
 
 export const REQUEST_STATUS_CLASS = {
   in_progress: "bg-amber-100 text-amber-800",
@@ -12,10 +13,7 @@ export const SIGN_TYPE_KEYS = ["either", "electronic", "digital"];
 
 export function formatDateTime(iso, lang = "th") {
   if (!iso) return "";
-  let locale = "th-TH";
-  if (lang === "en") locale = "en-US";
-  else if (lang === "ko") locale = "ko-KR";
-  return new Date(iso).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
+  return new Date(iso).toLocaleString(dateLocale(lang), { dateStyle: "medium", timeStyle: "short" });
 }
 
 export function StatusBadge({ status }) {
