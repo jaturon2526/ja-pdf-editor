@@ -94,7 +94,7 @@ const ERROR_PATTERNS = [
 ];
 
 function localizeQuotaName(name, lang) {
-  if (!name || lang !== "en") return name;
+  if (!name || lang === "th") return name;
   if (NAME_EN[name]) return NAME_EN[name];
   const aiMatch = /^(.+) \(คำขอวันนี้\)$/.exec(name);
   if (aiMatch) return `${aiMatch[1]} (Requests Today)`;
@@ -102,12 +102,12 @@ function localizeQuotaName(name, lang) {
 }
 
 function localizeQuotaUnit(unit, lang) {
-  if (!unit || lang !== "en") return unit;
+  if (!unit || lang === "th") return unit;
   return UNIT_EN[unit] || unit;
 }
 
 function localizeQuotaNote(note, lang) {
-  if (!note || lang !== "en") return note;
+  if (!note || lang === "th") return note;
   return note
     .split(" · ")
     .map((part) => {
@@ -121,7 +121,7 @@ function localizeQuotaNote(note, lang) {
 }
 
 function localizeQuotaError(error, lang) {
-  if (!error || lang !== "en") return error;
+  if (!error || lang === "th") return error;
   for (const [re, format] of ERROR_PATTERNS) {
     const m = re.exec(error);
     if (m) return format(...m);
@@ -130,7 +130,7 @@ function localizeQuotaError(error, lang) {
 }
 
 function localizeStatusLabel(label, lang) {
-  if (!label || lang !== "en") return label;
+  if (!label || lang === "th") return label;
   if (label === "ขาดหาย") return "Overdue";
   return label;
 }

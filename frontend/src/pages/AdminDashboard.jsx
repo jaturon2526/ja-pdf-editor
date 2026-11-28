@@ -27,6 +27,18 @@ export default function AdminDashboard() {
   const [isOnprem, setIsOnprem] = useState(false);
 
   useEffect(() => {
+    if (!editingUser && !showPlanConfig) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        setEditingUser(null);
+        setShowPlanConfig(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editingUser, showPlanConfig]);
+
+  useEffect(() => {
     getPublicConfig()
       .then((cfg) => setIsOnprem(cfg?.profile === "onprem"))
       .catch(() => {});
@@ -328,7 +340,7 @@ export default function AdminDashboard() {
       </div>
 
       {editingUser && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">{t("admin.changePlanTitle")}</h3>
             <p className="text-sm text-gray-600 mb-4">{t("admin.editingAccount", { email: editingUser.email })}</p>
@@ -352,17 +364,17 @@ export default function AdminDashboard() {
       )}
 
       {showPlanConfig && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6">
             <h3 className="text-xl font-bold text-gray-900 mb-2">{t("admin.planLimitsTitle")}</h3>
             <p className="text-sm text-gray-500 mb-4">{t("admin.planLimitsDesc")}</p>
             
             {successMessage && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded mb-4 text-sm font-medium">{successMessage}</div>}
             
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {plans.map(p => (
-                <form key={p.plan_type} onSubmit={(e) => void handleSavePlanConfig(e, p.plan_type, e.target.max_sessions.value, e.target.max_storage_mb.value)} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
-                  <div className="w-24">
+                <form key={p.plan_type} onSubmit={(e) => void handleSavePlanConfig(e, p.plan_type, e.target.max_sessions.value, e.target.max_storage_mb.value)} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg bg-gray-50">
+                  <div className="sm:w-24 shrink-0">
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       p.plan_type === 'premium' ? 'bg-yellow-100 text-yellow-800' :
                       p.plan_type === 'pro' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
@@ -370,16 +382,18 @@ export default function AdminDashboard() {
                       {p.plan_type.toUpperCase()}
                     </span>
                   </div>
-                  <div className="flex-1 flex items-center justify-end gap-6">
-                    <div className="flex items-center gap-2">
-                      <label htmlFor={`plan-${p.plan_type}-max_sessions`} className="text-sm text-gray-600">Sessions:</label>
-                      <input id={`plan-${p.plan_type}-max_sessions`} name="max_sessions" type="number" defaultValue={p.max_sessions} min="1" className="w-16 px-2 py-1 border rounded text-center text-sm" />
+                  <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 sm:gap-4">
+                    <div className="grid grid-cols-2 sm:flex sm:items-center gap-3 sm:gap-4">
+                      <div className="flex items-center justify-between sm:justify-start gap-2">
+                        <label htmlFor={`plan-${p.plan_type}-max_sessions`} className="text-sm text-gray-600 whitespace-nowrap">Sessions:</label>
+                        <input id={`plan-${p.plan_type}-max_sessions`} name="max_sessions" type="number" defaultValue={p.max_sessions} min="1" className="w-20 sm:w-16 px-2 py-1 border rounded text-center text-sm bg-white" />
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-start gap-2">
+                        <label htmlFor={`plan-${p.plan_type}-max_storage_mb`} className="text-sm text-gray-600 whitespace-nowrap">Disk (MB):</label>
+                        <input id={`plan-${p.plan_type}-max_storage_mb`} name="max_storage_mb" type="number" defaultValue={p.max_storage_mb} min="1" className="w-24 px-2 py-1 border rounded text-center text-sm bg-white" />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <label htmlFor={`plan-${p.plan_type}-max_storage_mb`} className="text-sm text-gray-600">Disk (MB):</label>
-                      <input id={`plan-${p.plan_type}-max_storage_mb`} name="max_storage_mb" type="number" defaultValue={p.max_storage_mb} min="1" className="w-24 px-2 py-1 border rounded text-center text-sm" />
-                    </div>
-                    <button type="submit" className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 ml-2">{t("admin.updateBtn")}</button>
+                    <button type="submit" className="w-full sm:w-auto px-3 py-1.5 sm:py-1 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 shrink-0">{t("admin.updateBtn")}</button>
                   </div>
                 </form>
               ))}

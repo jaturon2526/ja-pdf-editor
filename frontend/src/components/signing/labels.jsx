@@ -12,7 +12,10 @@ export const SIGN_TYPE_KEYS = ["either", "electronic", "digital"];
 
 export function formatDateTime(iso, lang = "th") {
   if (!iso) return "";
-  return new Date(iso).toLocaleString(lang === "en" ? "en-US" : "th-TH", { dateStyle: "medium", timeStyle: "short" });
+  let locale = "th-TH";
+  if (lang === "en") locale = "en-US";
+  else if (lang === "ko") locale = "ko-KR";
+  return new Date(iso).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
 }
 
 export function StatusBadge({ status }) {

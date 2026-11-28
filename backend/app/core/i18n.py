@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Any
 
 DEFAULT_LANG = "th"
-SUPPORTED_LANGUAGES = ("th", "en")
+SUPPORTED_LANGUAGES = ("th", "en", "ko")
 
 _MESSAGES: dict[str, dict[str, str]] = {
     "th": {
@@ -107,6 +107,55 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "donation.approved_perk": " — {plan} plan granted for {days} days",
         "donation.rejected": "Transfer could not be verified{reason} — please contact support",
         "donation.plan_expired": "Your supporter plan ({plan}) has expired — thank you for your support",
+    },
+    "ko": {
+        # ---- Auth emails ----
+        "email.greeting": "안녕하세요,",
+        "email.fallback_link": "버튼이 작동하지 않으면 아래 링크를 복사하여 브라우저에 붙여넣어 주세요:",
+        "email.verify.subject": "이메일 인증 - {app_name}",
+        "email.verify.line1": "{app_name}에 가입해 주셔서 감사합니다.",
+        "email.verify.line2": "아래 버튼을 클릭하여 이메일 주소를 인증하고 시작하세요.",
+        "email.verify.button": "이메일 인증하기",
+        "email.verify.footer": "본인이 가입한 것이 아니라면 이 이메일을 무시하셔도 됩니다 (링크는 24시간 유효합니다).",
+        "email.reset.subject": "비밀번호 재설정 - {app_name}",
+        "email.reset.line1": "계정의 비밀번호 재설정 요청이 접수되었습니다.",
+        "email.reset.line2": "아래 버튼을 클릭하여 새 비밀번호를 설정하세요 (링크는 1시간 유효합니다).",
+        "email.reset.button": "비밀번호 재설정",
+        "email.reset.footer": "비밀번호 재설정을 요청하지 않으셨다면 이 이메일을 무시해 주세요.",
+        "email.line_confirm.subject": "LINE 로그인 이메일 확인 - {app_name}",
+        "email.line_confirm.line1": "LINE 로그인 시 이 이메일 주소가 계정 이메일로 입력되었습니다.",
+        "email.line_confirm.line2": "아래 버튼을 클릭하여 이메일을 확인하고 로그인하세요 (링크는 30분간 1회 유효합니다).",
+        "email.line_confirm.line3": "이미 이 이메일로 등록된 계정이 있으면 LINE 계정이 기존 계정에 연결됩니다.",
+        "email.line_confirm.button": "이메일 확인 및 로그인",
+        "email.line_confirm.footer": "본인이 요청하지 않았다면 이 이메일을 무시하셔도 됩니다 — 아무런 변경도 적용되지 않습니다.",
+        # ---- Signing emails & LINE ----
+        "signing.subject.sign_turn": "서명 차례입니다: {title}",
+        "signing.subject.sign_reminder": "알림: \"{title}\" 서명 대기 중",
+        "signing.subject.sign_rejected": "서명 요청이 거절되었습니다: {title}",
+        "signing.subject.sign_completed": "모든 서명이 완료되었습니다: {title}",
+        "signing.subject.sign_cancelled": "서명 요청이 취소되었습니다: {title}",
+        "signing.subject.sign_overdue": "서명 기한이 지났습니다: {title}",
+        "signing.subject.sign_invite": "문서 서명에 초대되었습니다: {title}",
+        "signing.button.sign_turn": "서명할 문서 열기",
+        "signing.button.sign_reminder": "서명할 문서 열기",
+        "signing.button.sign_completed": "서명 완료 문서 보기",
+        "signing.button.sign_invite": "가입 후 서명하기",
+        "signing.button.default": "서명 요청 열기",
+        "signing.greeting": "{name}님께,",
+        "signing.sender_message": "발신자 메시지: {message}",
+        "signing.due_at": "서명 기한: {due}",
+        "signing.open_link": "열기: {url}",
+        "signing.link_label": "링크:",
+        "signing.footer_auto": "이 이메일은 {app_name}에서 자동으로 발송되었습니다",
+        "signing.footer_auto_short": "자동 발송된 이메일입니다",
+        "signing.footer_disable": " — \"서명\" 페이지에서 이메일 알림을 끌 수 있습니다",
+        "signing.login_note.invite": "이 이메일 주소로 가입해야 문서가 계정에 자동으로 연결됩니다.",
+        "signing.login_note.default": "문서를 열려면 계정으로 로그인해야 합니다.",
+        # ---- Donations & Plan Notifications ----
+        "donation.approved": "{amount} THB 후원에 감사드립니다{perk}",
+        "donation.approved_perk": " — {plan} 플랜 {days}일 부여됨",
+        "donation.rejected": "입금 내역을 확인할 수 없습니다{reason} — 관리자에게 문의해 주세요",
+        "donation.plan_expired": "후원자 플랜({plan})이 만료되었습니다 — 후원해 주셔서 감사합니다",
     },
 }
 

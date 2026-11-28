@@ -6,6 +6,7 @@ export const LANG_STORAGE_KEY = "ja_lang";
 export const SUPPORTED_LANGS = Object.freeze([
   { code: "th", shortLabel: "TH", label: "ภาษาไทย", nativeLabel: "ภาษาไทย (Thai)" },
   { code: "en", shortLabel: "EN", label: "English", nativeLabel: "English" },
+  { code: "ko", shortLabel: "KO", label: "한국어", nativeLabel: "한국어 (Korean)" },
 ]);
 
 const SUPPORTED_CODES = new Set(SUPPORTED_LANGS.map((l) => l.code));

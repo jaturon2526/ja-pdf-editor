@@ -35,12 +35,18 @@ const EN_PATTERNS = [
 ];
 
 function localizeNotificationTitle(title, lang) {
-  if (!title || lang !== "en") return title;
+  if (!title || lang === "th") return title;
   for (const [re, format] of EN_PATTERNS) {
     const m = title.match(re);
     if (m) return format(...m);
   }
   return title;
+}
+
+function getDateLocale(lang) {
+  if (lang === "ko") return "ko-KR";
+  if (lang === "en") return "en-US";
+  return "th-TH";
 }
 
 export default function NotificationBell() {
@@ -115,7 +121,7 @@ export default function NotificationBell() {
               >
                 {localizeNotificationTitle(item.title, lang)}
                 <span className="block text-xs text-gray-400 mt-0.5">
-                  {item.created_at ? new Date(item.created_at).toLocaleString(lang === "en" ? "en-US" : "th-TH", { dateStyle: "medium", timeStyle: "short" }) : ""}
+                  {item.created_at ? new Date(item.created_at).toLocaleString(getDateLocale(lang), { dateStyle: "medium", timeStyle: "short" }) : ""}
                 </span>
               </button>
             ))

@@ -11,6 +11,7 @@ import {
 const LOADERS = {
   th: async () => thDict,
   en: async () => (await import("./locales/en.json")).default,
+  ko: async () => (await import("./locales/ko.json")).default,
 };
 
 const I18nContext = createContext({
