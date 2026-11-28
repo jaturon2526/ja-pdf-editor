@@ -216,7 +216,7 @@ const SignatureCreator = forwardRef(function SignatureCreator({ optional = false
       const dataUrl = await unlockSignatureWithPasskey(savedBlob);
       setUnlockedUrl(dataUrl);
     } catch (e) {
-      setUnlockError(sigPasskeyErrorMessage(e));
+      setUnlockError(sigPasskeyErrorMessage(e, t));
     } finally {
       setUnlocking(false);
     }

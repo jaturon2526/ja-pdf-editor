@@ -66,7 +66,7 @@ function BindPasskeyDialog({ cert, onDone, onCancel }) {
       const updated = await bindCertificatePasskey(cert.id, payload);
       onDone(updated);
     } catch (err) {
-      const msg = certPasskeyErrorMessage(err);
+      const msg = certPasskeyErrorMessage(err, t);
       if (msg) setError(msg);
       void prepare(); // challenge ใช้ได้ครั้งเดียว
     } finally {
@@ -195,7 +195,7 @@ export default function CertificatesSection() {
       setDeletePassword("");
       await reload();
     } catch (err) {
-      const msg = withPasskey ? certPasskeyErrorMessage(err) : err.message || t("security.cert.deleteError");
+      const msg = withPasskey ? certPasskeyErrorMessage(err, t) : err.message || t("security.cert.deleteError");
       if (msg) setDeleteError(msg);
     } finally {
       setBusy(false);

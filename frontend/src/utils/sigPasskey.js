@@ -13,12 +13,19 @@ export { PasskeyUnlockError, PrfUnsupportedError, supportsWebAuthn };
 const HKDF_INFO = new TextEncoder().encode("ja-pdf-editor/saved-signature/v1");
 const IV_BYTES = 12;
 
-export function sigPasskeyErrorMessage(err) {
+export function sigPasskeyErrorMessage(err, t) {
+  const tr = (key, fallback) => (t ? t(key) : fallback);
   if (err?.name === "PrfUnsupportedError") {
-    return "อุปกรณ์หรือเบราว์เซอร์นี้ยังไม่รองรับ Passkey PRF สำหรับเข้ารหัสลายเซ็น (ต้องใช้ Chrome/Edge รุ่นใหม่, Android หรือ Safari บน iOS/macOS 18 ขึ้นไป)";
+    return tr(
+      "validation.sigPasskey.prfUnsupported",
+      "อุปกรณ์หรือเบราว์เซอร์นี้ยังไม่รองรับ Passkey PRF สำหรับเข้ารหัสลายเซ็น (ต้องใช้ Chrome/Edge รุ่นใหม่, Android หรือ Safari บน iOS/macOS 18 ขึ้นไป)",
+    );
   }
   if (err?.name === "PasskeyUnlockError") {
-    return "Passkey นี้ปลดล็อกรูปลายเซ็นไม่ได้ กรุณาใช้ Passkey อันเดียวกับที่บันทึกไว้";
+    return tr(
+      "validation.sigPasskey.unlockFailed",
+      "Passkey นี้ปลดล็อกรูปลายเซ็นไม่ได้ กรุณาใช้ Passkey อันเดียวกับที่บันทึกไว้",
+    );
   }
   return passkeyErrorMessage(err);
 }
@@ -119,9 +126,9 @@ const descriptor = (id, transports) => ({
 });
 
 // เข้ารหัสรูปลายเซ็นด้วย Passkey — prepared = { flow_id, options } จาก api.prepareSavedSignatureOptions (ขอไว้ก่อนกดปุ่ม)
-export async function sealSignatureWithPasskey({ prepared, pngBytes, label }) {
+export async function sealSignatureWithPasskey({ prepared, pngBytes, label, t }) {
   const { flow_id, options } = prepared;
-  const cleanLabel = label.trim() || "ลายเซ็นของฉัน";
+  const cleanLabel = label.trim() || (t ? t("validation.sigPasskey.defaultLabel") : "ลายเซ็นของฉัน");
   const salt = crypto.getRandomValues(new Uint8Array(32));
   const cred = await navigator.credentials.get({
     publicKey: {

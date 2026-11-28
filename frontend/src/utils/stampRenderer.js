@@ -1,5 +1,6 @@
 // สร้างภาพตราประทับยาง (Rubber Stamp) แบบ PNG พื้นหลังโปร่งใสความละเอียดสูงฝั่งเบราว์เซอร์
 // ไม่ต้องพึ่ง dependency ใหม่ — วางลงเอกสารผ่านระบบแทรก/แก้ไขรูปภาพที่มีอยู่ (ลาก ย่อ/ขยาย Undo/Redo ได้ทันที)
+import { dateLocale } from "../i18n/index.js";
 
 const THAI_MONTHS_SHORT = [
   "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
@@ -43,6 +44,11 @@ export function formatThaiDate(date = new Date()) {
   const month = THAI_MONTHS_SHORT[date.getMonth()] || "";
   const buddhistYear = date.getFullYear() + 543;
   return `${day} ${month} ${buddhistYear}`;
+}
+
+export function formatStampDate(date = new Date(), lang = "th") {
+  if (!lang || lang === "th") return formatThaiDate(date);
+  return date.toLocaleDateString(dateLocale(lang), { day: "numeric", month: "short", year: "numeric" });
 }
 
 function drawRoundedRectPath(ctx, x, y, w, h, r) {
@@ -157,20 +163,22 @@ export function drawStamp(ctx, width, height, options = {}) {
 /**
  * สร้างไฟล์ PNG พื้นหลังโปร่งใสความละเอียดสูง (720×380 px) สำหรับวางลงบนหน้า PDF
  */
-export async function renderStampPngFile(options) {
+export async function renderStampPngFile(options, t) {
   const width = 720;
   const height = 380;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("เบราว์เซอร์ไม่รองรับการสร้างภาพตราประทับ");
+  if (!ctx) {
+    throw new Error(t ? t("stampMeta.errUnsupported") : "เบราว์เซอร์ไม่รองรับการสร้างภาพตราประทับ");
+  }
 
   drawStamp(ctx, width, height, options);
 
   const blob = await new Promise((resolve, reject) => {
     canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error("แปลงภาพตราประทับไม่สำเร็จ"))),
+      (b) => (b ? resolve(b) : reject(new Error(t ? t("stampMeta.errConvertFailed") : "แปลงภาพตราประทับไม่สำเร็จ"))),
       "image/png",
     );
   });

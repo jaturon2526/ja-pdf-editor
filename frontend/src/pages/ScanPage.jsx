@@ -103,7 +103,16 @@ export default function ScanPage() {
   useEffect(() => {
     const engine = createScanEngine();
     engineRef.current = engine;
-    engine.ready.then(() => setEngineReady(true)).catch((e) => setError(`โหลดตัวประมวลผลภาพไม่สำเร็จ: ${e.message}`));
+    engine.ready
+      .then(() => setEngineReady(true))
+      .catch((e) => {
+        const msg = e?.message;
+        setError(
+          !msg || msg === "SCAN_ENGINE_LOAD_FAILED"
+            ? t("scanPage.engineLoadFailedSimple")
+            : t("scanPage.engineLoadFailed", { message: msg }),
+        );
+      });
     loadPages().then((saved) => {
       if (saved.length) {
         const restored = saved.map((p) => ({ ...p, sourceUrl: URL.createObjectURL(p.source), thumbUrl: null, out: null, outKey: null }));
@@ -120,7 +129,7 @@ export default function ScanPage() {
       stopStream(camRef.current?.stream);
       cancelAnimationFrame(loopRef.current);
     };
-  }, []);
+  }, [t]);
 
   // ---------- กล้อง ----------
   const stopCamera = useCallback(() => {
@@ -153,8 +162,8 @@ export default function ScanPage() {
     void (async () => {
       if (!cameraSupported()) {
         setCameraError(isInAppBrowser()
-          ? "เบราว์เซอร์ในแอปนี้เปิดกล้องไม่ได้ — กด ⋯ แล้วเลือก \"เปิดใน Safari/Chrome\" หรือใช้ปุ่ม กล้องของเครื่อง"
-          : "เบราว์เซอร์นี้เปิดกล้องไม่ได้ — ใช้ปุ่ม กล้องของเครื่อง แทน");
+          ? t("scanPage.cameraInAppError")
+          : t("scanPage.cameraUnsupportedError"));
         return;
       }
       try {
@@ -169,12 +178,12 @@ export default function ScanPage() {
         loopRef.current = requestAnimationFrame(liveLoop);
       } catch (e) {
         setCameraError(e?.name === "NotAllowedError"
-          ? "ไม่ได้รับอนุญาตให้ใช้กล้อง — อนุญาตกล้องในการตั้งค่าเบราว์เซอร์ หรือใช้ปุ่ม กล้องของเครื่อง"
-          : `เปิดกล้องไม่ได้ (${e?.message || e}) — ใช้ปุ่ม กล้องของเครื่อง แทน`);
+          ? t("scanPage.cameraDeniedError")
+          : t("scanPage.cameraOpenFailed", { message: e?.message || e }));
       }
     })();
     return () => { cancelled = true; stopCamera(); };
-  }, [screen, liveLoop, stopCamera]);
+  }, [screen, liveLoop, stopCamera, t]);
 
   // กลับมาที่แอปหลังสลับไปแอปอื่น — iOS หยุดกล้องให้ เปิดใหม่
   useEffect(() => {
@@ -197,8 +206,8 @@ export default function ScanPage() {
 
   async function onShutter() {
     if (!camRef.current || busy) return;
-    if (pages.length >= MAX_PAGES) { setError(`สแกนได้ไม่เกิน ${MAX_PAGES} หน้าต่อไฟล์`); return; }
-    setBusy("กำลังถ่าย...");
+    if (pages.length >= MAX_PAGES) { setError(t("scanPage.maxPagesError", { max: MAX_PAGES })); return; }
+    setBusy(t("scanPage.capturing"));
     try {
       const bitmap = await capturePhoto(camRef.current.track, videoRef.current);
       const corners = await detectOn(bitmap);
@@ -207,7 +216,7 @@ export default function ScanPage() {
       setDraft({ source, sourceUrl: URL.createObjectURL(source), corners: corners || INSET_FRAME, rotation: 0 });
       setScreen("adjust");
     } catch (e) {
-      setError(`ถ่ายภาพไม่สำเร็จ: ${e.message}`);
+      setError(t("scanPage.captureFailed", { message: e.message }));
     } finally {
       setBusy("");
     }
@@ -217,7 +226,7 @@ export default function ScanPage() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    setBusy("กำลังเปิดภาพ...");
+    setBusy(t("scanPage.openingImage"));
     try {
       const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
       const corners = await detectOn(bitmap);
@@ -226,7 +235,7 @@ export default function ScanPage() {
       setDraft({ source, sourceUrl: URL.createObjectURL(source), corners: corners || INSET_FRAME, rotation: 0 });
       setScreen("adjust");
     } catch (err) {
-      setError(`เปิดภาพไม่สำเร็จ: ${err.message}`);
+      setError(t("scanPage.openImageFailed", { message: err.message }));
     } finally {
       setBusy("");
     }
@@ -252,7 +261,7 @@ export default function ScanPage() {
 
   async function confirmDraft() {
     if (!draft || !engineReady) return;
-    setBusy("กำลังแปลงภาพ...");
+    setBusy(t("scanPage.processingImage"));
     try {
       const isNew = !draft.id;
       const base = isNew
@@ -266,7 +275,7 @@ export default function ScanPage() {
       }
       commitPage(page, isNew);
     } catch (e) {
-      setError(`แปลงภาพไม่สำเร็จ: ${e.message}`);
+      setError(t("scanPage.processImageFailed", { message: e.message }));
     } finally {
       setBusy("");
     }
@@ -317,7 +326,7 @@ export default function ScanPage() {
         if (cancelled) return;
         const key = `${mode}|${strength}|${p.rotation}`;
         if (p.out && p.outKey?.startsWith(key)) continue;
-        setBusy("กำลังปรับภาพตามโหมดที่เลือก...");
+        setBusy(t("scanPage.adjustingMode"));
         try {
           const updated = await renderPage(p);
           if (!cancelled) setPages((ps) => ps.map((x) => (x.id === updated.id ? updated : x)));
@@ -328,7 +337,7 @@ export default function ScanPage() {
     return () => { cancelled = true; };
     // renderPage อ่านค่า mode/strength ล่าสุดอยู่แล้ว
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen, engineReady, mode, strength, pages.length]);
+  }, [screen, engineReady, mode, strength, pages.length, t]);
 
   // ตรวจสิทธิ์ AI เมื่อเข้าหน้าตรวจสอบเอกสาร (ครั้งเดียว)
   useEffect(() => {
@@ -366,7 +375,7 @@ export default function ScanPage() {
   }
 
   async function startOver() {
-    if (pages.length && !window.confirm(`ลบหน้าที่สแกนไว้ทั้งหมด ${pages.length} หน้า แล้วเริ่มใหม่?`)) return;
+    if (pages.length && !window.confirm(t("scanPage.confirmStartOver", { count: pages.length }))) return;
     pages.forEach((p) => { URL.revokeObjectURL(p.sourceUrl); if (p.thumbUrl) URL.revokeObjectURL(p.thumbUrl); });
     setPages([]);
     startedAtRef.current = null;
@@ -395,30 +404,30 @@ export default function ScanPage() {
       const blobs = [];
       const ocrBlobs = [];
       for (let i = 0; i < pages.length; i++) {
-        setProgress({ label: `เตรียมหน้า ${i + 1}/${pages.length}`, value: (i / pages.length) * 0.2 });
+        setProgress({ label: t("scanPage.preparingPage", { current: i + 1, total: pages.length }), value: (i / pages.length) * 0.2 });
         const p = await renderPage(pages[i]);
         blobs.push(p.out);
         ocrBlobs.push(mode === "bw" ? await ocrImage(p) : null);
       }
       const name = filename.trim() || scanFilename(startedAtRef.current || new Date());
       const aiEnabled = outputMode === "rebuild" && useAi && aiAvailable !== false;
-      let savingLabel = "กำลังสร้าง PDF และอ่านข้อความ (OCR)...";
+      let savingLabel = t("scanPage.creatingPdfOcr");
       if (outputMode === "rebuild") {
         savingLabel = aiEnabled
-          ? "กำลังวาด PDF ใหม่และให้ AI ตรวจคำไทย..."
-          : "กำลังวาด PDF ใหม่และตรวจคำไทย...";
+          ? t("scanPage.rebuildingPdfAi")
+          : t("scanPage.rebuildingPdf");
       }
       const { task_id: taskId } = await createScan(
         name,
         blobs,
-        (f) => setProgress({ label: "กำลังอัปโหลด...", value: 0.2 + f * 0.3 }),
+        (f) => setProgress({ label: t("scanPage.uploading"), value: 0.2 + f * 0.3 }),
         ocrBlobs,
         { outputMode, useAi: aiEnabled },
       );
       for (;;) {
         await new Promise((r) => setTimeout(r, 1500));
         const st = await getScanStatus(taskId);
-        if (st.status === "failed") throw new Error(st.error_message || "สร้าง PDF ไม่สำเร็จ");
+        if (st.status === "failed") throw new Error(st.error_message || t("scanPage.createPdfFailed"));
         if (st.status === "completed") {
           setResult({ ...st.file, outputMode: st.output_mode || outputMode, aiStatus: st.ai_status || null });
           break;
@@ -445,7 +454,7 @@ export default function ScanPage() {
   }
 
   function exitScan() {
-    if (pages.length && screen !== "done" && !window.confirm("ออกจากหน้าสแกน? หน้าที่ถ่ายไว้ยังเก็บในเครื่อง กลับมาสแกนต่อได้")) return;
+    if (pages.length && screen !== "done" && !window.confirm(t("scanPage.confirmExit"))) return;
     void navigate("/dashboard");
   }
 
@@ -453,9 +462,20 @@ export default function ScanPage() {
   const safe = { paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" };
   const lastThumb = pages[pages.length - 1]?.thumbUrl;
 
+  let scanHintText = "";
+  if (!cameraError) {
+    if (!engineReady) {
+      scanHintText = t("scanPage.loadingDetector");
+    } else if (found) {
+      scanHintText = t("scanPage.docFoundHint");
+    } else {
+      scanHintText = t("scanPage.placeDocHint");
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-black text-white flex flex-col overflow-hidden overscroll-none" style={safe}>
-      <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onSystemCamera} />
+      <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => void onSystemCamera(e)} />
 
       {/* แถบบน */}
       <div className="flex items-center gap-2 px-3 py-2 bg-black/70 z-10">
@@ -467,17 +487,17 @@ export default function ScanPage() {
       {notice && (
         <div className="mx-3 my-2 p-3 rounded-lg bg-emerald-900/80 text-emerald-50 text-sm z-10 flex gap-2" role="status">
           <span className="flex-1">{notice}</span>
-          <button type="button" aria-label="ปิดข้อความ" onClick={() => setNotice("")}>×</button>
+          <button type="button" aria-label={t("scanPage.dismissMessage")} onClick={() => setNotice("")}>×</button>
         </div>
       )}
       {error && (
         <div className="mx-3 my-2 p-3 rounded-lg bg-red-900/80 text-red-50 text-sm z-10 flex gap-2" role="alert">
           <span className="flex-1">{error}</span>
-          <button type="button" aria-label="ปิดข้อความ" onClick={() => setError("")}>×</button>
+          <button type="button" aria-label={t("scanPage.dismissMessage")} onClick={() => setError("")}>×</button>
         </div>
       )}
 
-      {screen === "loading" && <div className="flex-1 flex items-center justify-center text-slate-300">กำลังเตรียม...</div>}
+      {screen === "loading" && <div className="flex-1 flex items-center justify-center text-slate-300">{t("scanPage.preparing")}</div>}
 
       {screen === "camera" && (
         <>
@@ -486,36 +506,36 @@ export default function ScanPage() {
             <canvas ref={overlayRef} className="absolute inset-0 w-full h-full pointer-events-none" />
             <div className="absolute top-3 inset-x-0 flex justify-center pointer-events-none">
               <span className="px-3 py-1 rounded-full bg-black/60 text-sm" data-testid="scan-hint">
-                {cameraError ? "" : !engineReady ? "กำลังโหลดตัวตรวจขอบ..." : found ? "พบเอกสาร — กดถ่ายได้เลย" : "วางเอกสารให้อยู่ในกรอบภาพ"}
+                {scanHintText}
               </span>
             </div>
             {cameraError && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
                 <p className="text-slate-200">{cameraError}</p>
-                <Btn className="bg-blue-600" onClick={() => fileRef.current?.click()}>กล้องของเครื่อง</Btn>
+                <Btn className="bg-blue-600" onClick={() => fileRef.current?.click()}>{t("scanPage.deviceCamera")}</Btn>
               </div>
             )}
           </div>
           <div className="grid grid-cols-3 items-center px-4 py-4 bg-black">
             <div className="flex items-center gap-2">
               {pages.length > 0 ? (
-                <button type="button" className="relative w-14 h-14 rounded-lg overflow-hidden border-2 border-white/70 bg-slate-800" aria-label={`ดู ${pages.length} หน้าที่สแกน`} onClick={() => setScreen("review")}>
+                <button type="button" className="relative w-14 h-14 rounded-lg overflow-hidden border-2 border-white/70 bg-slate-800" aria-label={t("scanPage.viewScannedPages", { count: pages.length })} onClick={() => setScreen("review")}>
                   {lastThumb && <img src={lastThumb} alt="" className="w-full h-full object-cover" />}
                   <span className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1 rounded-full bg-blue-600 text-xs flex items-center justify-center">{pages.length}</span>
                 </button>
               ) : (
-                <button type="button" className="min-h-[48px] px-2 text-sm text-slate-300" onClick={() => fileRef.current?.click()}>กล้องของเครื่อง</button>
+                <button type="button" className="min-h-[48px] px-2 text-sm text-slate-300" onClick={() => fileRef.current?.click()}>{t("scanPage.deviceCamera")}</button>
               )}
             </div>
             <div className="flex justify-center">
-              <button type="button" aria-label="ถ่ายภาพ" disabled={!!busy || !!cameraError} onClick={onShutter}
+              <button type="button" aria-label={t("scanPage.capturePhoto")} disabled={!!busy || !!cameraError} onClick={() => void onShutter()}
                 className="w-[76px] h-[76px] rounded-full border-4 border-white flex items-center justify-center disabled:opacity-40 active:scale-95 transition">
                 <span className={`block w-[60px] h-[60px] rounded-full ${found ? "bg-emerald-400" : "bg-white"}`} />
               </button>
             </div>
             <div className="flex justify-end gap-2">
-              {torch.available && <Btn className={torch.on ? "bg-amber-400 text-black" : "bg-white/15"} aria-label="ไฟฉาย" onClick={toggleTorch}>⚡</Btn>}
-              {pages.length > 0 && <Btn className="bg-blue-600" onClick={() => setScreen("review")}>เสร็จ</Btn>}
+              {torch.available && <Btn className={torch.on ? "bg-amber-400 text-black" : "bg-white/15"} aria-label={t("scanPage.torch")} onClick={() => void toggleTorch()}>⚡</Btn>}
+              {pages.length > 0 && <Btn className="bg-blue-600" onClick={() => setScreen("review")}>{t("scanPage.done")}</Btn>}
             </div>
           </div>
         </>
@@ -526,12 +546,12 @@ export default function ScanPage() {
           <div className="flex-1 relative bg-slate-950">
             <CornerEditor src={draft.sourceUrl} corners={draft.corners} onChange={(c) => setDraft((d) => ({ ...d, corners: c }))} />
           </div>
-          <p className="text-center text-xs text-slate-400 py-1 px-3">แตะบริเวณใกล้มุมแล้วลากเพื่อปรับกรอบเอกสาร (ไม่ต้องจิ้มตรงจุด)</p>
+          <p className="text-center text-xs text-slate-400 py-1 px-3">{t("scanPage.cornerHint")}</p>
           <div className="flex flex-wrap justify-between gap-2 px-3 py-3 bg-black">
-            <Btn className="bg-white/15" onClick={discardDraft}>{draft.id ? "ยกเลิก" : "ถ่ายใหม่"}</Btn>
-            <Btn className="bg-white/15" onClick={() => setDraft((d) => ({ ...d, corners: FULL_FRAME }))}>ทั้งภาพ</Btn>
-            <Btn className="bg-white/15" aria-label="หมุนภาพ 90 องศา" onClick={() => setDraft((d) => ({ ...d, rotation: (d.rotation + 90) % 360 }))}>↻ {draft.rotation ? `${draft.rotation}°` : "หมุน"}</Btn>
-            <Btn className="bg-emerald-500 text-black" disabled={!engineReady || !!busy} onClick={confirmDraft}>{draft.id ? "บันทึกการแก้ไข" : "ใช้ภาพนี้"}</Btn>
+            <Btn className="bg-white/15" onClick={discardDraft}>{draft.id ? t("scanPage.cancel") : t("scanPage.retake")}</Btn>
+            <Btn className="bg-white/15" onClick={() => setDraft((d) => ({ ...d, corners: FULL_FRAME }))}>{t("scanPage.fullImage")}</Btn>
+            <Btn className="bg-white/15" aria-label={t("scanPage.rotate90Aria")} onClick={() => setDraft((d) => ({ ...d, rotation: (d.rotation + 90) % 360 }))}>↻ {draft.rotation ? `${draft.rotation}°` : t("scanPage.rotate")}</Btn>
+            <Btn className="bg-emerald-500 text-black" disabled={!engineReady || !!busy} onClick={() => void confirmDraft()}>{draft.id ? t("scanPage.saveChanges") : t("scanPage.usePhoto")}</Btn>
           </div>
           {qualityWarn && (
             <div className="absolute inset-0 z-20 flex items-end sm:items-center justify-center bg-black/60 p-4" role="alertdialog" aria-labelledby="scan-quality-title" data-testid="scan-quality-warning">
@@ -540,18 +560,18 @@ export default function ScanPage() {
                   {qualityWarn.thumbUrl && <img src={qualityWarn.thumbUrl} alt="" className="w-16 rounded bg-white" />}
                   <div>
                     <p id="scan-quality-title" className="font-semibold text-amber-300">
-                      {qualityWarn.quality?.blurry ? "ภาพอาจไม่คม" : "มีแสงสะท้อนบนกระดาษ"}
+                      {qualityWarn.quality?.blurry ? t("scanPage.blurryTitle") : t("scanPage.glaryTitle")}
                     </p>
                     <p className="text-sm text-slate-300 mt-1">
                       {qualityWarn.quality?.blurry
-                        ? "ตัวหนังสือที่เบลอจะอ่านเป็นข้อความ (ค้นหา/แปลงเป็น Word) ได้ไม่ครบ — ถือมือถือให้นิ่ง แตะจอให้โฟกัส หรือเพิ่มแสง แล้วถ่ายใหม่"
-                        : "ตัวหนังสือตรงที่แสงสะท้อนอาจหายไป — เอียงมือถือเล็กน้อยหรือเลี่ยงแสงไฟตรงๆ แล้วถ่ายใหม่"}
+                        ? t("scanPage.blurryDesc")
+                        : t("scanPage.glaryDesc")}
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-2 justify-end">
-                  <Btn className="bg-white/15" onClick={keepAfterWarning}>ใช้ภาพนี้ต่อ</Btn>
-                  <Btn className="bg-emerald-500 text-black" onClick={retakeAfterWarning}>ถ่ายใหม่</Btn>
+                  <Btn className="bg-white/15" onClick={keepAfterWarning}>{t("scanPage.keepPhoto")}</Btn>
+                  <Btn className="bg-emerald-500 text-black" onClick={retakeAfterWarning}>{t("scanPage.retake")}</Btn>
                 </div>
               </div>
             </div>
@@ -565,24 +585,24 @@ export default function ScanPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" data-testid="scan-pages">
               {pages.map((p, i) => (
                 <div key={p.id} className="bg-slate-800 rounded-xl overflow-hidden flex flex-col">
-                  <button type="button" className="relative aspect-[3/4] bg-white flex items-center justify-center" onClick={() => editPage(p)} aria-label={`ปรับมุมหน้า ${i + 1}`}>
-                    {p.thumbUrl ? <img src={p.thumbUrl} alt={`หน้า ${i + 1}`} className="max-w-full max-h-full object-contain" /> : <span className="text-slate-400 text-sm">กำลังแปลง...</span>}
+                  <button type="button" className="relative aspect-[3/4] bg-white flex items-center justify-center" onClick={() => editPage(p)} aria-label={t("scanPage.adjustPageAria", { page: i + 1 })}>
+                    {p.thumbUrl ? <img src={p.thumbUrl} alt={t("scanPage.pageAlt", { page: i + 1 })} className="max-w-full max-h-full object-contain" /> : <span className="text-slate-400 text-sm">{t("scanPage.converting")}</span>}
                     <span className="absolute top-1 left-1 px-2 py-0.5 rounded bg-black/70 text-xs">{i + 1}</span>
                     {(p.quality?.blurry || p.quality?.glary) && (
-                      <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-amber-400 text-black text-[11px] font-semibold" title={p.quality.blurry ? "ภาพอาจไม่คม — แตะเพื่อถ่าย/ปรับใหม่" : "มีแสงสะท้อน"}>⚠ {p.quality.blurry ? "ไม่คม" : "แสงสะท้อน"}</span>
+                      <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-amber-400 text-black text-[11px] font-semibold" title={p.quality.blurry ? t("scanPage.blurryBadgeTitle") : t("scanPage.glaryBadgeTitle")}>⚠ {p.quality.blurry ? t("scanPage.blurryBadge") : t("scanPage.glaryBadge")}</span>
                     )}
                   </button>
                   <div className="flex justify-between">
-                    <button type="button" className="flex-1 min-h-[44px] disabled:opacity-30" disabled={i === 0} aria-label={`เลื่อนหน้า ${i + 1} ขึ้น`} onClick={() => movePage(i, -1)}>←</button>
-                    <button type="button" className="flex-1 min-h-[44px]" aria-label={`แก้หน้า ${i + 1}`} onClick={() => editPage(p)}>✎</button>
-                    <button type="button" className="flex-1 min-h-[44px] text-red-300" aria-label={`ลบหน้า ${i + 1}`} onClick={() => removePage(p.id)}>🗑</button>
-                    <button type="button" className="flex-1 min-h-[44px] disabled:opacity-30" disabled={i === pages.length - 1} aria-label={`เลื่อนหน้า ${i + 1} ลง`} onClick={() => movePage(i, 1)}>→</button>
+                    <button type="button" className="flex-1 min-h-[44px] disabled:opacity-30" disabled={i === 0} aria-label={t("scanPage.movePageUpAria", { page: i + 1 })} onClick={() => movePage(i, -1)}>←</button>
+                    <button type="button" className="flex-1 min-h-[44px]" aria-label={t("scanPage.editPageAria", { page: i + 1 })} onClick={() => editPage(p)}>✎</button>
+                    <button type="button" className="flex-1 min-h-[44px] text-red-300" aria-label={t("scanPage.deletePageAria", { page: i + 1 })} onClick={() => removePage(p.id)}>🗑</button>
+                    <button type="button" className="flex-1 min-h-[44px] disabled:opacity-30" disabled={i === pages.length - 1} aria-label={t("scanPage.movePageDownAria", { page: i + 1 })} onClick={() => movePage(i, 1)}>→</button>
                   </div>
                 </div>
               ))}
               {pages.length < MAX_PAGES && (
                 <button type="button" className="aspect-[3/4] rounded-xl border-2 border-dashed border-slate-600 text-slate-300 flex flex-col items-center justify-center gap-1" onClick={() => setScreen("camera")}>
-                  <span className="text-3xl">+</span>ถ่ายหน้าถัดไป
+                  <span className="text-3xl">+</span>{t("scanPage.captureNextPage")}
                 </button>
               )}
             </div>

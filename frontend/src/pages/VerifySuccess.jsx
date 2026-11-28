@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppName } from '../hooks/useAppName.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 export default function VerifySuccess() {
+  const { t } = useI18n();
   const appName = useAppName();
   const navigate = useNavigate();
 
@@ -16,16 +18,16 @@ export default function VerifySuccess() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            ยืนยันอีเมลสำเร็จ!
+            {t("authExtra.verifySuccess.title")}
           </h2>
           <p className="text-gray-600 mb-8">
-            บัญชีของคุณได้รับการยืนยันเรียบร้อยแล้ว ตอนนี้คุณสามารถเข้าสู่ระบบและเริ่มใช้งาน {appName} ได้ทันที
+            {t("authExtra.verifySuccess.desc", { appName })}
           </p>
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => void navigate("/login")}
             className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
           >
-            ไปที่หน้าเข้าสู่ระบบ
+            {t("authExtra.verifySuccess.goToLogin")}
           </button>
         </div>
       </div>

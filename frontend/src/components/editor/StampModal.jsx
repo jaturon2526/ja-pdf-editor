@@ -6,7 +6,7 @@ import {
   STAMP_OPACITIES,
   STAMP_PRESETS,
   drawStamp,
-  formatThaiDate,
+  formatStampDate,
   renderStampPngFile,
 } from "../../utils/stampRenderer.js";
 
@@ -29,12 +29,12 @@ const ANGLE_KEYS = {
  * แสดงตัวอย่างแบบเรียลไทม์บน <canvas> แล้วสร้าง PNG โปร่งใสส่งเข้าโหมดวางรูป (ลาก ย่อ/ขยาย Undo ได้)
  */
 export default function StampModal({ onClose, onSubmit }) {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const firstPreset = STAMP_PRESETS[0];
   const [presetId, setPresetId] = useState(firstPreset.id);
   const [text, setText] = useState(() => t(`editor.modals.stamp.presetText_${firstPreset.id}`));
   const [includeDate, setIncludeDate] = useState(firstPreset.includeDate);
-  const [subText, setSubText] = useState(firstPreset.includeDate ? formatThaiDate() : "");
+  const [subText, setSubText] = useState(firstPreset.includeDate ? formatStampDate(new Date(), lang) : "");
   const [color, setColor] = useState(firstPreset.color);
   const [angleDeg, setAngleDeg] = useState(firstPreset.angleDeg);
   const [opacity, setOpacity] = useState(0.85);
@@ -62,14 +62,14 @@ export default function StampModal({ onClose, onSubmit }) {
     setColor(preset.color);
     setAngleDeg(preset.angleDeg);
     setIncludeDate(preset.includeDate);
-    setSubText(preset.includeDate ? formatThaiDate() : "");
+    setSubText(preset.includeDate ? formatStampDate(new Date(), lang) : "");
     setError("");
   }
 
   function handleToggleDate(checked) {
     setIncludeDate(checked);
     if (checked && !subText.trim()) {
-      setSubText(formatThaiDate());
+      setSubText(formatStampDate(new Date(), lang));
     }
   }
 
@@ -87,7 +87,7 @@ export default function StampModal({ onClose, onSubmit }) {
         color,
         angleDeg,
         opacity,
-      });
+      }, t);
       onSubmit(file, text.trim());
     } catch (err) {
       setError(err?.message || t("editor.modals.stamp.errCreateFailed"));
@@ -208,7 +208,7 @@ export default function StampModal({ onClose, onSubmit }) {
                 value={subText}
                 maxLength={48}
                 onChange={(e) => setSubText(e.target.value)}
-                placeholder={t("editor.modals.stamp.subTextPlaceholder", { date: formatThaiDate() })}
+                placeholder={t("editor.modals.stamp.subTextPlaceholder", { date: formatStampDate(new Date(), lang) })}
                 className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             )}

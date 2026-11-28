@@ -10,6 +10,7 @@ import EditableTextBox from "./EditableTextBox.jsx";
 import ImageEditBox from "./ImageEditBox.jsx";
 import AnnotationBox from "./AnnotationBox.jsx";
 import { ZOOM_MAX, ZOOM_MIN } from "../hooks/useZoom.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 // เครื่องมือ annotation ที่ใช้ "ลากเมาส์" กำหนดตำแหน่ง+ขนาด (mousedown-move-up) แทนการคลิกจุดเดียว
 // แล้วได้กล่องขนาดคงที่แบบเดิม — highlight/text_note ใช้ผลลัพธ์ของการลากไป snap กับคำจริงในหน้า
@@ -126,6 +127,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   currentPage = 0,
   onSelectPage,
 }, canvasAreaRef) {
+  const { t } = useI18n();
   const imgRef = useRef(null);
   const pageSheetRef = useRef(null);
   const isPanningRef = useRef(false);
@@ -430,9 +432,9 @@ const PDFCanvas = forwardRef(function PDFCanvas({
   function handleTouchStart(e) {
     ensureGestureListeners();
     if (e.touches.length === 1) {
-      const t = e.touches[0];
+      const touch = e.touches[0];
       const el = canvasAreaRef.current;
-      swipeRef.current = { x: t.clientX, y: t.clientY, t: Date.now(), scrollLeft: el ? el.scrollLeft : 0, multi: false, target: e.target };
+      swipeRef.current = { x: touch.clientX, y: touch.clientY, t: Date.now(), scrollLeft: el ? el.scrollLeft : 0, multi: false, target: e.target };
     }
     if (e.touches.length >= 2) {
       if (swipeRef.current) swipeRef.current.multi = true;
@@ -680,10 +682,10 @@ const PDFCanvas = forwardRef(function PDFCanvas({
             <path d="M32 4v11h11" stroke="var(--color-text-muted)" strokeWidth="2" />
             <path d="M17 26h16M17 32h16M17 38h10" stroke="var(--color-text-muted)" strokeWidth="2" strokeLinecap="round" />
           </svg>
-          <p className="empty-title">ยังไม่ได้เปิดเอกสาร</p>
-          <p className="empty-subtitle">ลากไฟล์ PDF หรือ Office มาวางที่นี่ หรือ</p>
+          <p className="empty-title">{t("editor.canvas.emptyTitle")}</p>
+          <p className="empty-subtitle">{t("editor.canvas.emptySubtitle")}</p>
           <button type="button" className="primary-btn" onClick={onOpenClick}>
-            เปิดไฟล์ PDF
+            {t("editor.canvas.openPdfBtn")}
           </button>
         </div>
       </div>
@@ -921,7 +923,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                         justifyContent: "center",
                         color: "red",
                       }}
-                      title="ยกเลิกการลบ (Restore)"
+                      title={t("editor.canvas.undoDeleteTitle")}
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -950,12 +952,12 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                           e.stopPropagation();
                           onRestoreTextEdit(block.block_id);
                         }}
-                        title="กู้คืนข้อความนี้"
+                        title={t("editor.canvas.restoreTextTitle")}
                       >
                         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                         </svg>
-                        <span>กู้คืน</span>
+                        <span>{t("editor.canvas.restoreBtn")}</span>
                       </button>
                     </div>
                   );
@@ -990,7 +992,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                     width: (block.rect.x1 - block.rect.x0) * zoom,
                     height: (block.rect.y1 - block.rect.y0) * zoom,
                   }}
-                  title="คลิกเพื่อแก้ไขย่อหน้านี้"
+                  title={t("editor.canvas.clickToEditParagraph")}
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelectTextBlock(block);
@@ -1069,7 +1071,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                         justifyContent: "center",
                         color: "red",
                       }}
-                      title="ยกเลิกการลบ (Restore)"
+                      title={t("editor.canvas.undoDeleteTitle")}
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1098,12 +1100,12 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                           e.stopPropagation();
                           onRestoreImageEdit(key);
                         }}
-                        title="กู้คืนรูปภาพนี้"
+                        title={t("editor.canvas.restoreImageTitle")}
                       >
                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                         </svg>
-                        <span>กู้คืน</span>
+                        <span>{t("editor.canvas.restoreBtn")}</span>
                       </button>
                     </div>
                   );
@@ -1133,14 +1135,14 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                         width: (pending.rect.x1 - pending.rect.x0) * zoom,
                         height: (pending.rect.y1 - pending.rect.y0) * zoom,
                       }}
-                      title="รูปนี้ยืนยันไว้แล้ว รอกด 'บันทึกการแก้ไข' — คลิกเพื่อแก้ไขต่อ"
+                      title={t("editor.canvas.pendingImageTitle")}
                       onClick={(e) => {
                         e.stopPropagation();
                         onResumeImageEdit(key);
                       }}
                     >
                       {pending.previewUrl && (
-                        <img src={pending.previewUrl} alt="พรีวิวรูปภาพที่รอบันทึก" className="image-edit-preview" draggable={false} />
+                        <img src={pending.previewUrl} alt={t("editor.canvas.pendingImageAlt")} className="image-edit-preview" draggable={false} />
                       )}
                     </div>
                   </React.Fragment>
@@ -1157,7 +1159,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                     width: (img.rect.x1 - img.rect.x0) * zoom,
                     height: (img.rect.y1 - img.rect.y0) * zoom,
                   }}
-                  title="คลิกเพื่อย้าย/ปรับขนาด/แทนที่รูปภาพนี้"
+                  title={t("editor.canvas.clickToEditImage")}
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelectImage(img);
@@ -1182,14 +1184,14 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                     width: (pending.rect.x1 - pending.rect.x0) * zoom,
                     height: (pending.rect.y1 - pending.rect.y0) * zoom,
                   }}
-                  title="รูปนี้ยืนยันไว้แล้ว รอกด 'บันทึกการแก้ไข' — คลิกเพื่อแก้ไขต่อ"
+                  title={t("editor.canvas.pendingImageTitle")}
                   onClick={(e) => {
                     e.stopPropagation();
                     onResumeImageEdit(key);
                   }}
                 >
                   {pending.previewUrl && (
-                    <img src={pending.previewUrl} alt="พรีวิวรูปภาพที่รอบันทึก" className="image-edit-preview" draggable={false} />
+                    <img src={pending.previewUrl} alt={t("editor.canvas.pendingImageAlt")} className="image-edit-preview" draggable={false} />
                   )}
                 </div>
               );
@@ -1225,9 +1227,9 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                 void onPasteImageEdit?.();
               }}
               className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-medium shadow-md"
-              title="วางรูปที่คัดลอกไว้ (Ctrl+V)"
+              title={t("editor.canvas.pasteImageTitle")}
             >
-              วางรูปที่คัดลอกไว้
+              {t("editor.canvas.pasteImageBtn")}
             </button>
           </div>
         )}
@@ -1281,12 +1283,12 @@ const PDFCanvas = forwardRef(function PDFCanvas({
         maxWidth: "100%",
       } : undefined}
     >
-      {loading && <div className="page-loading">กำลังโหลดหน้า…</div>}
+      {loading && <div className="page-loading">{t("editor.canvas.loadingPage")}</div>}
       {pageImage && (
         <img
           ref={imgRef}
           src={pageImageSrc(pageImage)}
-          alt="หน้าเอกสารปัจจุบัน"
+          alt={t("editor.canvas.currentPageAlt")}
           className="page-image"
           style={pageWidthPt > 1 ? { width: pageWidthPt * zoom, height: "auto" } : undefined}
           draggable={false}
@@ -1361,12 +1363,12 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                 onClick={isActive ? handleClick : () => onSelectPage?.(layout.index)}
                 onPointerDown={isActive ? handlePageMouseDown : undefined}
               >
-                {isActive && loading && !displaySrc && <div className="page-loading">กำลังโหลดหน้า…</div>}
+                {isActive && loading && !displaySrc && <div className="page-loading">{t("editor.canvas.loadingPage")}</div>}
                 {displaySrc ? (
                   <img
                     ref={isActive ? imgRef : undefined}
                     src={pageImageSrc(displaySrc)}
-                    alt={isActive ? "หน้าเอกสารปัจจุบัน" : `หน้า ${layout.index + 1}`}
+                    alt={isActive ? t("editor.canvas.currentPageAlt") : t("editor.canvas.pageNumber", { page: layout.index + 1 })}
                     className={isActive ? "page-image" : "continuous-page-img"}
                     style={{
                       width: layout.width,
@@ -1377,7 +1379,7 @@ const PDFCanvas = forwardRef(function PDFCanvas({
                     draggable={false}
                   />
                 ) : (
-                  <div className="continuous-page-placeholder">หน้า {layout.index + 1}</div>
+                  <div className="continuous-page-placeholder">{t("editor.canvas.pageNumber", { page: layout.index + 1 })}</div>
                 )}
                 {isActive && activeOverlays}
               </div>

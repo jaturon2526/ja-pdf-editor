@@ -29,7 +29,7 @@ export default function SecurityPage() {
       setError(t("security.password.mismatch"));
       return;
     }
-    const pwdError = validatePassword(newPassword);
+    const pwdError = validatePassword(newPassword, t);
     if (pwdError) {
       setError(pwdError);
       return;

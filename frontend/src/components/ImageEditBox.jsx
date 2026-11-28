@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 /**
  * ImageEditBox — กล่องแก้ไขรูปภาพที่กำลังเลือกอยู่ตอนนี้ (แทรกใหม่ หรือ ย้าย/ปรับขนาดรูปเดิม)
@@ -41,6 +42,7 @@ export default function ImageEditBox({
   onDelete,
   keepAspect = false, // true = คงอัตราส่วนเสมอ (บาร์โค้ด — บีบ/ยืดแล้วสแกนไม่ติด) ไม่ต้องกด Shift
 }) {
+  const { t } = useI18n();
   const fileInputRef = useRef(null);
 
   function suppressClickAfterDrag() {
@@ -178,7 +180,7 @@ export default function ImageEditBox({
     >
       <button
         className="absolute -bottom-[22px] left-1/2 -translate-x-1/2 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow z-10 cursor-pointer"
-        title="ลบรูปภาพนี้ (Delete / Backspace)"
+        title={t("editor.imageEditBox.deleteTitle")}
         onClick={(e) => {
           e.stopPropagation();
           onDelete?.();
@@ -188,7 +190,7 @@ export default function ImageEditBox({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
       </button>
-      <div className="edit-box-drag-handle" title="ลากเพื่อย้ายตำแหน่ง" onPointerDown={startMove}>
+      <div className="edit-box-drag-handle" title={t("editor.imageEditBox.dragToMove")} onPointerDown={startMove}>
         <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
           <path d="M8 1v14M1 8h14" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
           <path
@@ -201,8 +203,8 @@ export default function ImageEditBox({
         </svg>
       </div>
 
-      {previewUrl && <img src={previewUrl} alt="พรีวิวรูปภาพที่กำลังแก้ไข" className="image-edit-preview" draggable={false}
-        onPointerDown={startMove} title="ลากเพื่อย้ายตำแหน่ง" />}
+      {previewUrl && <img src={previewUrl} alt={t("editor.imageEditBox.previewAlt")} className="image-edit-preview" draggable={false}
+        onPointerDown={startMove} title={t("editor.imageEditBox.dragToMove")} />}
 
       {HANDLES.map((h) => (
         <div
@@ -228,7 +230,7 @@ export default function ImageEditBox({
               }}
             />
             <button type="button" className="secondary-btn image-edit-toolbar-btn" onClick={() => fileInputRef.current?.click()}>
-              แทนที่รูปภาพ
+              {t("editor.imageEditBox.replaceBtn")}
             </button>
           </>
         )}
@@ -236,27 +238,27 @@ export default function ImageEditBox({
           <button
             type="button"
             className="secondary-btn image-edit-toolbar-btn"
-            title="คัดลอกรูปภาพ (Ctrl+C)"
+            title={t("editor.imageEditBox.copyTitle")}
             onClick={() => void onCopy()}
           >
-            คัดลอก
+            {t("editor.imageEditBox.copyBtn")}
           </button>
         )}
         {onPaste && canPaste && (
           <button
             type="button"
             className="secondary-btn image-edit-toolbar-btn"
-            title="วางรูปที่คัดลอกไว้ (Ctrl+V)"
+            title={t("editor.imageEditBox.pasteTitle")}
             onClick={() => void onPaste()}
           >
-            วางรูป
+            {t("editor.imageEditBox.pasteBtn")}
           </button>
         )}
         <button type="button" className="secondary-btn image-edit-toolbar-btn" onClick={onCancel}>
-          ยกเลิก
+          {t("editor.imageEditBox.cancel")}
         </button>
         <button type="button" className="primary-btn image-edit-toolbar-btn" onClick={onConfirm}>
-          ตกลง
+          {t("editor.imageEditBox.confirm")}
         </button>
       </div>
     </div>

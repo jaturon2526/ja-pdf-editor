@@ -102,7 +102,7 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
         : await prepareSavedSignatureOptions();
       const pngBytes = dataUrlToBytes(previewUrl);
       const cleanLabel = label.trim() || t("security.savedSig.defaultLabel", { n: items.length + 1 });
-      const payload = await sealSignatureWithPasskey({ prepared: opt, pngBytes, label: cleanLabel });
+      const payload = await sealSignatureWithPasskey({ prepared: opt, pngBytes, label: cleanLabel, t });
       await saveEncryptedSignature(payload);
       setLabel("");
       setRawImage(null);
@@ -110,7 +110,7 @@ export default function SavedSignaturesSection({ passkeyVersion = 0 } = {}) {
       setSuccess(t("security.savedSig.saveSuccess", { label: cleanLabel }));
       await loadAll();
     } catch (err) {
-      const msg = sigPasskeyErrorMessage(err);
+      const msg = sigPasskeyErrorMessage(err, t);
       if (msg) setError(msg);
       // ขอ challenge ใหม่เผื่ออันเดิมถูกใช้ไปแล้ว
       prepareSavedSignatureOptions().then(setPrepared).catch(() => {});

@@ -19,7 +19,7 @@ export function createScanEngine() {
     if (msg.error) p.reject(new Error(msg.error));
     else p.resolve(msg);
   };
-  worker.onerror = (e) => readyReject(new Error(e.message || "โหลดตัวประมวลผลภาพไม่สำเร็จ"));
+  worker.onerror = (e) => readyReject(new Error(e.message || "SCAN_ENGINE_LOAD_FAILED"));
   worker.postMessage({ type: "init", cvUrl: new URL(cvUrl, window.location.href).href });
 
   function call(type, payload, transfer = []) {

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { saveBlob } from "../../api/client.js";
 import { useI18n } from "../../i18n/I18nContext.jsx";
+import { dateLocale } from "../../i18n/index.js";
 
 export const PII_TYPE_ORDER = ["national_id", "credit_card", "bank_account", "phone", "email", "person_name", "address", "person_name_guess"];
 
@@ -20,19 +21,27 @@ export function groupFindings(findings) {
 }
 
 // รายงานแบบ CSV (UTF-8 BOM เปิดใน Excel ภาษาไทยได้) — ค่าในรายงานถูกปิดบางส่วนจากฝั่ง server แล้ว
-export function downloadPiiReport(report, sourceName) {
+export function downloadPiiReport(report, sourceName, { t, lang = "th" } = {}) {
+  const tr = (key, fallback, params) => (t ? t(key, params) : fallback);
   const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
-  const rows = [["ลำดับ", "ประเภท", "หน้า", "ค่าที่ปกปิด (บางส่วน)"]];
+  const rows = [[
+    tr("pdpaCsv.colIndex", "ลำดับ"),
+    tr("pdpaCsv.colType", "ประเภท"),
+    tr("pdpaCsv.colPage", "หน้า"),
+    tr("pdpaCsv.colMasked", "ค่าที่ปกปิด (บางส่วน)"),
+  ]];
   report.forEach((r, i) => rows.push([i + 1, r.label, r.page, r.masked]));
   const now = new Date();
+  const formattedDate = now.toLocaleString(dateLocale(lang));
   const header = [
-    [`รายงานการปกปิดข้อมูลส่วนบุคคล — ${sourceName}`],
-    [`วันที่ ${now.toLocaleString("th-TH")}`],
-    [`จำนวน ${report.length} รายการ`],
+    [tr("pdpaCsv.reportTitle", `รายงานการปกปิดข้อมูลส่วนบุคคล — ${sourceName}`, { sourceName })],
+    [tr("pdpaCsv.reportDate", `วันที่ ${formattedDate}`, { date: formattedDate })],
+    [tr("pdpaCsv.reportCount", `จำนวน ${report.length} รายการ`, { count: report.length })],
     [],
   ];
-  const csv = "﻿" + [...header, ...rows].map((r) => r.map(esc).join(",")).join("\r\n");
-  saveBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `${sourceName.replace(/\.pdf$/i, "")} - รายงาน PDPA.csv`);
+  const csv = "\uFEFF" + [...header, ...rows].map((r) => r.map(esc).join(",")).join("\r\n");
+  const suffix = tr("pdpaCsv.filenameSuffix", "รายงาน PDPA");
+  saveBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `${sourceName.replace(/\.pdf$/i, "")} - ${suffix}.csv`);
 }
 
 function GroupCheckbox({ checked, indeterminate, onChange, label }) {

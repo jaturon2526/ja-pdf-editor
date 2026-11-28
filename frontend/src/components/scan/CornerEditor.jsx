@@ -3,6 +3,7 @@
 // v1.41.2: เว้นระยะขอบภาพ (IMAGE_PAD) ไม่ให้จุดมุมชิดขอบจอมือถือ + ขยายพื้นที่จับมุม (HANDLE 88px / รัศมี 140px)
 // และลากแบบสัมพัทธ์ (shiftCorner) ให้วางนิ้วถัดเข้ามาในจอแล้วลากได้เลย ไม่ไปโดน gesture ปัดขอบซ้ายย้อนกลับของมือถือ
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useI18n } from "../../i18n/I18nContext.jsx";
 import { nearestCornerIndex, shiftCorner } from "../../scan/geometry.js";
 
 const IMAGE_PAD = 28; // เว้นระยะจากขอบกล่อง (px) กันจุดมุมชิดขอบซ้าย/ขวาของจอมือถือ
@@ -10,8 +11,15 @@ const HANDLE = 88; // พื้นที่แตะรอบจุดมุม 
 const MAX_GRAB_RADIUS = 140; // รัศมีสูงสุด (px) ที่แตะข้างจุดมุมแล้วดึงมุมที่ใกล้ที่สุดได้ทันที
 const LOUPE = 112;
 const LOUPE_ZOOM = 2.5;
+const CORNER_LABEL_KEYS = [
+  "scanPage.corner.topLeft",
+  "scanPage.corner.topRight",
+  "scanPage.corner.bottomRight",
+  "scanPage.corner.bottomLeft",
+];
 
 export default function CornerEditor({ src, corners, onChange }) {
+  const { t } = useI18n();
   const boxRef = useRef(null);
   const imgRef = useRef(null);
   const loupeRef = useRef(null);
@@ -140,7 +148,7 @@ export default function CornerEditor({ src, corners, onChange }) {
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      <img ref={imgRef} src={src} alt="ภาพที่ถ่าย" onLoad={measure} draggable={false}
+      <img ref={imgRef} src={src} alt={t("scanPage.corner.capturedImageAlt")} onLoad={measure} draggable={false}
         className="absolute pointer-events-none"
         style={layout ? { left: layout.ox, top: layout.oy, width: layout.w, height: layout.h } : { opacity: 0 }} />
       {layout && (
@@ -159,7 +167,7 @@ export default function CornerEditor({ src, corners, onChange }) {
             <div
               key={i}
               role="slider"
-              aria-label={["มุมบนซ้าย", "มุมบนขวา", "มุมล่างขวา", "มุมล่างซ้าย"][i]}
+              aria-label={t(CORNER_LABEL_KEYS[i])}
               aria-valuetext={`${Math.round(corners[i].x * 100)}%, ${Math.round(corners[i].y * 100)}%`}
               tabIndex={0}
               className="absolute flex items-center justify-center"

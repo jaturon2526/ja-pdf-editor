@@ -33,7 +33,7 @@ export default function ResetPassword() {
       setError(t("auth.resetPasswordMismatch"));
       return;
     }
-    const pwdError = validatePassword(newPassword);
+    const pwdError = validatePassword(newPassword, t);
     if (pwdError) {
       setError(pwdError);
       return;

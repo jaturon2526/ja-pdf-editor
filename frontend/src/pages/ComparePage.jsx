@@ -8,13 +8,13 @@ import { PHONE_LAYOUT_QUERY } from "../utils/viewport.js";
 import { useI18n } from "../i18n/I18nContext.jsx";
 
 export const KIND = {
-  replace: { label: "แก้ไข", color: "#ea580c", bg: "bg-orange-100 text-orange-800" },
-  insert: { label: "เพิ่ม", color: "#16a34a", bg: "bg-green-100 text-green-800" },
-  delete: { label: "ลบ", color: "#dc2626", bg: "bg-red-100 text-red-800" },
-  visual: { label: "ภาพต่าง", color: "#9333ea", bg: "bg-purple-100 text-purple-800" },
-  page_insert: { label: "หน้าที่เพิ่ม", color: "#16a34a", bg: "bg-green-100 text-green-800" },
-  page_delete: { label: "หน้าที่ลบ", color: "#dc2626", bg: "bg-red-100 text-red-800" },
-  page_size: { label: "ขนาดหน้า", color: "#ea580c", bg: "bg-orange-100 text-orange-800" },
+  replace: { labelKey: "comparePage.kindReplace", color: "#ea580c", bg: "bg-orange-100 text-orange-800" },
+  insert: { labelKey: "comparePage.kindInsert", color: "#16a34a", bg: "bg-green-100 text-green-800" },
+  delete: { labelKey: "comparePage.kindDelete", color: "#dc2626", bg: "bg-red-100 text-red-800" },
+  visual: { labelKey: "comparePage.kindVisual", color: "#9333ea", bg: "bg-purple-100 text-purple-800" },
+  page_insert: { labelKey: "comparePage.kindPageInsert", color: "#16a34a", bg: "bg-green-100 text-green-800" },
+  page_delete: { labelKey: "comparePage.kindPageDelete", color: "#dc2626", bg: "bg-red-100 text-red-800" },
+  page_size: { labelKey: "comparePage.kindPageSize", color: "#ea580c", bg: "bg-orange-100 text-orange-800" },
 };
 
 function useMedia(query) {
@@ -32,6 +32,7 @@ function useMedia(query) {
 
 /** ภาพหน้า (โหลดเมื่อใกล้เข้าจอ) — URL ต้องมี token จึงโหลดเป็น blob */
 function PageImage({ taskId, side, page, zoom, className = "", style }) {
+  const { t } = useI18n();
   const ref = useRef(null);
   const [src, setSrc] = useState(null);
   const [visible, setVisible] = useState(false);
@@ -55,12 +56,13 @@ function PageImage({ taskId, side, page, zoom, className = "", style }) {
   return (
     <div ref={ref} className={`absolute inset-0 ${className}`} style={style}>
       {src ? <img src={src} alt="" draggable={false} className="w-full h-full select-none" />
-        : <div className="w-full h-full bg-white flex items-center justify-center text-xs text-gray-400 whitespace-nowrap">กำลังโหลดหน้า...</div>}
+        : <div className="w-full h-full bg-white flex items-center justify-center text-xs text-gray-400 whitespace-nowrap">{t("comparePage.loadingPage")}</div>}
     </div>
   );
 }
 
 function Marks({ marks, size, activeId, onPick }) {
+  const { t } = useI18n();
   const [w, h] = size;
   return marks.map(({ change, rect, caret }, i) => {
     const k = KIND[change.kind];
@@ -68,9 +70,9 @@ function Marks({ marks, size, activeId, onPick }) {
     const thin = rect.x1 - rect.x0 < 2;
     if (caret) {
       // ตำแหน่งที่ข้อความถูกลบ (ในไฟล์ใหม่) / ถูกเพิ่ม (ในไฟล์เดิม) — ลูกศรชี้ ไม่ใช่กรอบรอบคำ (กรอบดูเหมือนคำนั้นถูกแก้)
-      const what = change.kind === "delete" ? "ข้อความถูกลบตรงนี้" : "ข้อความถูกเพิ่มตรงนี้";
+      const what = change.kind === "delete" ? t("comparePage.caretDeleted") : t("comparePage.caretInserted");
       return (
-        <button key={`${change.id}-${i}`} type="button" data-mark={change.id} aria-label={`จุดต่าง ${change.id}: ${what}`} title={what}
+        <button key={`${change.id}-${i}`} type="button" data-mark={change.id} aria-label={t("comparePage.markAria", { id: change.id, label: what })} title={what}
           onClick={() => onPick(change.id)} className={`absolute ${active ? "z-20 animate-pulse" : "z-10"}`}
           style={{ left: `${(rect.x0 / w) * 100}%`, top: `${(rect.y0 / h) * 100}%`, height: `${((rect.y1 - rect.y0) / h) * 100}%`,
             width: 0, borderLeft: `2px dashed ${k.color}`, marginLeft: -1 }}>
@@ -79,7 +81,7 @@ function Marks({ marks, size, activeId, onPick }) {
       );
     }
     return (
-      <button key={`${change.id}-${i}`} type="button" data-mark={change.id} aria-label={`จุดต่าง ${change.id}: ${k.label}`}
+      <button key={`${change.id}-${i}`} type="button" data-mark={change.id} aria-label={t("comparePage.markAria", { id: change.id, label: t(k.labelKey) })}
         onClick={() => onPick(change.id)}
         className={`absolute rounded-sm ${active ? "z-20 animate-pulse" : "z-10"}`}
         style={{
@@ -109,6 +111,7 @@ function EmptySheet({ width, text }) {
 }
 
 function ChangeItem({ change, active, onPick }) {
+  const { t } = useI18n();
   const k = KIND[change.kind];
   const pages = (rects, anchor) => {
     const set = [...new Set(rects.map((r) => r.page + 1))];
@@ -121,8 +124,8 @@ function ChangeItem({ change, active, onPick }) {
         className={`w-full text-left px-3 py-2 border-l-4 ${active ? "bg-blue-50" : "hover:bg-gray-50"}`} style={{ borderLeftColor: k.color }}>
         <div className="flex items-center gap-2 text-xs">
           <span className="font-mono text-gray-500">#{change.id}</span>
-          <span className={`px-1.5 py-0.5 rounded ${k.bg}`}>{k.label}</span>
-          <span className="ml-auto text-gray-500 whitespace-nowrap">หน้า {pages(change.a_rects, change.a_anchor)} → {pages(change.b_rects, change.b_anchor)}</span>
+          <span className={`px-1.5 py-0.5 rounded ${k.bg}`}>{t(k.labelKey)}</span>
+          <span className="ml-auto text-gray-500 whitespace-nowrap">{t("comparePage.changePages", { pageA: pages(change.a_rects, change.a_anchor), pageB: pages(change.b_rects, change.b_anchor) })}</span>
         </div>
         {(change.a_text || change.b_text) && (
           <p className="mt-1 text-sm break-words">
@@ -131,7 +134,7 @@ function ChangeItem({ change, active, onPick }) {
             {change.b_text && <span className="text-green-700">{change.b_text}</span>}
           </p>
         )}
-        {change.kind === "visual" && <p className="mt-1 text-sm text-gray-600">{change.note || "รูป เส้น ลายเซ็น หรือกราฟิกต่างกัน"}</p>}
+        {change.kind === "visual" && <p className="mt-1 text-sm text-gray-600">{change.note || t("comparePage.visualDefaultNote")}</p>}
       </button>
     </li>
   );
@@ -246,7 +249,7 @@ function Viewer({ taskId, data }) {
     const size = result.b.page_sizes[pb];
     const marks = [...(marksBy.b[pb] || []), ...(marksBy.a[pa] || []).filter((m) => !m.change.b_rects.length)];
     return (
-      <Sheet size={size} width={width} label={`ซ้อนทับหน้า ${pa + 1} กับ ${pb + 1}`}>
+      <Sheet size={size} width={width} label={t("comparePage.overlaySheetAria", { pageA: pa + 1, pageB: pb + 1 })}>
         <div className="absolute inset-0" style={overlay === "diff" ? { filter: "invert(1)" } : undefined}>
           <PageImage taskId={taskId} side="a" page={pa} zoom={pageZoom(size)} />
           <PageImage taskId={taskId} side="b" page={pb} zoom={pageZoom(size)}
@@ -257,10 +260,44 @@ function Viewer({ taskId, data }) {
     );
   };
 
+  const renderPairBody = (pa, pb) => {
+    if (mode === "overlay" && pa != null && pb != null) {
+      return renderOverlay(pa, pb);
+    }
+    if (twoCols) {
+      return (
+        <div className="grid gap-4 px-4" style={{ gridTemplateColumns: `${width}px ${width}px` }}>
+          {pa != null
+            ? renderSide("a", pa, t("comparePage.originalPageAria", { page: pa + 1 }))
+            : <EmptySheet width={width} text={t("comparePage.missingInOriginal")} />}
+          {pb != null
+            ? renderSide("b", pb, t("comparePage.newPageAria", { page: pb + 1 }))
+            : <EmptySheet width={width} text={t("comparePage.deletedInNew")} />}
+        </div>
+      );
+    }
+    let side = phoneSide;
+    if (mode === "overlay") {
+      side = pb != null ? "b" : "a";
+    }
+    const page = side === "a" ? pa : pb;
+    let body;
+    if (page != null) {
+      const sideLabel = side === "a"
+        ? t("comparePage.originalPageAria", { page: page + 1 })
+        : t("comparePage.newPageAria", { page: page + 1 });
+      body = renderSide(side, page, sideLabel);
+    } else {
+      const emptyText = side === "a" ? t("comparePage.missingInOriginal") : t("comparePage.deletedInNew");
+      body = <EmptySheet width={width} text={emptyText} />;
+    }
+    return <div className="px-4">{body}</div>;
+  };
+
   return (
     <div className="h-dvh flex flex-col bg-gray-100" data-testid="compare-viewer">
       <header className="bg-white border-b border-gray-200 px-3 py-2 flex flex-wrap items-center gap-2">
-        <button type="button" onClick={() => navigate(-1)} className="px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100" aria-label="ย้อนกลับ">←</button>
+        <button type="button" onClick={() => navigate(-1)} className="px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100" aria-label={t("comparePage.back")}>←</button>
         {/* มือถือ: ชื่อไฟล์เต็มแถว ปุ่มควบคุมขึ้นแถวถัดไป */}
         <div className="min-w-0 flex-1 phone:basis-[calc(100%-3rem)]">
           <h1 className="text-base font-bold text-gray-900 truncate">{t("pages.compareTitle")}</h1>
@@ -268,77 +305,62 @@ function Viewer({ taskId, data }) {
             <span className="text-red-700">A: {data.name_a}</span> → <span className="text-green-700">B: {data.name_b}</span>
           </p>
         </div>
-        <div className="flex items-center gap-1" role="group" aria-label="รูปแบบการแสดงผล">
+        <div className="flex items-center gap-1" role="group" aria-label={t("comparePage.viewModeGroup")}>
           {phone && mode === "side" ? (
             <>
-              <button type="button" className={btn(phoneSide === "a")} onClick={() => setPhoneSide("a")}>เดิม</button>
-              <button type="button" className={btn(phoneSide === "b")} onClick={() => setPhoneSide("b")}>ใหม่</button>
+              <button type="button" className={btn(phoneSide === "a")} onClick={() => setPhoneSide("a")}>{t("comparePage.sideOriginal")}</button>
+              <button type="button" className={btn(phoneSide === "b")} onClick={() => setPhoneSide("b")}>{t("comparePage.sideNew")}</button>
             </>
           ) : (
-            <button type="button" className={btn(mode === "side")} onClick={() => setMode("side")}>เคียงข้าง</button>
+            <button type="button" className={btn(mode === "side")} onClick={() => setMode("side")}>{t("comparePage.modeSideBySide")}</button>
           )}
-          <button type="button" className={btn(mode === "overlay")} onClick={() => setMode(mode === "overlay" && phone ? "side" : "overlay")}>ซ้อนทับ</button>
+          <button type="button" className={btn(mode === "overlay")} onClick={() => setMode(mode === "overlay" && phone ? "side" : "overlay")}>{t("comparePage.modeOverlay")}</button>
         </div>
         {mode === "overlay" && (
-          <div className="flex items-center gap-1" role="group" aria-label="แบบซ้อนทับ">
-            <button type="button" className={btn(overlay === "diff")} onClick={() => setOverlay("diff")} title="จุดที่ต่างเป็นสีเข้ม ที่เหมือนกันเป็นสีขาว">ไฮไลต์ต่าง</button>
-            <button type="button" className={btn(overlay === "fade")} onClick={() => setOverlay("fade")}>โปร่งใส</button>
-            {overlay === "fade" && <input type="range" min="0" max="100" value={opacity} aria-label="ความทึบของไฟล์ใหม่"
+          <div className="flex items-center gap-1" role="group" aria-label={t("comparePage.overlayModeGroup")}>
+            <button type="button" className={btn(overlay === "diff")} onClick={() => setOverlay("diff")} title={t("comparePage.overlayDiffTitle")}>{t("comparePage.overlayDiff")}</button>
+            <button type="button" className={btn(overlay === "fade")} onClick={() => setOverlay("fade")}>{t("comparePage.overlayFade")}</button>
+            {overlay === "fade" && <input type="range" min="0" max="100" value={opacity} aria-label={t("comparePage.overlayOpacityAria")}
               onChange={(e) => setOpacity(Number(e.target.value))} className="w-24" />}
           </div>
         )}
-        <div className="flex items-center gap-1" role="group" aria-label="ซูม">
-          <button type="button" className={btn(false)} onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))} aria-label="ซูมออก">−</button>
+        <div className="flex items-center gap-1" role="group" aria-label={t("comparePage.zoomGroup")}>
+          <button type="button" className={btn(false)} onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))} aria-label={t("comparePage.zoomOut")}>−</button>
           <span className="text-xs text-gray-600 w-10 text-center">{Math.round(zoom * 100)}%</span>
-          <button type="button" className={btn(false)} onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))} aria-label="ซูมเข้า">+</button>
+          <button type="button" className={btn(false)} onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))} aria-label={t("comparePage.zoomIn")}>+</button>
         </div>
-        <button type="button" onClick={download} disabled={busy} className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50">
-          {busy ? "กำลังสร้าง..." : "ดาวน์โหลดรายงาน"}
+        <button type="button" onClick={() => void download()} disabled={busy} className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50">
+          {busy ? t("comparePage.generatingReport") : t("comparePage.downloadReport")}
         </button>
         {phone && (
           <button type="button" className={btn(panel)} onClick={() => setPanel((p) => !p)} aria-expanded={panel}>
-            รายการ ({changes.length})
+            {t("comparePage.listToggle", { count: changes.length })}
           </button>
         )}
       </header>
       {error && <p className="px-3 py-2 text-sm text-red-700 bg-red-50" role="alert">{error}</p>}
 
       <div className="flex-1 flex min-h-0 relative">
-        <main ref={mainRef} className="flex-1 overflow-auto" aria-label="หน้าเอกสาร">
+        <main ref={mainRef} className="flex-1 overflow-auto" aria-label={t("comparePage.documentPagesAria")}>
           {result.identical && (
             <div className="m-4 p-4 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm" role="status">
-              ไม่พบจุดต่าง — ข้อความ{data.options?.visual ? "และภาพ" : ""}ของทั้งสองไฟล์ตรงกัน
+              {data.options?.visual ? t("comparePage.identicalTextAndVisual") : t("comparePage.identicalText")}
             </div>
           )}
           {twoCols && (
             <div className="sticky top-0 z-30 grid grid-cols-2 gap-4 px-4 py-1 bg-gray-100/95 text-xs font-medium text-gray-600">
-              <span className="truncate text-red-700">A · เดิม</span><span className="truncate text-green-700">B · ใหม่</span>
+              <span className="truncate text-red-700">{t("comparePage.headerOriginal")}</span><span className="truncate text-green-700">{t("comparePage.headerNew")}</span>
             </div>
           )}
           <div className="py-3 space-y-6" style={{ minWidth: twoCols ? 2 * width + 3 * gap : width + 2 * gap }}>
             {result.pairs.map(([pa, pb]) => (
-              <section key={`${pa}-${pb}`} aria-label={`หน้า ${pa != null ? pa + 1 : "-"} เทียบกับ ${pb != null ? pb + 1 : "-"}`}>
+              <section key={`${pa}-${pb}`} aria-label={t("comparePage.pairSectionAria", { pageA: pa != null ? pa + 1 : "-", pageB: pb != null ? pb + 1 : "-" })}>
                 <p className="text-center text-xs text-gray-500 mb-1">
-                  หน้า {pa != null ? pa + 1 : "—"} (A) · หน้า {pb != null ? pb + 1 : "—"} (B)
-                  {pa == null && <span className="ml-1 text-green-700">หน้าที่เพิ่มใหม่</span>}
-                  {pb == null && <span className="ml-1 text-red-700">หน้าที่ถูกลบ</span>}
+                  {t("comparePage.pairHeading", { pageA: pa != null ? pa + 1 : "—", pageB: pb != null ? pb + 1 : "—" })}
+                  {pa == null && <span className="ml-1 text-green-700">{t("comparePage.pageAddedBadge")}</span>}
+                  {pb == null && <span className="ml-1 text-red-700">{t("comparePage.pageDeletedBadge")}</span>}
                 </p>
-                {mode === "overlay" && pa != null && pb != null ? renderOverlay(pa, pb)
-                  : twoCols ? (
-                    <div className="grid gap-4 px-4" style={{ gridTemplateColumns: `${width}px ${width}px` }}>
-                      {pa != null ? renderSide("a", pa, `ไฟล์เดิม หน้า ${pa + 1}`) : <EmptySheet width={width} text="ไม่มีหน้านี้ในไฟล์เดิม" />}
-                      {pb != null ? renderSide("b", pb, `ไฟล์ใหม่ หน้า ${pb + 1}`) : <EmptySheet width={width} text="หน้านี้ถูกลบในไฟล์ใหม่" />}
-                    </div>
-                  ) : (
-                    <div className="px-4">
-                      {(() => {
-                        const side = mode === "overlay" ? (pb != null ? "b" : "a") : phoneSide;
-                        const page = side === "a" ? pa : pb;
-                        return page != null ? renderSide(side, page, `${side === "a" ? "ไฟล์เดิม" : "ไฟล์ใหม่"} หน้า ${page + 1}`)
-                          : <EmptySheet width={width} text={side === "a" ? "ไม่มีหน้านี้ในไฟล์เดิม" : "หน้านี้ถูกลบในไฟล์ใหม่"} />;
-                      })()}
-                    </div>
-                  )}
+                {renderPairBody(pa, pb)}
               </section>
             ))}
           </div>
@@ -346,34 +368,38 @@ function Viewer({ taskId, data }) {
 
         {panel && (
           <aside className={phone ? "absolute inset-x-0 bottom-0 z-40 max-h-[60%] bg-white border-t border-gray-200 shadow-2xl flex flex-col rounded-t-xl"
-            : "w-80 shrink-0 bg-white border-l border-gray-200 flex flex-col"} aria-label="รายการจุดต่าง" data-testid="compare-list">
+            : "w-80 shrink-0 bg-white border-l border-gray-200 flex flex-col"} aria-label={t("comparePage.diffListAria")} data-testid="compare-list">
             <div className="p-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-gray-900">จุดต่าง {changes.length}{hidden.size ? ` จาก ${counts.total}` : ""} จุด</h2>
+                <h2 className="text-sm font-semibold text-gray-900">
+                  {hidden.size
+                    ? t("comparePage.diffCountFiltered", { count: changes.length, total: counts.total })
+                    : t("comparePage.diffCount", { count: changes.length })}
+                </h2>
                 <div className="ml-auto flex gap-1">
-                  <button type="button" className={btn(false)} onClick={() => step(-1)} aria-label="จุดต่างก่อนหน้า" title="ก่อนหน้า (k)">↑</button>
-                  <button type="button" className={btn(false)} onClick={() => step(1)} aria-label="จุดต่างถัดไป" title="ถัดไป (j)">↓</button>
-                  {phone && <button type="button" className={btn(false)} onClick={() => setPanel(false)} aria-label="ปิดรายการ">✕</button>}
+                  <button type="button" className={btn(false)} onClick={() => step(-1)} aria-label={t("comparePage.prevDiffAria")} title={t("comparePage.prevDiffTitle")}>↑</button>
+                  <button type="button" className={btn(false)} onClick={() => step(1)} aria-label={t("comparePage.nextDiffAria")} title={t("comparePage.nextDiffTitle")}>↓</button>
+                  {phone && <button type="button" className={btn(false)} onClick={() => setPanel(false)} aria-label={t("comparePage.closeListAria")}>✕</button>}
                 </div>
               </div>
               {kindsPresent.length > 1 && (
-                <div className="mt-2 flex flex-wrap gap-1" role="group" aria-label="กรองชนิดจุดต่าง">
+                <div className="mt-2 flex flex-wrap gap-1" role="group" aria-label={t("comparePage.filterKindsAria")}>
                   {kindsPresent.map((k) => (
                     <button key={k} type="button" aria-pressed={!hidden.has(k)}
                       onClick={() => setHidden((h) => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n; })}
                       className={`px-2 py-0.5 rounded text-xs ${hidden.has(k) ? "bg-gray-100 text-gray-400 line-through" : KIND[k].bg}`}>
-                      {KIND[k].label} {counts[k]}
+                      {t(KIND[k].labelKey)} {counts[k]}
                     </button>
                   ))}
                 </div>
               )}
-              {[...(result.a.ocr_pages.length ? [`ไฟล์เดิมอ่านข้อความจากภาพ (OCR) หน้า ${result.a.ocr_pages.map((p) => p + 1).join(", ")}`] : []),
-                ...(result.b.ocr_pages.length ? [`ไฟล์ใหม่อ่านข้อความจากภาพ (OCR) หน้า ${result.b.ocr_pages.map((p) => p + 1).join(", ")}`] : []),
+              {[...(result.a.ocr_pages.length ? [t("comparePage.ocrNoteOriginal", { pages: result.a.ocr_pages.map((p) => p + 1).join(", ") })] : []),
+                ...(result.b.ocr_pages.length ? [t("comparePage.ocrNoteNew", { pages: result.b.ocr_pages.map((p) => p + 1).join(", ") })] : []),
                 ...result.notes].map((n) => <p key={n} className="mt-2 text-xs text-gray-500">{n}</p>)}
             </div>
             <ul className="flex-1 overflow-y-auto divide-y divide-gray-100">
               {changes.map((c) => <ChangeItem key={c.id} change={c} active={c.id === activeId} onPick={pick} />)}
-              {!changes.length && <li className="p-4 text-sm text-gray-500">{result.identical ? "ไม่พบจุดต่าง" : "ซ่อนทุกชนิดไว้ — กดชนิดด้านบนเพื่อแสดง"}</li>}
+              {!changes.length && <li className="p-4 text-sm text-gray-500">{result.identical ? t("comparePage.noDifferences") : t("comparePage.allKindsHidden")}</li>}
             </ul>
           </aside>
         )}
@@ -409,6 +435,7 @@ export default function ComparePage() {
   if (data?.status === "completed" && data.result) return <Viewer taskId={taskId} data={data} />;
 
   const failed = error || data?.status === "failed";
+  const fallbackStage = data?.status === "pending" ? t("comparePage.statusPending") : t("comparePage.statusStarting");
   return (
     <div className="min-h-dvh flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-6" data-testid="compare-progress">
@@ -416,16 +443,16 @@ export default function ComparePage() {
         {data && <p className="mt-1 text-sm text-gray-500 break-words">{data.name_a} → {data.name_b}</p>}
         {failed ? (
           <>
-            <p className="mt-4 text-sm text-red-700 bg-red-50 rounded p-3" role="alert">{error || data.error_message || "เปรียบเทียบไม่สำเร็จ"}</p>
-            <button type="button" onClick={() => navigate("/dashboard")} className="mt-4 px-4 py-2 text-sm border border-gray-300 rounded-lg">กลับหน้าเอกสารของฉัน</button>
+            <p className="mt-4 text-sm text-red-700 bg-red-50 rounded p-3" role="alert">{error || data.error_message || t("comparePage.compareFailed")}</p>
+            <button type="button" onClick={() => navigate("/dashboard")} className="mt-4 px-4 py-2 text-sm border border-gray-300 rounded-lg">{t("comparePage.backToMyDocs")}</button>
           </>
         ) : (
           <>
             <div className="mt-5 h-2 bg-gray-100 rounded-full overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={data?.progress || 0}>
               <div className="h-full bg-blue-600 transition-all" style={{ width: `${Math.max(3, data?.progress || 0)}%` }} />
             </div>
-            <p className="mt-2 text-sm text-gray-600">{data?.stage || (data?.status === "pending" ? "รอคิว..." : "กำลังเริ่ม...")}</p>
-            <p className="mt-1 text-xs text-gray-400">เอกสารยาวหรือไฟล์สแกนอาจใช้เวลาหลายนาที</p>
+            <p className="mt-2 text-sm text-gray-600">{data?.stage || fallbackStage}</p>
+            <p className="mt-1 text-xs text-gray-400">{t("comparePage.longDocHint")}</p>
           </>
         )}
       </div>

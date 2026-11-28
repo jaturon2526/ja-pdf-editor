@@ -95,7 +95,7 @@ export default function DigitalSignModal({ onConfirm, onCancel }) {
       setShowPassword(false);
       setUnlockedBy(selectedCert.id);
     } catch (err) {
-      const msg = certPasskeyErrorMessage(err);
+      const msg = certPasskeyErrorMessage(err, t);
       if (msg) setCertError(msg);
     } finally {
       setUnlocking(false);

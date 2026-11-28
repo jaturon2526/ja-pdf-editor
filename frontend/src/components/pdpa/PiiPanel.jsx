@@ -6,7 +6,7 @@ import { useI18n } from "../../i18n/I18nContext.jsx";
 import PiiReviewList, { defaultPiiSelection, downloadPiiReport } from "./PiiReviewList.jsx";
 
 export default function PiiPanel({ sessionId, fileName, onGoToPage, onHighlights, onApplied, onClose }) {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const [phase, setPhase] = useState("scanning"); // scanning | review | applying | done | error
   const [scan, setScan] = useState(null);
   const [selected, setSelected] = useState(new Set());
@@ -121,7 +121,7 @@ export default function PiiPanel({ sessionId, fileName, onGoToPage, onHighlights
                 : t("editor.panels.pii.doneSummary", { count: result.redacted })}
             </p>
             {result.report.length > 0 && (
-              <button type="button" className="text-blue-700 hover:underline" onClick={() => downloadPiiReport(result.report, fileName || "document.pdf")}>
+              <button type="button" className="text-blue-700 hover:underline" onClick={() => downloadPiiReport(result.report, fileName || "document.pdf", { t, lang })}>
                 {t("editor.panels.pii.downloadReport")}
               </button>
             )}

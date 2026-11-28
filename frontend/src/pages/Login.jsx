@@ -74,7 +74,7 @@ export default function Login() {
     try {
       await startLineLogin(); // ไปหน้าอนุญาตของ LINE
     } catch (err) {
-      setErrorMsg("เข้าสู่ระบบด้วย LINE ไม่สำเร็จ: " + err.message);
+      setErrorMsg(t("authExtra.login.lineFailed", { error: err.message }));
       setLineBusy(false);
     }
   }
@@ -144,7 +144,7 @@ export default function Login() {
       finishPasskeyLogin();
     } catch (err) {
       const msg = buttonTimedOut.current
-        ? "ไม่ได้รับการยืนยันจากอุปกรณ์ — กด \"เข้าสู่ระบบด้วย Passkey\" อีกครั้ง"
+        ? t("authExtra.login.passkeyTimeout")
         : passkeyErrorMessage(err);
       if (msg) setErrorMsg(msg);
       preparePasskeyButton();
@@ -162,16 +162,16 @@ export default function Login() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("expired")) {
-      setErrorMsg("เซสชันของคุณหมดอายุ หรือมีการเข้าสู่ระบบซ้อนจากอุปกรณ์อื่น กรุณาเข้าสู่ระบบใหม่");
+      setErrorMsg(t("authExtra.login.sessionExpired"));
       // clear param
       window.history.replaceState({}, document.title, "/login");
     }
 
     if (searchParams.get("verified") === "true") {
-      setSuccessMsg("ยืนยันอีเมลสำเร็จ กรุณาเข้าสู่ระบบ");
+      setSuccessMsg(t("authExtra.login.emailVerified"));
     }
     if (searchParams.get("deleted") === "1") {
-      setSuccessMsg("ลบบัญชีพร้อมไฟล์และข้อมูลทั้งหมดเรียบร้อยแล้ว ขอบคุณที่ใช้งาน");
+      setSuccessMsg(t("authExtra.login.accountDeleted"));
     }
 
     // ลิงก์จากอีเมลเชิญลงนาม: /login?register=1&email=... → เปิดหน้าสมัครพร้อมอีเมลที่ถูกเชิญ
@@ -180,14 +180,14 @@ export default function Login() {
     if (searchParams.get("register") === "1") {
       setIsRegister(true);
       setInvited(true);
-      setSuccessMsg("คุณได้รับเชิญให้ลงนามเอกสาร — สมัครด้วยอีเมลนี้แล้วยืนยันอีเมล เอกสารจะอยู่ในเมนู \"การลงนาม\"");
+      setSuccessMsg(t("authExtra.login.invitedToSign"));
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("expired")) {
-      setErrorMsg("เซสชันของคุณหมดอายุ หรือมีการเข้าสู่ระบบซ้อนจากอุปกรณ์อื่น กรุณาเข้าสู่ระบบใหม่");
+      setErrorMsg(t("authExtra.login.sessionExpired"));
       // clear param
       window.history.replaceState({}, document.title, "/login");
     }
@@ -197,17 +197,17 @@ export default function Login() {
       timer = setInterval(() => setResendCooldown(c => c - 1), 1000);
     }
     return () => clearInterval(timer);
-  }, [resendCooldown]);
+  }, [resendCooldown, t]);
 
   const handleResend = async () => {
     if (resendCooldown > 0) return;
     try {
       setResendCooldown(60);
       await resendVerification(email);
-      setSuccessMsg("ส่งลิงก์ยืนยันตัวตนไปที่อีเมลของคุณแล้ว (กรุณาเช็กในกล่องจดหมายขยะด้วยครับ)");
+      setSuccessMsg(t("authExtra.login.resendSuccess"));
       setErrorMsg("");
     } catch (err) {
-      setErrorMsg(err.message || "ไม่สามารถส่งอีเมลได้");
+      setErrorMsg(err.message || t("authExtra.login.resendFailed"));
       setResendCooldown(0);
     }
   };
@@ -220,11 +220,11 @@ export default function Login() {
     try {
       if (isRegister) {
         if (password !== confirmPassword) {
-          setErrorMsg("รหัสผ่านไม่ตรงกัน");
+          setErrorMsg(t("authExtra.login.passwordMismatch"));
           setLoading(false);
           return;
         }
-        const pwdError = validatePassword(password);
+        const pwdError = validatePassword(password, t);
         if (pwdError) {
           setErrorMsg(pwdError);
           setLoading(false);
@@ -232,22 +232,20 @@ export default function Login() {
         }
         // ผู้ได้รับเชิญลงนามสมัครได้แม้อยู่นอกโดเมน — backend ตรวจซ้ำเสมอ
         if (!invited && !emailDomainAllowed(email, allowedDomains)) {
-          setErrorMsg(`สมัครได้เฉพาะอีเมลขององค์กร (${allowedDomains.map((d) => "@" + d).join(", ")})`);
+          setErrorMsg(t("authExtra.login.orgDomainOnly", { domains: allowedDomains.map((d) => "@" + d).join(", ") }));
           setLoading(false);
           return;
         }
         await authRegister(email, password);
-        setSuccessMsg(
-          `สมัครสมาชิกสำเร็จ! เราส่งลิงก์ยืนยันไปที่ ${email} แล้ว — กรุณากดลิงก์ในอีเมลก่อนเข้าสู่ระบบ (ถ้าไม่เห็น ลองดูในโฟลเดอร์ Junk/สแปม)`,
-        );
+        setSuccessMsg(t("authExtra.login.registerSuccess", { email }));
         setIsRegister(false);
       } else {
         await authLogin(email, password); // token อยู่ใน HttpOnly cookie
         void navigate("/dashboard");
       }
     } catch (err) {
-      setErrorMsg(err.message || "เกิดข้อผิดพลาด");
-      if (err.message && err.message.includes("กรุณายืนยันอีเมล")) {
+      setErrorMsg(err.message || t("authExtra.login.genericError"));
+      if (err.message && (err.message.includes("กรุณายืนยันอีเมล") || err.message.toLowerCase().includes("verify your email"))) {
         setShowResend(true);
       }
     } finally {

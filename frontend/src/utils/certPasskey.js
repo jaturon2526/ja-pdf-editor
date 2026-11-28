@@ -25,12 +25,19 @@ export class PasskeyUnlockError extends Error {
   }
 }
 
-export function certPasskeyErrorMessage(err) {
+export function certPasskeyErrorMessage(err, t) {
+  const tr = (key, fallback) => (t ? t(key) : fallback);
   if (err?.name === "PrfUnsupportedError") {
-    return "อุปกรณ์หรือเบราว์เซอร์นี้ยังใช้ passkey ปลดล็อกใบรับรองไม่ได้ (ต้องใช้ Chrome/Edge รุ่นใหม่, Android หรือ Safari บน iOS/macOS 18 ขึ้นไป) — กรอกรหัสผ่านแทนได้";
+    return tr(
+      "validation.certPasskey.prfUnsupported",
+      "อุปกรณ์หรือเบราว์เซอร์นี้ยังใช้ passkey ปลดล็อกใบรับรองไม่ได้ (ต้องใช้ Chrome/Edge รุ่นใหม่, Android หรือ Safari บน iOS/macOS 18 ขึ้นไป) — กรอกรหัสผ่านแทนได้",
+    );
   }
   if (err?.name === "PasskeyUnlockError") {
-    return "passkey นี้ปลดล็อกใบรับรองไม่ได้ — ผูก passkey ใหม่ที่หน้า “ความปลอดภัย” หรือกรอกรหัสผ่านแทน";
+    return tr(
+      "validation.certPasskey.unlockFailed",
+      "passkey นี้ปลดล็อกใบรับรองไม่ได้ — ผูก passkey ใหม่ที่หน้า “ความปลอดภัย” หรือกรอกรหัสผ่านแทน",
+    );
   }
   return passkeyErrorMessage(err);
 }

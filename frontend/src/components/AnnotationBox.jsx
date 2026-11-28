@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 /**
  * AnnotationBox — คลิกเลือก annotation ที่มีอยู่แล้วในหน้า (ไฮไลท์ / กรอบสี่เหลี่ยม / กล่องข้อความ /
@@ -59,6 +60,7 @@ export default function AnnotationBox({
   onMove,
   onDelete,
 }) {
+  const { t } = useI18n();
   const [hover, setHover] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [noteDragRect, setNoteDragRect] = useState(null); // ตำแหน่งชั่วคราวขณะลากย้ายบันทึกย่อ (ไม่เปิดกล่องแก้ไข)
@@ -257,7 +259,7 @@ export default function AnnotationBox({
         onMouseLeave={() => setHover(false)}
         onPointerDown={startNoteMove}
         onContextMenu={handleNoteContextMenu}
-        title={editing ? undefined : "ลากเพื่อย้ายตำแหน่ง / คลิกหรือคลิกขวาเพื่อแก้ไข"}
+        title={editing ? undefined : t("editor.annotationBox.noteMarkerTitle")}
       >
         {hover && !editing && !isDraggingNote && !noteMenuOpen && annot.content && (
           <div className="annot-note-balloon">{annot.content}</div>
@@ -267,7 +269,7 @@ export default function AnnotationBox({
             ref={noteMenuRef}
             role="menu"
             tabIndex={-1}
-            aria-label="เมนูบันทึกย่อ"
+            aria-label={t("editor.annotationBox.noteMenuAria")}
             className="absolute left-full top-0 ml-1.5 z-40 min-w-[148px] bg-white border border-slate-200 rounded-lg shadow-xl py-1 text-xs text-slate-800"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
@@ -278,7 +280,7 @@ export default function AnnotationBox({
               className="w-full text-left px-3 py-1.5 hover:bg-sky-50 flex items-center gap-2 cursor-pointer"
               onClick={() => { setNoteMenuOpen(false); onSelect(annot); }}
             >
-              แก้ไขบันทึกย่อ
+              {t("editor.annotationBox.editNote")}
             </button>
             <button
               type="button"
@@ -286,7 +288,7 @@ export default function AnnotationBox({
               className="w-full text-left px-3 py-1.5 text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
               onClick={() => { setNoteMenuOpen(false); void onDelete(annot); }}
             >
-              ลบบันทึกย่อ
+              {t("editor.annotationBox.deleteNote")}
             </button>
           </div>
         )}
@@ -302,31 +304,31 @@ export default function AnnotationBox({
               rows={3}
               value={draftContent}
               onChange={(e) => onDraftContentChange(e.target.value)}
-              placeholder="ข้อความในโน้ต..."
+              placeholder={t("editor.annotationBox.notePlaceholder")}
             />
             <div className="annot-editor-actions">
               {confirmDelete ? (
                 <>
                   <span style={{ fontSize: "12px", color: "var(--color-danger, #ef4444)", marginRight: "auto" }}>
-                    ยืนยันการลบ?
+                    {t("editor.annotationBox.confirmDelete")}
                   </span>
                   <button className="secondary-btn annot-toolbar-btn" onClick={() => setConfirmDelete(false)}>
-                    ยกเลิก
+                    {t("editor.annotationBox.cancel")}
                   </button>
                   <button className="annot-danger-btn annot-toolbar-btn" onClick={() => void onDelete()}>
-                    ใช่, ลบเลย
+                    {t("editor.annotationBox.confirmDeleteYes")}
                   </button>
                 </>
               ) : (
                 <>
                   <button className="secondary-btn annot-toolbar-btn" onClick={onCancel}>
-                    ยกเลิก
+                    {t("editor.annotationBox.cancel")}
                   </button>
                   <button className="annot-danger-btn annot-toolbar-btn" onClick={() => setConfirmDelete(true)}>
-                    ลบ
+                    {t("editor.annotationBox.delete")}
                   </button>
                   <button className="primary-btn annot-toolbar-btn" onClick={() => void onCommit()}>
-                    ตกลง
+                    {t("editor.annotationBox.confirm")}
                   </button>
                 </>
               )}
@@ -363,7 +365,7 @@ export default function AnnotationBox({
         if (!editing) onSelect(annot);
       }}
       onPointerDown={(e) => e.stopPropagation()}
-      title={editing ? undefined : "คลิกเพื่อแก้ไข/ลบ annotation นี้"}
+      title={editing ? undefined : t("editor.annotationBox.clickToEdit")}
     >
       {editing && isTextual && (
         <div
@@ -371,7 +373,7 @@ export default function AnnotationBox({
           className="annot-box-text"
           role="textbox"
           aria-multiline="true"
-          aria-label="ข้อความในกล่อง"
+          aria-label={t("editor.annotationBox.boxTextAria")}
           tabIndex={0}
           contentEditable
           suppressContentEditableWarning
@@ -383,7 +385,7 @@ export default function AnnotationBox({
           _set_text_appearance) จึงไม่วาดทับซ้ำ หน้าจอจึงตรงกับไฟล์ที่ดาวน์โหลด/พิมพ์ */}
       {editing && (
         <>
-          <div className="edit-box-drag-handle" title="ลากเพื่อย้ายตำแหน่ง" onPointerDown={startMove}>
+          <div className="edit-box-drag-handle" title={t("editor.annotationBox.dragToMove")} onPointerDown={startMove}>
             <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
               <path d="M8 1v14M1 8h14" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
               <path
@@ -411,7 +413,7 @@ export default function AnnotationBox({
                   className="annot-font-select"
                   value={draftFontKey || ""}
                   onChange={(e) => onDraftFontKeyChange(e.target.value)}
-                  title="ฟอนต์ของกล่องข้อความ"
+                  title={t("editor.annotationBox.fontTitle")}
                 >
                   {(fonts || []).map((f) => (
                     <option key={f.key} value={f.key}>
@@ -426,7 +428,7 @@ export default function AnnotationBox({
                   max={96}
                   value={draftFontSize ?? 12}
                   onChange={(e) => onDraftFontSizeChange(Number.parseFloat(e.target.value) || 12)}
-                  title="ขนาดตัวอักษร"
+                  title={t("editor.annotationBox.fontSizeTitle")}
                 />
               </div>
             )}
@@ -445,25 +447,25 @@ export default function AnnotationBox({
               {confirmDelete ? (
                 <>
                   <span style={{ fontSize: "12px", color: "var(--color-danger, #ef4444)", marginRight: "auto" }}>
-                    ยืนยันการลบ?
+                    {t("editor.annotationBox.confirmDelete")}
                   </span>
                   <button className="secondary-btn annot-toolbar-btn" onClick={() => setConfirmDelete(false)}>
-                    ยกเลิก
+                    {t("editor.annotationBox.cancel")}
                   </button>
                   <button className="annot-danger-btn annot-toolbar-btn" onClick={onDelete}>
-                    ใช่, ลบเลย
+                    {t("editor.annotationBox.confirmDeleteYes")}
                   </button>
                 </>
               ) : (
                 <>
                   <button className="secondary-btn annot-toolbar-btn" onClick={onCancel}>
-                    ยกเลิก
+                    {t("editor.annotationBox.cancel")}
                   </button>
                   <button className="annot-danger-btn annot-toolbar-btn" onClick={() => setConfirmDelete(true)}>
-                    ลบ
+                    {t("editor.annotationBox.delete")}
                   </button>
                   <button className="primary-btn annot-toolbar-btn" onClick={onCommit}>
-                    ตกลง
+                    {t("editor.annotationBox.confirm")}
                   </button>
                 </>
               )}

@@ -205,7 +205,7 @@ const REGEX_EXAMPLES = [
 
 // initialFile: เริ่มจากไฟล์ที่เลือกไว้แล้ว (เมนู ☰ ของไฟล์) ข้ามขั้นเลือกไฟล์
 export default function QuickFileAction({ action, files, initialFile = null, onClose, onDone, onOpenFile }) {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const labelKeys = LABEL_KEYS[action];
   const labels = { title: t(labelKeys.title), verb: t(labelKeys.verb) };
   const [step, setStep] = useState(initialFile ? "checking" : "choose"); // choose | checking | signed | scanning | scan_error | form | password | result
@@ -451,7 +451,7 @@ export default function QuickFileAction({ action, files, initialFile = null, onC
         <p>{t("quickAction.savedAs")} <strong className="text-gray-900 break-all">{result.file.filename}</strong></p>
         <p>{t("quickAction.originalUnchanged")}</p>
         {action === "pdpa" && result.report?.length > 0 && (
-          <button type="button" className="text-blue-700 hover:underline" onClick={() => downloadPiiReport(result.report, file.filename)}>
+          <button type="button" className="text-blue-700 hover:underline" onClick={() => downloadPiiReport(result.report, file.filename, { t, lang })}>
             {t("quickAction.downloadPdpaReport")}
           </button>
         )}

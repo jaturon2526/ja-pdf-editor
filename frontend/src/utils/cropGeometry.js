@@ -60,13 +60,19 @@ export function applyHandleDrag(startMargins, handle, dxPt, dyPt, pageWidthPt, p
  * แปลงขอบเขตที่ผู้ใช้เลือกเป็นรายการเลขหน้า 0-based
  * คืน { pages: number[], error: string | null }
  */
-export function resolveCropPages(scope, currentPage, pageCount, rangeText) {
-  if (!pageCount || pageCount < 1) return { pages: [], error: "ไม่พบหน้าเอกสาร" };
+export function resolveCropPages(scope, currentPage, pageCount, rangeText, t) {
+  const tr = (key, fallback, params) => (t ? t(key, params) : fallback);
+  if (!pageCount || pageCount < 1) {
+    return { pages: [], error: tr("validation.crop.noPages", "ไม่พบหน้าเอกสาร") };
+  }
   if (scope === "current") return { pages: [currentPage], error: null };
   if (scope === "all") return { pages: Array.from({ length: pageCount }, (_, i) => i), error: null };
   const parsed = parsePageRange(rangeText, pageCount);
   if (!parsed || parsed.length === 0) {
-    return { pages: [], error: `กรุณาระบุช่วงหน้าให้ถูกต้อง (1–${pageCount}) เช่น 1-3, 5` };
+    return {
+      pages: [],
+      error: tr("validation.crop.invalidRange", `กรุณาระบุช่วงหน้าให้ถูกต้อง (1–${pageCount}) เช่น 1-3, 5`, { pageCount }),
+    };
   }
   return { pages: parsed.map((p) => p - 1), error: null };
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { fontFamilyForKey, fontWeightForKey, fontStyleForKey } from "../utils/textEditUtils.js";
+import { useI18n } from "../i18n/I18nContext.jsx";
 
 /**
  * EditableTextBox — กล่องข้อความที่กำลังแก้ไขอยู่ แสดงทับตำแหน่งเดิมบนหน้า PDF โดยตรง
@@ -55,6 +56,7 @@ export default function EditableTextBox({
   pending = false,  // true = ใส่ style เตือนว่ายังไม่กดบันทึกจริง (กรอบส้ม) ใช้คู่กับ readOnly เท่านั้น
   onSelect,         // ใช้ตอน readOnly — คลิกกล่องเพื่อกลับไปแก้ไขต่อ
 }) {
+  const { t } = useI18n();
   const textRef = useRef(null);
 
   // ตั้งค่าข้อความเริ่มต้นแค่ตอน mount (component นี้ถูก remount ใหม่ทุกครั้งที่เปลี่ยนย่อหน้าที่แก้
@@ -182,7 +184,7 @@ export default function EditableTextBox({
           e.stopPropagation();
           onSelect?.();
         }}
-        title="คลิกเพื่อแก้ไขย่อหน้านี้ต่อ"
+        title={t("editor.textEditBox.clickToContinueEdit")}
       >
         <div className="edit-inline-text edit-inline-text-preview" style={textStyle}>
           {text}
@@ -195,7 +197,7 @@ export default function EditableTextBox({
     <div role="presentation" className="edit-box-active" style={boxStyle} onClick={(e) => e.stopPropagation()}>
       <button
         className="absolute -bottom-[22px] left-1/2 -translate-x-1/2 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow z-10 cursor-pointer"
-        title="ลบกล่องข้อความนี้ (Ctrl + Delete)"
+        title={t("editor.textEditBox.deleteTitle")}
         onClick={(e) => {
           e.stopPropagation();
           onDelete?.();
@@ -205,7 +207,7 @@ export default function EditableTextBox({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
       </button>
-      <div className="edit-box-drag-handle" title="ลากเพื่อย้ายตำแหน่ง" onPointerDown={startMove}>
+      <div className="edit-box-drag-handle" title={t("editor.textEditBox.dragToMove")} onPointerDown={startMove}>
         <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
           <path d="M8 1v14M1 8h14" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
           <path
@@ -222,7 +224,7 @@ export default function EditableTextBox({
         className="edit-inline-text"
         role="textbox"
         aria-multiline="true"
-        aria-label="แก้ไขข้อความ"
+        aria-label={t("editor.textEditBox.editTextAria")}
         tabIndex={0}
         contentEditable
         suppressContentEditableWarning

@@ -61,7 +61,7 @@ export function useCropPage({
 
   const apply = useCallback(async () => {
     if (!session || applying) return;
-    const { pages, error: rangeErr } = resolveCropPages(scope, currentPage, session.pageCount, rangeText);
+    const { pages, error: rangeErr } = resolveCropPages(scope, currentPage, session.pageCount, rangeText, t);
     if (rangeErr) {
       setError(rangeErr);
       return;
